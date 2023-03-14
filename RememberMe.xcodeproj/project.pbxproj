@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		7545750A29C00798004242C5 /* LogInViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750929C00798004242C5 /* LogInViewController.swift */; };
+		7545750C29C00848004242C5 /* PlacesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750B29C00848004242C5 /* PlacesViewController.swift */; };
+		7545750F29C00868004242C5 /* NamesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750E29C00868004242C5 /* NamesViewController.swift */; };
+		7545751129C0086F004242C5 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545751029C0086F004242C5 /* SettingsViewController.swift */; };
 		75B69CD529BFEEE40049D4F5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */; };
 		75B69CD729BFEEE40049D4F5 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CD629BFEEE40049D4F5 /* SceneDelegate.swift */; };
 		75B69CD929BFEEE40049D4F5 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CD829BFEEE40049D4F5 /* HomeViewController.swift */; };
@@ -21,6 +24,9 @@
 
 /* Begin PBXFileReference section */
 		7545750929C00798004242C5 /* LogInViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogInViewController.swift; sourceTree = "<group>"; };
+		7545750B29C00848004242C5 /* PlacesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesViewController.swift; sourceTree = "<group>"; };
+		7545750E29C00868004242C5 /* NamesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NamesViewController.swift; sourceTree = "<group>"; };
+		7545751029C0086F004242C5 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		75B69CD129BFEEE40049D4F5 /* RememberMe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RememberMe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		75B69CD629BFEEE40049D4F5 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -45,6 +51,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		7545750D29C00853004242C5 /* Navigation */ = {
+			isa = PBXGroup;
+			children = (
+				75B69CD829BFEEE40049D4F5 /* HomeViewController.swift */,
+				7545750B29C00848004242C5 /* PlacesViewController.swift */,
+				7545750E29C00868004242C5 /* NamesViewController.swift */,
+				7545751029C0086F004242C5 /* SettingsViewController.swift */,
+			);
+			path = Navigation;
+			sourceTree = "<group>";
+		};
 		75B69CC829BFEEE40049D4F5 = {
 			isa = PBXGroup;
 			children = (
@@ -79,10 +96,10 @@
 		75B69CEB29BFF4FB0049D4F5 /* Controllers */ = {
 			isa = PBXGroup;
 			children = (
-				75B69CD829BFEEE40049D4F5 /* HomeViewController.swift */,
 				75B69CEC29BFF5120049D4F5 /* WelcomeViewController.swift */,
 				75B69CEE29BFF5200049D4F5 /* RegisterViewController.swift */,
 				7545750929C00798004242C5 /* LogInViewController.swift */,
+				7545750D29C00853004242C5 /* Navigation */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -161,7 +178,10 @@
 				75B69CDF29BFEEE40049D4F5 /* RememberMe.xcdatamodeld in Sources */,
 				75B69CD929BFEEE40049D4F5 /* HomeViewController.swift in Sources */,
 				75B69CD529BFEEE40049D4F5 /* AppDelegate.swift in Sources */,
+				7545751129C0086F004242C5 /* SettingsViewController.swift in Sources */,
 				7545750A29C00798004242C5 /* LogInViewController.swift in Sources */,
+				7545750F29C00868004242C5 /* NamesViewController.swift in Sources */,
+				7545750C29C00848004242C5 /* PlacesViewController.swift in Sources */,
 				75B69CEF29BFF5200049D4F5 /* RegisterViewController.swift in Sources */,
 				75B69CED29BFF5120049D4F5 /* WelcomeViewController.swift in Sources */,
 				75B69CD729BFEEE40049D4F5 /* SceneDelegate.swift in Sources */,
