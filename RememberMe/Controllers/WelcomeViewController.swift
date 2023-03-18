@@ -11,7 +11,7 @@ class WelcomeViewController: UIViewController {
     
     @IBOutlet weak var StartTitle: UILabel!
     var currentCharacterIndex = 0
-      var displayText: String = "Namey"
+      var displayText: String = "Namie"
       var animationTimer: Timer?
 
       override func viewDidLoad() {
