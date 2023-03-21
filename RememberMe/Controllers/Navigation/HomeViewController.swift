@@ -7,12 +7,18 @@
 
 import UIKit
 
+
 class HomeViewController: UIViewController {
     
     
     @IBOutlet weak var CurrentPlace: UIImageView!
     
     @IBOutlet weak var Progressbar: UIProgressView!
+    
+    override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            navigationController?.setNavigationBarHidden(true, animated: false)
+        }
     
     
     override func viewDidLoad() {

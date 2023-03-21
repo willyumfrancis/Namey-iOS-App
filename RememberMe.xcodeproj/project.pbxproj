@@ -142,7 +142,6 @@
 				2E72DCCE94307E8B124BC5D3 /* Pods-RememberMe.debug.xcconfig */,
 				D52F56AC43D9BDF3ECF77AD1 /* Pods-RememberMe.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
