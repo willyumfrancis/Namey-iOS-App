@@ -6,9 +6,31 @@
 //
 
 import UIKit
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
 
 class LogInViewController: UIViewController {
 
+    @IBOutlet weak var PasswordTextField: UITextField!
+    @IBOutlet weak var EmailTextField: UITextField!
+    
+    
+    @IBAction func LogInButton(_ sender: Any) {
+        
+        if let email = EmailTextField.text, let password = PasswordTextField.text {
+            Auth.auth().signIn(withEmail: email, password: password) { authResult, error in
+                if let e = error {
+                    print(e)
+                } else {
+                    //Navigate to Chat View Controller
+                    self.performSegue(withIdentifier: "LogInSegue", sender: self)
+                }
+            }
+        }
+    }
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 

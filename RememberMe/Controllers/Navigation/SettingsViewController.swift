@@ -10,6 +10,10 @@ import UIKit
 class SettingsViewController: UIViewController {
     
 
+    @IBAction func LogOutButton(_ sender: UIBarButtonItem) {
+        navigationController?.popToRootViewController(animated: true)
+    }
+    
     override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
             navigationController?.setNavigationBarHidden(true, animated: false)
