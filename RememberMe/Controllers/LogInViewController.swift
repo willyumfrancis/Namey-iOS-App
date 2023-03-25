@@ -11,7 +11,7 @@ import FirebaseFirestore
 import FirebaseAuth
 
 class LogInViewController: UIViewController {
-
+    
     @IBOutlet weak var PasswordTextField: UITextField!
     @IBOutlet weak var EmailTextField: UITextField!
     
@@ -22,6 +22,11 @@ class LogInViewController: UIViewController {
             Auth.auth().signIn(withEmail: email, password: password) { authResult, error in
                 if let e = error {
                     print(e)
+                    // Show error as an alert
+                    let errorMessage = e.localizedDescription
+                    let alertController = UIAlertController(title: "Error", message: errorMessage, preferredStyle: .alert)
+                    alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self.present(alertController, animated: true, completion: nil)
                 } else {
                     //Navigate to Chat View Controller
                     self.performSegue(withIdentifier: "LogInSegue", sender: self)
@@ -33,19 +38,24 @@ class LogInViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         // Do any additional setup after loading the view.
     }
     
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: false)
     }
-    */
-
+    
+    
+    /*
+     // MARK: - Navigation
+     
+     // In a storyboard-based application, you will often want to do a little preparation before navigation
+     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+     // Get the new view controller using segue.destination.
+     // Pass the selected object to the new view controller.
+     }
+     */
+    
 }

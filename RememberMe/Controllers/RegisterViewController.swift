@@ -21,6 +21,11 @@ class RegisterViewController: UIViewController {
             Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
                 if let e = error {
                     print(e)
+                    // Show error as an alert
+                    let errorMessage = e.localizedDescription
+                    let alertController = UIAlertController(title: "Error", message: errorMessage, preferredStyle: .alert)
+                    alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self.present(alertController, animated: true, completion: nil)
                 } else {
                     //Navigate to Chat View Controller
                     self.performSegue(withIdentifier: "RegisterSegue", sender: self)
@@ -33,6 +38,11 @@ class RegisterViewController: UIViewController {
         super.viewDidLoad()
         
         // Do any additional setup after loading the view.
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: false)
     }
     
     
