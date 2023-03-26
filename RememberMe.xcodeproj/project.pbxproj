@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		7502561829CE4A1C004FE87A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7502561729CE4A1C004FE87A /* GoogleService-Info.plist */; };
+		7516ED1C29D0C83500801960 /* Names.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7516ED1B29D0C83500801960 /* Names.swift */; };
+		7516ED1F29D0C95100801960 /* NameCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7516ED1D29D0C95100801960 /* NameCell.swift */; };
+		7516ED2029D0C95100801960 /* NameCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7516ED1E29D0C95100801960 /* NameCell.xib */; };
 		7545750A29C00798004242C5 /* LogInViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750929C00798004242C5 /* LogInViewController.swift */; };
 		7545750C29C00848004242C5 /* PlacesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750B29C00848004242C5 /* PlacesViewController.swift */; };
 		7545750F29C00868004242C5 /* NamesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750E29C00868004242C5 /* NamesViewController.swift */; };
@@ -30,6 +33,9 @@
 		7502561529CE4851004FE87A /* Roboto-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Bold.ttf"; sourceTree = "<group>"; };
 		7502561629CE485D004FE87A /* Roboto-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Regular.ttf"; sourceTree = "<group>"; };
 		7502561729CE4A1C004FE87A /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		7516ED1B29D0C83500801960 /* Names.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Names.swift; sourceTree = "<group>"; };
+		7516ED1D29D0C95100801960 /* NameCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameCell.swift; sourceTree = "<group>"; };
+		7516ED1E29D0C95100801960 /* NameCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NameCell.xib; sourceTree = "<group>"; };
 		7545750929C00798004242C5 /* LogInViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogInViewController.swift; sourceTree = "<group>"; };
 		7545750B29C00848004242C5 /* PlacesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesViewController.swift; sourceTree = "<group>"; };
 		7545750E29C00868004242C5 /* NamesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NamesViewController.swift; sourceTree = "<group>"; };
@@ -68,6 +74,23 @@
 				A0CDA379DE75D8A61E96F863 /* Pods_RememberMe.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		7516ED1929D0C7B800801960 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				7516ED1D29D0C95100801960 /* NameCell.swift */,
+				7516ED1E29D0C95100801960 /* NameCell.xib */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		7516ED1A29D0C7D900801960 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				7516ED1B29D0C83500801960 /* Names.swift */,
+			);
+			path = Models;
 			sourceTree = "<group>";
 		};
 		7545750D29C00853004242C5 /* Navigation */ = {
@@ -112,6 +135,8 @@
 		75B69CD329BFEEE40049D4F5 /* RememberMe */ = {
 			isa = PBXGroup;
 			children = (
+				7516ED1A29D0C7D900801960 /* Models */,
+				7516ED1929D0C7B800801960 /* Views */,
 				75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */,
 				75B69CD629BFEEE40049D4F5 /* SceneDelegate.swift */,
 				75B69CEB29BFF4FB0049D4F5 /* Controllers */,
@@ -207,6 +232,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				75B69CE429BFEEE50049D4F5 /* LaunchScreen.storyboard in Resources */,
+				7516ED2029D0C95100801960 /* NameCell.xib in Resources */,
 				7502561829CE4A1C004FE87A /* GoogleService-Info.plist in Resources */,
 				75B69CE129BFEEE50049D4F5 /* Assets.xcassets in Resources */,
 				75B69CDC29BFEEE40049D4F5 /* Main.storyboard in Resources */,
@@ -266,8 +292,10 @@
 				75B69CD929BFEEE40049D4F5 /* HomeViewController.swift in Sources */,
 				75B69CD529BFEEE40049D4F5 /* AppDelegate.swift in Sources */,
 				7545751129C0086F004242C5 /* SettingsViewController.swift in Sources */,
+				7516ED1F29D0C95100801960 /* NameCell.swift in Sources */,
 				7545750A29C00798004242C5 /* LogInViewController.swift in Sources */,
 				75F5D89529C63D2A00272A2F /* MenuController.swift in Sources */,
+				7516ED1C29D0C83500801960 /* Names.swift in Sources */,
 				7545750F29C00868004242C5 /* NamesViewController.swift in Sources */,
 				7545750C29C00848004242C5 /* PlacesViewController.swift in Sources */,
 				75B69CEF29BFF5200049D4F5 /* RegisterViewController.swift in Sources */,

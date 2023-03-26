@@ -9,12 +9,15 @@ import UIKit
 import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
+import CoreLocation
 
-class LogInViewController: UIViewController {
+class LogInViewController: UIViewController, CLLocationManagerDelegate {
     
     @IBOutlet weak var PasswordTextField: UITextField!
     @IBOutlet weak var EmailTextField: UITextField!
     
+    let locationManager = CLLocationManager()
+
     
     @IBAction func LogInButton(_ sender: Any) {
         
@@ -29,6 +32,8 @@ class LogInViewController: UIViewController {
                     self.present(alertController, animated: true, completion: nil)
                 } else {
                     //Navigate to Chat View Controller
+                    self.locationManager.requestWhenInUseAuthorization()
+
                     self.performSegue(withIdentifier: "LogInSegue", sender: self)
                 }
             }
@@ -38,24 +43,43 @@ class LogInViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        locationManager.delegate = self
         
         // Do any additional setup after loading the view.
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(false, animated: false)
+            super.viewWillAppear(animated)
+            navigationController?.setNavigationBarHidden(false, animated: false)
+        }
+        
+        // CLLocationManagerDelegate method
+        func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+            if status == .authorizedWhenInUse {
+                locationManager.requestLocation()
+            }
+        }
+        
+        // CLLocationManagerDelegate method
+        func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+            if let location = locations.first {
+                print("User's location: \(location)")
+            }
+        }
+        
+        // CLLocationManagerDelegate method
+        func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+            print("Failed to get user's location: \(error.localizedDescription)")
+        }
+        
+        /*
+         // MARK: - Navigation
+         
+         // In a storyboard-based application, you will often want to do a little preparation before navigation
+         override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+         // Get the new view controller using segue.destination.
+         // Pass the selected object to the new view controller.
+         }
+         */
+        
     }
-    
-    
-    /*
-     // MARK: - Navigation
-     
-     // In a storyboard-based application, you will often want to do a little preparation before navigation
-     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-     // Get the new view controller using segue.destination.
-     // Pass the selected object to the new view controller.
-     }
-     */
-    
-}

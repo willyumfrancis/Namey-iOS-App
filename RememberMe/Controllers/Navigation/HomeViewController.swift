@@ -6,14 +6,28 @@
 //
 
 import UIKit
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+import CoreData
 
 
 class HomeViewController: UIViewController {
     
     
     @IBOutlet weak var CurrentPlace: UIImageView!
-    
     @IBOutlet weak var Progressbar: UIProgressView!
+    
+    @IBAction func New(_ sender: UIButton) {
+    }
+    
+    @IBAction func Save(_ sender: Any) {
+    }
+    
+    @IBOutlet weak var NameList: UITableView!
+    
+    
+    let db = Firestore.firestore()
     
     override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
@@ -63,4 +77,6 @@ class HomeViewController: UIViewController {
     
     
 }
+
+extension HomeViewController {
 
