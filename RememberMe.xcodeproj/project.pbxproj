@@ -8,13 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		7502561829CE4A1C004FE87A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7502561729CE4A1C004FE87A /* GoogleService-Info.plist */; };
-		7516ED1C29D0C83500801960 /* Names.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7516ED1B29D0C83500801960 /* Names.swift */; };
-		7516ED1F29D0C95100801960 /* NameCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7516ED1D29D0C95100801960 /* NameCell.swift */; };
-		7516ED2029D0C95100801960 /* NameCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7516ED1E29D0C95100801960 /* NameCell.xib */; };
+		7516ED2229D215CB00801960 /* K.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7516ED2129D215CB00801960 /* K.swift */; };
 		7545750A29C00798004242C5 /* LogInViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750929C00798004242C5 /* LogInViewController.swift */; };
 		7545750C29C00848004242C5 /* PlacesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750B29C00848004242C5 /* PlacesViewController.swift */; };
 		7545750F29C00868004242C5 /* NamesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750E29C00868004242C5 /* NamesViewController.swift */; };
 		7545751129C0086F004242C5 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545751029C0086F004242C5 /* SettingsViewController.swift */; };
+		75A2588E29D21A1200A8D509 /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A2588D29D21A1200A8D509 /* Note.swift */; };
+		75A2589529D2380000A8D509 /* NoteCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A2589329D2380000A8D509 /* NoteCell.swift */; };
+		75A2589629D2380000A8D509 /* NoteCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 75A2589429D2380000A8D509 /* NoteCell.xib */; };
 		75B69CD529BFEEE40049D4F5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */; };
 		75B69CD729BFEEE40049D4F5 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CD629BFEEE40049D4F5 /* SceneDelegate.swift */; };
 		75B69CD929BFEEE40049D4F5 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CD829BFEEE40049D4F5 /* HomeViewController.swift */; };
@@ -33,13 +34,14 @@
 		7502561529CE4851004FE87A /* Roboto-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Bold.ttf"; sourceTree = "<group>"; };
 		7502561629CE485D004FE87A /* Roboto-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Regular.ttf"; sourceTree = "<group>"; };
 		7502561729CE4A1C004FE87A /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		7516ED1B29D0C83500801960 /* Names.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Names.swift; sourceTree = "<group>"; };
-		7516ED1D29D0C95100801960 /* NameCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameCell.swift; sourceTree = "<group>"; };
-		7516ED1E29D0C95100801960 /* NameCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NameCell.xib; sourceTree = "<group>"; };
+		7516ED2129D215CB00801960 /* K.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = K.swift; sourceTree = "<group>"; };
 		7545750929C00798004242C5 /* LogInViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogInViewController.swift; sourceTree = "<group>"; };
 		7545750B29C00848004242C5 /* PlacesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesViewController.swift; sourceTree = "<group>"; };
 		7545750E29C00868004242C5 /* NamesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NamesViewController.swift; sourceTree = "<group>"; };
 		7545751029C0086F004242C5 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
+		75A2588D29D21A1200A8D509 /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
+		75A2589329D2380000A8D509 /* NoteCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteCell.swift; sourceTree = "<group>"; };
+		75A2589429D2380000A8D509 /* NoteCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NoteCell.xib; sourceTree = "<group>"; };
 		75B69CD129BFEEE40049D4F5 /* RememberMe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RememberMe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		75B69CD629BFEEE40049D4F5 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -79,8 +81,6 @@
 		7516ED1929D0C7B800801960 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				7516ED1D29D0C95100801960 /* NameCell.swift */,
-				7516ED1E29D0C95100801960 /* NameCell.xib */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -88,7 +88,7 @@
 		7516ED1A29D0C7D900801960 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				7516ED1B29D0C83500801960 /* Names.swift */,
+				75A2588D29D21A1200A8D509 /* Note.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -138,10 +138,13 @@
 				7516ED1A29D0C7D900801960 /* Models */,
 				7516ED1929D0C7B800801960 /* Views */,
 				75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */,
+				75A2589329D2380000A8D509 /* NoteCell.swift */,
+				75A2589429D2380000A8D509 /* NoteCell.xib */,
 				75B69CD629BFEEE40049D4F5 /* SceneDelegate.swift */,
 				75B69CEB29BFF4FB0049D4F5 /* Controllers */,
 				75B69CDA29BFEEE40049D4F5 /* Main.storyboard */,
 				75B69CE029BFEEE50049D4F5 /* Assets.xcassets */,
+				7516ED2129D215CB00801960 /* K.swift */,
 				755AE47829C5095A00FA55B0 /* Fonts */,
 				75B69CE229BFEEE50049D4F5 /* LaunchScreen.storyboard */,
 				75B69CE529BFEEE50049D4F5 /* Info.plist */,
@@ -231,8 +234,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75A2589629D2380000A8D509 /* NoteCell.xib in Resources */,
 				75B69CE429BFEEE50049D4F5 /* LaunchScreen.storyboard in Resources */,
-				7516ED2029D0C95100801960 /* NameCell.xib in Resources */,
 				7502561829CE4A1C004FE87A /* GoogleService-Info.plist in Resources */,
 				75B69CE129BFEEE50049D4F5 /* Assets.xcassets in Resources */,
 				75B69CDC29BFEEE40049D4F5 /* Main.storyboard in Resources */,
@@ -289,18 +292,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				75B69CDF29BFEEE40049D4F5 /* RememberMe.xcdatamodeld in Sources */,
+				7516ED2229D215CB00801960 /* K.swift in Sources */,
 				75B69CD929BFEEE40049D4F5 /* HomeViewController.swift in Sources */,
 				75B69CD529BFEEE40049D4F5 /* AppDelegate.swift in Sources */,
 				7545751129C0086F004242C5 /* SettingsViewController.swift in Sources */,
-				7516ED1F29D0C95100801960 /* NameCell.swift in Sources */,
+				75A2589529D2380000A8D509 /* NoteCell.swift in Sources */,
 				7545750A29C00798004242C5 /* LogInViewController.swift in Sources */,
 				75F5D89529C63D2A00272A2F /* MenuController.swift in Sources */,
-				7516ED1C29D0C83500801960 /* Names.swift in Sources */,
 				7545750F29C00868004242C5 /* NamesViewController.swift in Sources */,
 				7545750C29C00848004242C5 /* PlacesViewController.swift in Sources */,
 				75B69CEF29BFF5200049D4F5 /* RegisterViewController.swift in Sources */,
 				75B69CED29BFF5120049D4F5 /* WelcomeViewController.swift in Sources */,
 				75B69CD729BFEEE40049D4F5 /* SceneDelegate.swift in Sources */,
+				75A2588E29D21A1200A8D509 /* Note.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
