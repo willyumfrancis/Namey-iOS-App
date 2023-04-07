@@ -12,32 +12,59 @@ import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
 import CoreData
+import CoreLocation
 
 
-class HomeViewController: UIViewController {
+
+class HomeViewController: UIViewController, CLLocationManagerDelegate {
     
     @IBOutlet weak var tableView: UITableView!
     //Current Place & Goal of People
     @IBOutlet weak var CurrentPlace: UIImageView!
     @IBOutlet weak var Progressbar: UIProgressView!
+    @IBOutlet weak var SaveButtonLook: UIButton!
+    @IBOutlet weak var NewNameLook: UIButton!
     
     //FireBase Cloud Storage
     let db = Firestore.firestore()
     
-    //Create New Note
-    @IBAction func New(_ sender: UIButton) {
-        let newNote = Note(id: UUID().uuidString, text: "")
-            saveNote(note: newNote)
-            notes.append(newNote)
-            
-            tableView.reloadData()
-            let indexPath = IndexPath(row: notes.count - 1, section: 0)
-            tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
-            if let cell = tableView.cellForRow(at: indexPath) as? NoteCell {
-                cell.noteTextField.becomeFirstResponder()
+    //Core Location instance & variable
+    let locationManager = CLLocationManager()
+    var currentLocation: CLLocationCoordinate2D?
+    var selectedNote: Note?
+    
+    
+    //Save New Name
+    
+    @IBAction func SaveName(_ sender: UIButton) {
+    
+    if let selectedNote = selectedNote {
+               if let indexPath = notes.firstIndex(where: { $0.id == selectedNote.id }) {
+                   if let cell = tableView.cellForRow(at: IndexPath(row: indexPath, section: 0)) as? NoteCell {
+                       let updatedNote = Note(id: selectedNote.id, text: cell.noteTextField.text!, location: selectedNote.location)
+                       notes[indexPath] = updatedNote
+                       saveNoteToCloud(note: updatedNote)
+                       print("Manually Saved to Cloud")
+                       cell.noteTextField.resignFirstResponder()
+                   }
+               }
+           }
+       }
+
+    //Create New Name
+    @IBAction func NewName(_ sender: UIButton) {
+        if let currentLocation = self.currentLocation {
+                let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation)
+                saveNote(note: newNote)
+                selectedNote = newNote // Add this line to update the selectedNote variable
             }
         }
+    
+    
+    
     var notes: [Note] = []
+    var authStateListenerHandle: AuthStateDidChangeListenerHandle?
+    
     
     
     //MARK: - Appearance Code
@@ -45,20 +72,65 @@ class HomeViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
+        
+        authStateListenerHandle = Auth.auth().addStateDidChangeListener { auth, user in
+            if user != nil {
+                print("User is signed in: \(user?.email ?? "Unknown email")")
+                self.loadNotes()
+            } else {
+                print("User is not signed in")
+                // Handle the case where the user is not signed in
+            }
+        }
+        
+        
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        //Apparance of App//
+        NewNameLook.layer.cornerRadius = 12
+                NewNameLook.backgroundColor = UIColor(red: 0.50, green: 0.23, blue: 0.27, alpha: 0.50)
+                NewNameLook.layer.borderWidth = 3
+                NewNameLook.layer.borderColor = UIColor.black.cgColor
+        
+        SaveButtonLook.layer.cornerRadius = 12
+                SaveButtonLook.backgroundColor = UIColor(red: 0.50, green: 0.23, blue: 0.27, alpha: 0.50)
+                SaveButtonLook.layer.borderWidth = 3
+                SaveButtonLook.layer.borderColor = UIColor.black.cgColor
+        
+
+        print("viewDidLoad called") // Add print statement
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(UINib(nibName: "NoteCell", bundle: nil), forCellReuseIdentifier: "NoteCell")
         
-        loadNotes()
-        
+        setupLocationManager()
         setupRoundedImageView()
         setupRoundedProgressBar()
+        
     }
-
+    
+    
+    
+    
+    //Location Manager
+    func setupLocationManager() {
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingLocation()
+    }
+    
+    //Location Manager Delegate
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let location = locations.last {
+            currentLocation = location.coordinate
+        }
+    }
+    
+    
     
     private func setupRoundedImageView() {
         // Apply corner radius
@@ -98,20 +170,24 @@ class HomeViewController: UIViewController {
     //Load FireStore Notes
     private func loadNotes() {
         if let userEmail = Auth.auth().currentUser?.email {
+            print("Loading notes for user: \(userEmail)")
             db.collection("notes")
                 .whereField("user", isEqualTo: userEmail)
-                .getDocuments { querySnapshot, error in
-                    self.notes = []
-                    
+                .order(by: "timestamp", descending: false)
+                .addSnapshotListener { querySnapshot, error in
                     if let e = error {
                         print("There was an issue retrieving data from Firestore: \(e)")
                     } else {
+                        self.notes = [] // Clear the existing notes array
                         if let snapshotDocuments = querySnapshot?.documents {
+                            print("Found \(snapshotDocuments.count) notes")
                             for doc in snapshotDocuments {
                                 let data = doc.data()
-                                if let noteText = data["note"] as? String {
-                                    let newNote = Note(id: doc.documentID, text: noteText)
-                                    self.notes.append(newNote)
+                                if let noteText = data["note"] as? String,
+                                   let locationData = data["location"] as? GeoPoint {
+                                    let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                                    let newNote = Note(id: doc.documentID, text: noteText, location: location)
+                                    self.notes.append(newNote) // Add the new note to the array
                                 }
                             }
                             DispatchQueue.main.async {
@@ -120,24 +196,40 @@ class HomeViewController: UIViewController {
                         }
                     }
                 }
+        } else {
+            print("User email not found")
         }
     }
-
-
-    private func saveNote(note: Note) {
+    
+    
+    
+    private func saveNoteToCloud(note: Note) {
         if let userEmail = Auth.auth().currentUser?.email {
-            let noteDocument = db.collection("notes").document(note.id)
-            noteDocument.setData([
-                "user": userEmail,
-                "note": note.text
-            ]) { error in
-                if let e = error {
-                    print("There was an issue saving data to Firestore: \(e)")
-                } else {
-                    print("Successfully saved data.")
+            if !note.text.isEmpty {
+                let noteDocument = db.collection("notes").document(note.id)
+                noteDocument.setData([
+                    "user": userEmail,
+                    "note": note.text,
+                    "location": GeoPoint(latitude: note.location.latitude, longitude: note.location.longitude),
+                    "timestamp": Timestamp()
+                ]) { error in
+                    if let e = error {
+                        print("Error saving note: \(e)")
+                    } else {
+                        print("Note saved successfully.")
+                    }
                 }
             }
         }
+    }
+    
+    
+    private func saveNote(note: Note) {
+        notes.append(note) // Add the new note to the existing notes array
+        let indexPath = IndexPath(row: notes.count - 1, section: 0)
+        tableView.insertRows(at: [indexPath], with: .automatic)
+        tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+        saveNoteToCloud(note: note) // Save the new note to the cloud
     }
     
 }
@@ -149,8 +241,11 @@ extension HomeViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "NoteCell", for: indexPath) as! NoteCell
-        cell.noteTextField.text = notes[indexPath.row].text
+        let note = notes[indexPath.row]
+        cell.noteTextField.text = note.text
+        cell.noteLocation = note.location // Update the cell's noteLocation property
         cell.delegate = self
+        
         return cell
     }
     
@@ -171,23 +266,37 @@ extension HomeViewController: UITableViewDataSource {
     }
 }
 
-
 extension HomeViewController: UITableViewDelegate {
-func tableView(_ tableView:
-               UITableView, didSelectRowAt indexPath: IndexPath) {
-               tableView.deselectRow(at: indexPath, animated: true)
-               }
-               }
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        selectedNote = notes[indexPath.row]
+    }
+}
+
+
 
 extension HomeViewController: NoteCellDelegate {
     func noteCell(_ cell: NoteCell, didUpdateNote note: Note) {
         if let indexPath = tableView.indexPath(for: cell) {
-            let updatedNote = Note(id: note.id, text: note.text)
-            notes[indexPath.row] = updatedNote
-            saveNote(note: updatedNote)
+            notes[indexPath.row] = note
+            saveNoteToCloud(note: note)
+            print("Auto-Saved to Cloud")
         }
     }
-    
-    
-    
+
+    func noteCellDidEndEditing(_ cell: NoteCell) {
+        if let indexPath = tableView.indexPath(for: cell), indexPath.row < notes.count {
+            let note = notes[indexPath.row]
+            if cell.noteTextField.text != note.text {
+                let updatedNote = Note(id: note.id, text: cell.noteTextField.text!, location: note.location)
+                notes[indexPath.row] = updatedNote
+                if cell.saveButtonPressed { // Add this condition
+                    saveNoteToCloud(note: updatedNote)
+                    print("Auto-Saved to Cloud")
+                }
+            }
+        }
+        cell.saveButtonPressed = false // Reset the flag
+    }
 }
+

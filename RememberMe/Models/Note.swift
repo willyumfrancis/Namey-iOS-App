@@ -7,8 +7,11 @@
 
 
 import Foundation
+import CoreLocation
 
 struct Note {
-let id: String
-let text: String
+    var id: String
+    let text: String
+    let location: CLLocationCoordinate2D
 }
+

@@ -1,61 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="21701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21678"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
-        <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="NoteCell" rowHeight="57" id="KGk-i7-Jjw" customClass="NoteCell" customModule="RememberMe" customModuleProvider="target">
-            <rect key="frame" x="0.0" y="0.0" width="402" height="57"/>
+        <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="NoteCell" rowHeight="71" id="KGk-i7-Jjw" customClass="NoteCell" customModule="RememberMe" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="414" height="71"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
             <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="KGk-i7-Jjw" id="H2p-sc-9uM">
-                <rect key="frame" x="0.0" y="0.0" width="402" height="57"/>
+                <rect key="frame" x="0.0" y="0.0" width="414" height="71"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="GIC-TY-bJe">
-                        <rect key="frame" x="0.0" y="0.0" width="480" height="69"/>
-                        <subviews>
-                            <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" misplaced="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Name - Description" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="nrP-bm-AVY">
-                                <rect key="frame" x="0.0" y="10" width="398" height="34"/>
-                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits" returnKeyType="done"/>
-                                <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.borderWidth">
-                                        <integer key="value" value="2"/>
-                                    </userDefinedRuntimeAttribute>
-                                </userDefinedRuntimeAttributes>
-                            </textField>
-                        </subviews>
+                    <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Name - Description" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="nrP-bm-AVY">
+                        <rect key="frame" x="5" y="5" width="404" height="61"/>
                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                        <constraints>
-                            <constraint firstItem="nrP-bm-AVY" firstAttribute="top" secondItem="GIC-TY-bJe" secondAttribute="top" constant="10" id="6Kd-gh-K93"/>
-                            <constraint firstAttribute="trailing" secondItem="nrP-bm-AVY" secondAttribute="trailing" constant="84" id="RmA-tH-n5g"/>
-                            <constraint firstItem="nrP-bm-AVY" firstAttribute="leading" secondItem="GIC-TY-bJe" secondAttribute="leadingMargin" id="Siv-6A-WsI"/>
-                        </constraints>
-                    </view>
+                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                        <textInputTraits key="textInputTraits" returnKeyType="done"/>
+                        <userDefinedRuntimeAttributes>
+                            <userDefinedRuntimeAttribute type="number" keyPath="layer.borderWidth">
+                                <integer key="value" value="2"/>
+                            </userDefinedRuntimeAttribute>
+                        </userDefinedRuntimeAttributes>
+                    </textField>
                 </subviews>
                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                 <constraints>
-                    <constraint firstItem="GIC-TY-bJe" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="1nL-Nh-Udg"/>
-                    <constraint firstItem="GIC-TY-bJe" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="7Gt-2h-MYH"/>
-                    <constraint firstAttribute="trailing" secondItem="GIC-TY-bJe" secondAttribute="trailing" constant="-78" id="C7J-0O-URP"/>
-                    <constraint firstItem="GIC-TY-bJe" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" id="HYO-W4-isk"/>
-                    <constraint firstAttribute="trailing" secondItem="GIC-TY-bJe" secondAttribute="trailing" constant="-78" id="IZJ-pf-Rzd"/>
-                    <constraint firstAttribute="bottom" secondItem="GIC-TY-bJe" secondAttribute="bottom" constant="-12" id="WmF-U9-k6F"/>
-                    <constraint firstItem="GIC-TY-bJe" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" id="bT0-ra-TlD"/>
-                    <constraint firstAttribute="bottom" secondItem="GIC-TY-bJe" secondAttribute="bottom" constant="-12" id="q67-MS-rzP"/>
+                    <constraint firstItem="nrP-bm-AVY" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="5" id="PnR-uK-c1M"/>
+                    <constraint firstAttribute="trailing" secondItem="nrP-bm-AVY" secondAttribute="trailing" constant="5" id="bJe-Xv-bRf"/>
+                    <constraint firstAttribute="bottom" secondItem="nrP-bm-AVY" secondAttribute="bottom" constant="5" id="hy2-Ob-gHO"/>
+                    <constraint firstItem="nrP-bm-AVY" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="5" id="tdC-rh-8Vc"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
                 <outlet property="noteTextField" destination="nrP-bm-AVY" id="UO5-Ap-Eq6"/>
             </connections>
-            <point key="canvasLocation" x="27.480916030534349" y="29.929577464788736"/>
+            <point key="canvasLocation" x="39.694656488549619" y="52.464788732394368"/>
         </tableViewCell>
     </objects>
 </document>
