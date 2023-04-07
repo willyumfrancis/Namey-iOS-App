@@ -18,24 +18,36 @@ import CoreLocation
 
 class HomeViewController: UIViewController, CLLocationManagerDelegate {
     
+    //MARK: - OUTLETS
     @IBOutlet weak var tableView: UITableView!
     //Current Place & Goal of People
     @IBOutlet weak var CurrentPlace: UIImageView!
     @IBOutlet weak var Progressbar: UIProgressView!
     @IBOutlet weak var SaveButtonLook: UIButton!
     @IBOutlet weak var NewNameLook: UIButton!
+    @IBOutlet weak var LocationButtonOutlet: UIButton!
+    
     
     //FireBase Cloud Storage
     let db = Firestore.firestore()
     
     //Core Location instance & variable
-    let locationManager = CLLocationManager()
+    private let locationManager = CLLocationManager()
     var currentLocation: CLLocationCoordinate2D?
     var selectedNote: Note?
     
     
-    //Save New Name
+
     
+    
+    //Location Button
+    @IBAction func LocationButton(_ sender: UIButton) {
+        print("Location Button Pressed")
+        updateCurrentLocationAndFetchNotes()
+
+    }
+    
+    //Save Name Button
     @IBAction func SaveName(_ sender: UIButton) {
     
     if let selectedNote = selectedNote {
@@ -86,34 +98,64 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
         
     }
     
+    // VIEWDIDLOAD BRO
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         //Apparance of App//
         NewNameLook.layer.cornerRadius = 12
-                NewNameLook.backgroundColor = UIColor(red: 0.50, green: 0.23, blue: 0.27, alpha: 0.50)
-                NewNameLook.layer.borderWidth = 3
-                NewNameLook.layer.borderColor = UIColor.black.cgColor
-        
+        NewNameLook.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
+        NewNameLook.layer.borderWidth = 3
+        NewNameLook.layer.borderColor = UIColor.black.cgColor
+
         SaveButtonLook.layer.cornerRadius = 12
-                SaveButtonLook.backgroundColor = UIColor(red: 0.50, green: 0.23, blue: 0.27, alpha: 0.50)
-                SaveButtonLook.layer.borderWidth = 3
-                SaveButtonLook.layer.borderColor = UIColor.black.cgColor
-        
+        SaveButtonLook.backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
+        SaveButtonLook.layer.borderWidth = 3
+        SaveButtonLook.layer.borderColor = UIColor.black.cgColor
 
         print("viewDidLoad called") // Add print statement
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(UINib(nibName: "NoteCell", bundle: nil), forCellReuseIdentifier: "NoteCell")
-        
+
         setupLocationManager()
         setupRoundedImageView()
         setupRoundedProgressBar()
-        
+
     }
+
     
     
+    //Update Notes Based on Location
+    func updateDisplayedNotes() {
+        // Check if the user's location is available
+        if let userLocation = locationManager.location?.coordinate {
+            // Filter the notes based on the user's proximity to the note's location
+            let filteredNotes = notes.filter { note in
+                let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
+                let userCurrentLocation = CLLocation(latitude: userLocation.latitude, longitude: userLocation.longitude)
+                let distance = noteLocation.distance(from: userCurrentLocation)
+                return distance <= 300 // Replace 'proximityThreshold' with the desired distance in meters
+            }
+            notes = filteredNotes
+            
+            // Reload the table view without animation
+            UIView.performWithoutAnimation {
+                tableView.reloadData()
+            }
+        }
+    }
+
     
+
+
+    
+    //Update Location via Button Function
+    func updateCurrentLocationAndFetchNotes() {
+        locationManager.startUpdatingLocation()
+    }
+
+
     
     //Location Manager
     func setupLocationManager() {
@@ -126,11 +168,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     //Location Manager Delegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let location = locations.last {
-            currentLocation = location.coordinate
-        }
-    }
-    
-    
+               currentLocation = location.coordinate
+               updateDisplayedNotes()
+               tableView.reloadData()
+               locationManager.stopUpdatingLocation() // Stop updating location after receiving the first update
+           }
+       }
     
     private func setupRoundedImageView() {
         // Apply corner radius
@@ -246,8 +289,21 @@ extension HomeViewController: UITableViewDataSource {
         cell.noteLocation = note.location // Update the cell's noteLocation property
         cell.delegate = self
         
-        return cell
-    }
+        // Apply the drop-down animation
+               cell.transform = CGAffineTransform(translationX: 0, y: tableView.bounds.size.height)
+               UIView.animate(withDuration: 0.5,
+                              delay: 0.05 * Double(indexPath.row),
+                              usingSpringWithDamping: 0.8,
+                              initialSpringVelocity: 0,
+                              options: .curveEaseInOut,
+                              animations: {
+                               cell.transform = CGAffineTransform.identity
+                              },
+                              completion: nil)
+               
+               return cell
+           }
+    
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
