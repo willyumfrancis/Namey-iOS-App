@@ -13,5 +13,6 @@ struct Note {
     var id: String
     let text: String
     let location: CLLocationCoordinate2D
+    let imageURL: String
 }
 

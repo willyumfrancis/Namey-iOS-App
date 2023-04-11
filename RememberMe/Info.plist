@@ -4,6 +4,8 @@
 <dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We use your location to locate establishments you are visiting. It&apos;s a core function of the app.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a picture of your spot. This requires camera access.</string>
 	<key>UIUserInterfaceStyle</key>
 	<string>Light</string>
 	<key>UIApplicationSceneManifest</key>
