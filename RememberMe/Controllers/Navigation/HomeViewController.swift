@@ -8,15 +8,22 @@
 //MARK: - DO NOT EDIT
 
 import UIKit
-import FirebaseCore
-import FirebaseFirestore
-import FirebaseAuth
-import CoreData
-import CoreLocation
+    import FirebaseCore
+    import FirebaseFirestore
+    import FirebaseAuth
+    import CoreData
+    import CoreLocation
+    import Photos
+    import MobileCoreServices
+    import FirebaseStorage
+    import SDWebImage
 
 
 
-class HomeViewController: UIViewController, CLLocationManagerDelegate {
+
+
+
+    class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     //MARK: - OUTLETS
     @IBOutlet weak var tableView: UITableView!
@@ -45,12 +52,20 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     var notes: [Note] = []
     var authStateListenerHandle: AuthStateDidChangeListenerHandle?
     var sliderValueLabel: UILabel!
+        var displayedNotes: [Note] = []
+
     
 
     
     
 
-    
+
+    @IBAction func uploadImageButton(_ sender: UIButton) {
+        print("Upload Image button pressed")
+
+                   presentImagePicker()
+    }
+    //Goal (Star) Button
     @IBAction func goalButton(_ sender: UIButton) {
         goalButtonTapped()
 
@@ -69,7 +84,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     if let selectedNote = selectedNote {
                if let indexPath = notes.firstIndex(where: { $0.id == selectedNote.id }) {
                    if let cell = tableView.cellForRow(at: IndexPath(row: indexPath, section: 0)) as? NoteCell {
-                       let updatedNote = Note(id: selectedNote.id, text: cell.noteTextField.text!, location: selectedNote.location)
+                       let updatedNote = Note(id: selectedNote.id, text: cell.noteTextField.text!, location: selectedNote.location, locationName: selectedNote.locationName)
+
                        notes[indexPath] = updatedNote
                        saveNoteToCloud(note: updatedNote)
                        print("Manually Saved to Cloud")
@@ -82,7 +98,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     //Create New Name
     @IBAction func NewName(_ sender: UIButton) {
         if let currentLocation = self.currentLocation {
-                let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation)
+            let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: "") // Change "" to the default image URL value
                 saveNote(note: newNote)
                 selectedNote = newNote // Add this line to update the selectedNote variable
 
@@ -164,12 +180,15 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
         Progressbar.setProgress(progress, animated: true)
         
         if progress == 1.0 {
-            Progressbar.progressTintColor = .green
+            Progressbar.progressTintColor = #colorLiteral(red: 0.9970520139, green: 0.9155963063, blue: 0.2788145244, alpha: 1)
+
         } else {
-            Progressbar.progressTintColor = UIColor(red: 0.50, green: 0.23, blue: 0.27, alpha: 0.50)
+            Progressbar.progressTintColor = #colorLiteral(red: 0.2917920053, green: 0.6612223983, blue: 1, alpha: 1)
+
         }
     }
 
+    //MARK: - POP-UPS
     
     @objc func goalButtonTapped() {
         let alertController = UIAlertController(title: "Set Goal", message: "\n\n\n\n\n", preferredStyle: .alert)
@@ -213,6 +232,278 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
 
 
 //MARK: - LOCATION
+        
+        //SAFEFILENAME
+        func safeFileName(for locationName: String) -> String {
+            return locationName.replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: "'", with: "")
+        }
+
+        
+        //SAVEIMAGE
+        func saveImageToFirestore(image: UIImage, location: CLLocationCoordinate2D, locationName: String) {
+            uploadImage(image: image, location: location, locationName: locationName) { result in
+
+                
+                switch result {
+                case .success(let url):
+                    print("Image successfully uploaded to URL: \(url)")
+                    self.updateNotesNearLocation(location: location, locationName: locationName)
+                case .failure(let error):
+                    print("Error uploading image: \(error)")
+                }
+            }
+        }
+        
+        //UPDATE NEAR
+        func updateNotesNearLocation(location: CLLocationCoordinate2D, locationName: String) {
+            let maxDistance: CLLocationDistance = 300 // Adjust this value according to your requirements
+            
+            let locationGeoPoint = GeoPoint(latitude: location.latitude, longitude: location.longitude)
+            
+            if let userEmail = Auth.auth().currentUser?.email {
+                db.collection("notes")
+                    .whereField("user", isEqualTo: userEmail)
+                    .getDocuments { querySnapshot, error in
+                        if let e = error {
+                            print("There was an issue retrieving data from Firestore: \(e)")
+                        } else {
+                            if let snapshotDocuments = querySnapshot?.documents {
+                                for doc in snapshotDocuments {
+                                    let data = doc.data()
+                                    if let locationData = data["location"] as? GeoPoint {
+                                        let noteLocation = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
+                                        let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+                                        let distance = noteLocation.distance(from: userCurrentLocation)
+                                        
+                                        if distance <= maxDistance {
+                                            let documentRef = self.db.collection("notes").document(doc.documentID)
+                                            documentRef.updateData([
+                                                "locationName": locationName
+                                            ]) { err in
+                                                if let err = err {
+                                                    print("Error updating document: \(err)")
+                                                } else {
+                                                    print("Document successfully updated")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                DispatchQueue.main.async {
+                                    self.loadNotes()
+                                }
+                            }
+                        }
+                    }
+            } else {
+                print("User email not found")
+            }
+        }
+
+
+    
+    //Fetch Image for Current Location
+          func userDidEnterLocation(_ location: CLLocationCoordinate2D) {
+              displayImageForLocation(location: location)
+          }
+    
+        // Display Image
+        func displayImageForLocation(location: CLLocationCoordinate2D) {
+            let maxDistance: CLLocationDistance = 300
+            let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+            
+            if let userEmail = Auth.auth().currentUser?.email {
+                db.collection("notes")
+                    .whereField("user", isEqualTo: userEmail)
+                    .getDocuments { querySnapshot, error in
+                        if let e = error {
+                            print("There was an issue retrieving data from Firestore: \(e)")
+                        } else {
+                            if let snapshotDocuments = querySnapshot?.documents {
+                                var imageFound = false
+                                for doc in snapshotDocuments {
+                                    if imageFound { break }
+                                    
+                                    let data = doc.data()
+                                    if let locationData = data["location"] as? GeoPoint,
+                                       let locationName = data["locationName"] as? String {
+                                        let noteLocation = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
+                                        let distance = noteLocation.distance(from: userCurrentLocation)
+                                        
+                                        if distance <= maxDistance {
+                                            let safeFileName = self.safeFileName(for: locationName)
+                                            let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
+                                            
+                                            storageRef.downloadURL { (url, error) in
+                                                if let error = error {
+                                                    print("Error getting download URL: \(error)")
+                                                    return
+                                                }
+                                                
+                                                guard let url = url else { return }
+                                                
+                                                self.CurrentPlace.sd_setImage(with: url, placeholderImage: UIImage(named: "placeholder")) { (image, error, cacheType, imageURL) in
+                                                    if let error = error {
+                                                        print("Error loading image from URL: \(error)")
+                                                    } else {
+                                                        print("Successfully loaded image from URL: \(imageURL)")
+                                                        imageFound = true
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+            } else {
+                print("User email not found")
+            }
+        }
+
+
+
+           
+           //Upload Image to Fire Storage (Google Cloud) -> 5GB Max for Free Tier
+        func uploadImage(image: UIImage, location: CLLocationCoordinate2D, locationName: String, completion: @escaping (Result<URL, Error>) -> Void) {
+            guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+                completion(.failure(NSError(domain: "ImageConversionError", code: -1, userInfo: nil)))
+                return
+            }
+            
+            let safeFileName = safeFileName(for: locationName)
+            let storageRef = Storage.storage().reference().child("location_images").child("\(safeFileName).jpg")
+               
+               let temporaryDirectory = NSTemporaryDirectory()
+               let localFilePath = temporaryDirectory.appending(safeFileName)
+               let localFileURL = URL(fileURLWithPath: localFilePath)
+               
+               do {
+                   try imageData.write(to: localFileURL)
+               } catch {
+                   completion(.failure(error))
+                   return
+               }
+               
+               storageRef.putFile(from: localFileURL, metadata: nil) { metadata, error in
+                   if let error = error {
+                       completion(.failure(error))
+                       return
+                   }
+                   
+                   storageRef.downloadURL { url, error in
+                       if let error = error {
+                           completion(.failure(error))
+                           return
+                       }
+                       
+                       guard let url = url else {
+                           completion(.failure(NSError(domain: "DownloadURLError", code: -1, userInfo: nil)))
+                           return
+                       }
+                       
+                       completion(.success(url))
+                   }
+               }
+           }
+
+           //Image Picker Delegate - Selection and Saving
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            if let image = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
+                // Show an alert to get the location name from the user
+                let alertController = UIAlertController(title: "Location Name", message: "Please enter a name for this location:", preferredStyle: .alert)
+                alertController.addTextField()
+
+                let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
+                    guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
+                        print("Location name is empty.")
+                        return
+                    }
+
+                    guard let userLocation = self.locationManager.location?.coordinate else {
+                        print("User location not available yet")
+                        return
+                    }
+
+                    // Save the image and location data to Firestore with the locationName
+                    self.saveImageToFirestore(image: image, location: userLocation, locationName: locationName)
+                }
+                alertController.addAction(saveAction)
+
+                let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+                alertController.addAction(cancelAction)
+
+                picker.dismiss(animated: true) {
+                    self.present(alertController, animated: true)
+                }
+            }
+        }
+
+
+           //Resize and Crop Local Image
+           func resizeAndCrop(image: UIImage, targetSize: CGSize) -> UIImage {
+               let size = image.size
+               let widthRatio = targetSize.width / size.width
+               let heightRatio = targetSize.height / size.height
+
+               let ratio = max(widthRatio, heightRatio)
+               let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
+               let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
+
+               UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+               image.draw(in: rect)
+               let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+               UIGraphicsEndImageContext()
+
+               guard let resized = resizedImage else { return image }
+
+               let cropRect = CGRect(x: (resized.size.width - targetSize.width) / 2,
+                                     y: (resized.size.height - targetSize.height) / 2,
+                                     width: targetSize.width, height: targetSize.height)
+
+               guard let cgImage = resized.cgImage?.cropping(to: cropRect) else { return image }
+               return UIImage(cgImage: cgImage)
+           }
+
+           
+           //Phone Doc Function for Image Picker
+           func getDocumentsDirectory() -> URL {
+               let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+               return paths[0]
+           }
+
+
+           //Image Picker iOS
+           func presentImagePicker() {
+               let imagePickerController = UIImagePickerController()
+               imagePickerController.delegate = self
+               imagePickerController.mediaTypes = [kUTTypeImage as String]
+               imagePickerController.allowsEditing = false
+
+               let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+               let cameraAction = UIAlertAction(title: "Take Photo", style: .default) { _ in
+                   if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                       imagePickerController.sourceType = .camera
+                       self.present(imagePickerController, animated: true, completion: nil)
+                   }
+               }
+               let libraryAction = UIAlertAction(title: "Choose from Library", style: .default) { _ in
+                   if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
+                       imagePickerController.sourceType = .photoLibrary
+                       self.present(imagePickerController, animated: true, completion: nil)
+                   }
+               }
+               let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+
+               alertController.addAction(cameraAction)
+               alertController.addAction(libraryAction)
+               alertController.addAction(cancelAction)
+
+               present(alertController, animated: true, completion: nil)
+           }
+
+    
     //Update Location via Button Function
     func updateCurrentLocationAndFetchNotes() {
         locationManager.startUpdatingLocation()
@@ -227,14 +518,15 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     }
     
     //Location Manager Delegate
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if let location = locations.last {
-               currentLocation = location.coordinate
-               updateDisplayedNotes()
-               tableView.reloadData()
-               locationManager.stopUpdatingLocation() // Stop updating location after receiving the first update
-           }
-       }
+        func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+            if let location = locations.last {
+                currentLocation = location.coordinate
+                print("User's location: \(location)")
+                locationManager.stopUpdatingLocation()
+                updateDisplayedNotes()
+            }
+        }
+
     
     private func setupRoundedImageView() {
         // Apply corner radius
@@ -271,26 +563,38 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     //MARK: - NOTES
     
     //Update Notes Based on Location
-    func updateDisplayedNotes() {
-        // Check if the user's location is available
-        if let userLocation = locationManager.location?.coordinate {
-            // Filter the notes based on the user's proximity to the note's location
-            let filteredNotes = notes.filter { note in
+        func updateDisplayedNotes() {
+            guard let userLocation = locationManager.location?.coordinate else {
+                print("User location not available yet")
+                return
+            }
+            
+            displayedNotes = notes.filter { note in
                 let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
                 let userCurrentLocation = CLLocation(latitude: userLocation.latitude, longitude: userLocation.longitude)
                 let distance = noteLocation.distance(from: userCurrentLocation)
-                return distance <= 300 // Replace 'proximityThreshold' with the desired distance in meters
+                return distance <= 300
             }
-            notes = filteredNotes
-            print("Showing \(filteredNotes.count) notes based on location")
+            print("Showing \(displayedNotes.count) notes based on location")
             
-            // Reload the table view without animation
             UIView.performWithoutAnimation {
+                if let closestNote = displayedNotes.min(by: { (note1, note2) -> Bool in
+                    let note1Location = CLLocation(latitude: note1.location.latitude, longitude: note1.location.longitude)
+                    let note2Location = CLLocation(latitude: note2.location.latitude, longitude: note2.location.longitude)
+                    let userCurrentLocation = CLLocation(latitude: userLocation.latitude, longitude: userLocation.longitude)
+                    let distance1 = note1Location.distance(from: userCurrentLocation)
+                    let distance2 = note2Location.distance(from: userCurrentLocation)
+                    return distance1 < distance2
+                }) {
+                    displayImageForLocation(location: closestNote.location)
+                }
+
                 tableView.reloadData()
             }
+            updateProgressBar()
         }
-        updateProgressBar()
-    }
+
+
     
     
     //Load FireStore Notes
@@ -310,11 +614,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
                                for doc in snapshotDocuments {
                                    let data = doc.data()
                                    if let noteText = data["note"] as? String,
-                                      let locationData = data["location"] as? GeoPoint {
+                                       let locationData = data["location"] as? GeoPoint,
+                                       let locationName = data["locationName"] as? String {
                                        let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-                                       let newNote = Note(id: doc.documentID, text: noteText, location: location)
-                                       self.notes.append(newNote) // Add the new note to the array
+                                       let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName)
+                                       self.notes.append(newNote)
                                    }
+
                                }
                                DispatchQueue.main.async {
                                    self.updateDisplayedNotes() // Call updateDisplayedNotes here
@@ -330,25 +636,27 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
        }
     
     
-    private func saveNoteToCloud(note: Note) {
-        if let userEmail = Auth.auth().currentUser?.email {
-            if !note.text.isEmpty {
-                let noteDocument = db.collection("notes").document(note.id)
-                noteDocument.setData([
-                    "user": userEmail,
-                    "note": note.text,
-                    "location": GeoPoint(latitude: note.location.latitude, longitude: note.location.longitude),
-                    "timestamp": Timestamp()
-                ]) { error in
-                    if let e = error {
-                        print("Error saving note: \(e)")
-                    } else {
-                        print("Note saved successfully.")
+        private func saveNoteToCloud(note: Note) {
+            if let userEmail = Auth.auth().currentUser?.email {
+                if !note.text.isEmpty || !note.locationName.isEmpty {
+                    let noteDocument = db.collection("notes").document(note.id)
+                    noteDocument.setData([
+                        "user": userEmail,
+                        "note": note.text,
+                        "location": GeoPoint(latitude: note.location.latitude, longitude: note.location.longitude),
+                        "timestamp": Timestamp(),
+                        "imageURL": note.locationName // Include imageURL here
+                    ]) { error in
+                        if let e = error {
+                            print("Error saving note: \(e)")
+                        } else {
+                            print("Note saved successfully.")
+                        }
                     }
                 }
             }
         }
-    }
+
     
     
     private func saveNote(note: Note) {
@@ -443,13 +751,14 @@ extension HomeViewController: NoteCellDelegate {
         if let indexPath = tableView.indexPath(for: cell), indexPath.row < notes.count {
             let note = notes[indexPath.row]
             if cell.noteTextField.text != note.text {
-                let updatedNote = Note(id: note.id, text: cell.noteTextField.text!, location: note.location)
+                let updatedNote = Note(id: note.id, text: cell.noteTextField.text!, location: note.location, locationName: note.locationName) // Include the imageURL parameter
                 notes[indexPath.row] = updatedNote
                 if cell.saveButtonPressed { // Add this condition
                     saveNoteToCloud(note: updatedNote)
                     print("Auto-Saved to Cloud")
                 }
             }
+
         }
         cell.saveButtonPressed = false // Reset the flag
     }

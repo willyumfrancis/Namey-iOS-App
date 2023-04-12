@@ -10,8 +10,11 @@ import Foundation
 import CoreLocation
 
 struct Note {
-    var id: String
+    let id: String
     let text: String
     let location: CLLocationCoordinate2D
+    var locationName: String
+
 }
+
 

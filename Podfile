@@ -8,5 +8,10 @@ target 'RememberMe' do
   # Pods for RememberMe
 pod 'FirebaseAuth'
 	pod 'FirebaseFirestore'
+pod 'FirebaseStorage'
+pod 'SDWebImage'
+
+
+
 
 end
