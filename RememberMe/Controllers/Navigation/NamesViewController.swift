@@ -6,13 +6,32 @@
 //
 
 import UIKit
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+import CoreData
+import CoreLocation
 
-class NamesViewController: UIViewController {
+class NamesViewController: UIViewController, CLLocationManagerDelegate {
+    
+    //MARK: - OUTLETS
+    @IBOutlet weak var NameList: UITableView!
+    
+    //FireBase Cloud Storage
+    let db = Firestore.firestore()
+    
+    //Core Location instance & variable
+    private let locationManager = CLLocationManager()
+    var currentLocation: CLLocationCoordinate2D?
+    var selectedNote: Note?
+    
+    
     
     override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
             navigationController?.setNavigationBarHidden(true, animated: false)
-        }
+
+    }
 
 
     override func viewDidLoad() {

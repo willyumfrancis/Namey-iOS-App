@@ -79,7 +79,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     
     
     
-    //MARK: - Appearance Code
+    //MARK: - APPEARANCE
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -121,41 +121,21 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
         setupLocationManager()
         setupRoundedImageView()
         setupRoundedProgressBar()
+        
+        updateCurrentLocationAndFetchNotes()
+
 
     }
 
-    
-    
-    //Update Notes Based on Location
-    func updateDisplayedNotes() {
-        // Check if the user's location is available
-        if let userLocation = locationManager.location?.coordinate {
-            // Filter the notes based on the user's proximity to the note's location
-            let filteredNotes = notes.filter { note in
-                let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
-                let userCurrentLocation = CLLocation(latitude: userLocation.latitude, longitude: userLocation.longitude)
-                let distance = noteLocation.distance(from: userCurrentLocation)
-                return distance <= 300 // Replace 'proximityThreshold' with the desired distance in meters
-            }
-            notes = filteredNotes
-            
-            // Reload the table view without animation
-            UIView.performWithoutAnimation {
-                tableView.reloadData()
-            }
-        }
-    }
 
     
 
 
-    
+//MARK: - LOCATION
     //Update Location via Button Function
     func updateCurrentLocationAndFetchNotes() {
         locationManager.startUpdatingLocation()
     }
-
-
     
     //Location Manager
     func setupLocationManager() {
@@ -207,43 +187,64 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
         
     }
     
-    //MARK: - Notes Code
+    //MARK: - NOTES
     
-    
-    //Load FireStore Notes
-    private func loadNotes() {
-        if let userEmail = Auth.auth().currentUser?.email {
-            print("Loading notes for user: \(userEmail)")
-            db.collection("notes")
-                .whereField("user", isEqualTo: userEmail)
-                .order(by: "timestamp", descending: false)
-                .addSnapshotListener { querySnapshot, error in
-                    if let e = error {
-                        print("There was an issue retrieving data from Firestore: \(e)")
-                    } else {
-                        self.notes = [] // Clear the existing notes array
-                        if let snapshotDocuments = querySnapshot?.documents {
-                            print("Found \(snapshotDocuments.count) notes")
-                            for doc in snapshotDocuments {
-                                let data = doc.data()
-                                if let noteText = data["note"] as? String,
-                                   let locationData = data["location"] as? GeoPoint {
-                                    let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-                                    let newNote = Note(id: doc.documentID, text: noteText, location: location)
-                                    self.notes.append(newNote) // Add the new note to the array
-                                }
-                            }
-                            DispatchQueue.main.async {
-                                self.tableView.reloadData()
-                            }
-                        }
-                    }
-                }
-        } else {
-            print("User email not found")
+    //Update Notes Based on Location
+    func updateDisplayedNotes() {
+        // Check if the user's location is available
+        if let userLocation = locationManager.location?.coordinate {
+            // Filter the notes based on the user's proximity to the note's location
+            let filteredNotes = notes.filter { note in
+                let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
+                let userCurrentLocation = CLLocation(latitude: userLocation.latitude, longitude: userLocation.longitude)
+                let distance = noteLocation.distance(from: userCurrentLocation)
+                return distance <= 300 // Replace 'proximityThreshold' with the desired distance in meters
+            }
+            notes = filteredNotes
+            print("Showing \(filteredNotes.count) notes based on location")
+            
+            // Reload the table view without animation
+            UIView.performWithoutAnimation {
+                tableView.reloadData()
+            }
         }
     }
     
+    
+    //Load FireStore Notes
+       private func loadNotes() {
+           if let userEmail = Auth.auth().currentUser?.email {
+               print("Loading notes for user: \(userEmail)")
+               db.collection("notes")
+                   .whereField("user", isEqualTo: userEmail)
+                   .order(by: "timestamp", descending: false)
+                   .addSnapshotListener { querySnapshot, error in
+                       if let e = error {
+                           print("There was an issue retrieving data from Firestore: \(e)")
+                       } else {
+                           self.notes = [] // Clear the existing notes array
+                           if let snapshotDocuments = querySnapshot?.documents {
+                               print("Found \(snapshotDocuments.count) notes")
+                               for doc in snapshotDocuments {
+                                   let data = doc.data()
+                                   if let noteText = data["note"] as? String,
+                                      let locationData = data["location"] as? GeoPoint {
+                                       let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                                       let newNote = Note(id: doc.documentID, text: noteText, location: location)
+                                       self.notes.append(newNote) // Add the new note to the array
+                                   }
+                               }
+                               DispatchQueue.main.async {
+                                   self.updateDisplayedNotes() // Call updateDisplayedNotes here
+                                   self.tableView.reloadData()
+                               }
+                           }
+                       }
+                   }
+           } else {
+               print("User email not found")
+           }
+       }
     
     
     private func saveNoteToCloud(note: Note) {
@@ -276,6 +277,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     }
     
 }
+
+
+//MARK: - EXTENSIONS
 
 extension HomeViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
