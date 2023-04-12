@@ -25,6 +25,7 @@ class NoteCell: UITableViewCell {
        override func awakeFromNib() {
            super.awakeFromNib()
            noteTextField.delegate = self
+           noteTextField.tintColor = .black
        }
        
        override func setSelected(_ selected: Bool, animated: Bool) {

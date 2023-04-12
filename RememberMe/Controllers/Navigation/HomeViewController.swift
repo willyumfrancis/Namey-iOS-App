@@ -31,14 +31,30 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     //FireBase Cloud Storage
     let db = Firestore.firestore()
     
-    //Core Location instance & variable
+    
+    //MARK: - VARIABLES & CONSTANTS
     private let locationManager = CLLocationManager()
     var currentLocation: CLLocationCoordinate2D?
     var selectedNote: Note?
     
+    let progressBar = UIProgressView(progressViewStyle: .default)
+
+    var maxPeople = 3
+
+    
+    var notes: [Note] = []
+    var authStateListenerHandle: AuthStateDidChangeListenerHandle?
+    var sliderValueLabel: UILabel!
     
 
     
+    
+
+    
+    @IBAction func goalButton(_ sender: UIButton) {
+        goalButtonTapped()
+
+    }
     
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
@@ -69,17 +85,24 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
                 let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation)
                 saveNote(note: newNote)
                 selectedNote = newNote // Add this line to update the selectedNote variable
+
+                // Make the text field in the new note cell the first responder
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                    guard let self = self else { return }
+                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                        let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                        newCell.noteTextField.becomeFirstResponder()
+                    }
+                }
             }
         }
     
     
     
-    var notes: [Note] = []
-    var authStateListenerHandle: AuthStateDidChangeListenerHandle?
-    
     
     
     //MARK: - APPEARANCE
+    
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -97,6 +120,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
         
         
     }
+    
+
     
     // VIEWDIDLOAD BRO
     override func viewDidLoad() {
@@ -122,10 +147,66 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
         setupRoundedImageView()
         setupRoundedProgressBar()
         
+ 
+        let goalButton = UIBarButtonItem(title: "Set Goal", style: .plain, target: self, action: #selector(goalButtonTapped))
+        navigationItem.rightBarButtonItem = goalButton
+
+        
         updateCurrentLocationAndFetchNotes()
 
 
     }
+
+    func updateProgressBar() {
+        let currentPeople = notes.count
+        let progress = min(Float(currentPeople) / Float(maxPeople), 1.0)
+        
+        Progressbar.setProgress(progress, animated: true)
+        
+        if progress == 1.0 {
+            Progressbar.progressTintColor = .green
+        } else {
+            Progressbar.progressTintColor = UIColor(red: 0.50, green: 0.23, blue: 0.27, alpha: 0.50)
+        }
+    }
+
+    
+    @objc func goalButtonTapped() {
+        let alertController = UIAlertController(title: "Set Goal", message: "\n\n\n\n\n", preferredStyle: .alert)
+        
+        sliderValueLabel = UILabel(frame: CGRect(x: 10, y: 80, width: 250, height: 20))
+        sliderValueLabel.textAlignment = .center
+        
+        let slider = UISlider(frame: CGRect(x: 10, y: 60, width: 250, height: 20))
+        slider.minimumValue = 1
+        slider.maximumValue = 7
+        slider.value = Float(maxPeople)
+        slider.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
+        
+        sliderValueLabel.text = "\(Int(slider.value))"
+        
+        alertController.view.addSubview(slider)
+        alertController.view.addSubview(sliderValueLabel)
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        let doneAction = UIAlertAction(title: "Done", style: .default) { [weak self] _ in
+            self?.maxPeople = Int(slider.value)
+            self?.updateProgressBar()
+        }
+        
+        alertController.addAction(cancelAction)
+        alertController.addAction(doneAction)
+        present(alertController, animated: true)
+    }
+
+
+
+    @objc func sliderValueChanged(_ sender: UISlider) {
+        let value = Int(sender.value)
+        sliderValueLabel.text = "\(value)"
+    }
+
+
 
 
     
@@ -208,6 +289,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
                 tableView.reloadData()
             }
         }
+        updateProgressBar()
     }
     
     
@@ -237,6 +319,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
                                DispatchQueue.main.async {
                                    self.updateDisplayedNotes() // Call updateDisplayedNotes here
                                    self.tableView.reloadData()
+                                   self.updateProgressBar()
                                }
                            }
                        }
@@ -273,13 +356,25 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
         let indexPath = IndexPath(row: notes.count - 1, section: 0)
         tableView.insertRows(at: [indexPath], with: .automatic)
         tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+        updateProgressBar()
         saveNoteToCloud(note: note) // Save the new note to the cloud
     }
+    
+    
     
 }
 
 
+
 //MARK: - EXTENSIONS
+
+extension UITableView {
+    var indexPathForLastRow: IndexPath? {
+        let lastSectionIndex = max(numberOfSections - 1, 0)
+        let lastRowIndex = max(numberOfRows(inSection: lastSectionIndex) - 1, 0)
+        return IndexPath(row: lastRowIndex, section: lastSectionIndex)
+    }
+}
 
 extension HomeViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
