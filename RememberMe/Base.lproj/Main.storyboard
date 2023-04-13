@@ -100,13 +100,13 @@
                                 <rect key="frame" x="52" y="188" width="289" height="4"/>
                             </progressView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Hello William!" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="JH5-Iz-f7Q">
-                                <rect key="frame" x="52" y="103" width="143" height="27"/>
+                                <rect key="frame" x="52" y="103" width="138.66666666666666" height="27"/>
                                 <fontDescription key="fontDescription" name="Roboto-Bold" family="Roboto" pointSize="23"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="You know X people at X" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Ja3-s1-LKd">
-                                <rect key="frame" x="52" y="130" width="158" height="17.666666666666671"/>
+                                <rect key="frame" x="52" y="130" width="159" height="17.666666666666657"/>
                                 <fontDescription key="fontDescription" name="Roboto-Bold" family="Roboto" pointSize="15"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -231,6 +231,7 @@
                         <outlet property="NewNameLook" destination="oX5-B4-FmA" id="0yV-Zh-UL1"/>
                         <outlet property="Progressbar" destination="qT4-kL-fdE" id="dv4-j2-w4N"/>
                         <outlet property="SaveButtonLook" destination="lmQ-DZ-jTj" id="Jta-fD-gzv"/>
+                        <outlet property="notesCountLabel" destination="Ja3-s1-LKd" id="Rkg-Dx-79V"/>
                         <outlet property="tableView" destination="r8s-nI-bUC" id="ej8-qC-3a9"/>
                     </connections>
                 </viewController>
