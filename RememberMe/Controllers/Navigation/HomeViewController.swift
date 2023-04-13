@@ -59,7 +59,10 @@ import UIKit
         
         var currentLocationName: String?
         var fetchedLocationKeys: Set<String> = []
-        
+        var notesFetched = false
+        private var notesLoaded = false
+
+
 
 
         
@@ -134,23 +137,11 @@ import UIKit
     //MARK: - APPEARANCE
     
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(true, animated: false)
-        
-        authStateListenerHandle = Auth.auth().addStateDidChangeListener { auth, user in
-            if user != nil {
-                print("User is signed in: \(user?.email ?? "Unknown email")")
-                self.loadNotes()
-            } else {
-                print("User is not signed in")
-                // Handle the case where the user is not signed in
-            }
-        }
-        
-        
-    }
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            navigationController?.setNavigationBarHidden(true, animated: false)
     
+        }
 
     
     // VIEWDIDLOAD BRO
@@ -180,12 +171,17 @@ import UIKit
         setupRoundedImageView()
         setupRoundedProgressBar()
         
+        if !notesFetched {
+              notesFetched = true
+              loadNotes()
+          }
+        
  
         let goalButton = UIBarButtonItem(title: "Set Goal", style: .plain, target: self, action: #selector(goalButtonTapped))
         navigationItem.rightBarButtonItem = goalButton
 
         
-        updateCurrentLocationAndFetchNotes()
+
 
 
     }
@@ -646,6 +642,7 @@ import UIKit
     
     //LOAD NOTES FIRESTORE
         private func loadNotes() {
+            guard !notesLoaded else { return }
             if let userEmail = Auth.auth().currentUser?.email,
                let userLocation = locationManager.location?.coordinate { // Get user's location
                 print("Loading notes for user: \(userEmail)")
@@ -681,6 +678,8 @@ import UIKit
                 
                 // Add this line to update the image based on user's location
                 displayImageForLocation(location: userLocation)
+                notesLoaded = true
+
             } else {
                 print("User email not found or user location not available yet")
             }
