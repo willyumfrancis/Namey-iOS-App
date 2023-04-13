@@ -47,14 +47,13 @@ import UIKit
     let progressBar = UIProgressView(progressViewStyle: .default)
 
     var maxPeople = 3
+        var activeNoteCell: NoteCell?
 
     
     var notes: [Note] = []
     var authStateListenerHandle: AuthStateDidChangeListenerHandle?
     var sliderValueLabel: UILabel!
         var displayedNotes: [Note] = []
-        var activeNoteCell: NoteCell?
-
 
     
 
@@ -82,23 +81,22 @@ import UIKit
     
     //Save Name Button
     @IBAction func SaveName(_ sender: UIButton) {
-            // Save a new note
-            if let location = locationManager.location?.coordinate {
-                guard let activeCell = activeNoteCell else {
-                    print("Failed to get active cell")
-                    return
-                }
-                let locationName = fetchLocationNameFor(location: location) ?? ""
-                let newNote = Note(id: UUID().uuidString, text: activeCell.noteTextField.text ?? "", location: location, locationName: locationName)
-                saveNote(note: newNote)
-                print("Saved note to local array")
-            } else {
-                print("Failed to get user's current location")
-            }
-        }
+    
+        // Save a new note
+          if let location = locationManager.location?.coordinate {
+              guard let indexPath = tableView.indexPathForSelectedRow,
+                    let cell = tableView.cellForRow(at: indexPath) as? NoteCell else {
+                  print("Failed to get selected cell")
+                  return
+              }
+              let newNote = Note(id: UUID().uuidString, text: cell.noteTextField.text ?? "", location: location, locationName: "")
+              saveNote(note: newNote)
+              print("Saved note to local array")
+          } else {
+              print("Failed to get user's current location")
+          }
+      }
 
-
-        
     //Create New Name
     @IBAction func NewName(_ sender: UIButton) {
         if let currentLocation = self.currentLocation {
@@ -246,22 +244,21 @@ import UIKit
         //SAVEIMAGE
         func saveImageToFirestore(image: UIImage, location: CLLocationCoordinate2D, locationName: String) {
             uploadImage(image: image, location: location, locationName: locationName) { result in
+
+                
                 switch result {
-                   case .success(let url):
-                       print("Image successfully uploaded to URL: \(url)")
-                       let newNote = Note(id: UUID().uuidString, text: "", location: location, locationName: locationName)
-                       self.saveNote(note: newNote)
-                   case .failure(let error):
-                       print("Error uploading image: \(error)")
-                   }
+                case .success(let url):
+                    print("Image successfully uploaded to URL: \(url)")
+                    self.updateNotesNearLocation(location: location, locationName: locationName)
+                case .failure(let error):
+                    print("Error uploading image: \(error)")
+                }
             }
         }
-
         
         //UPDATE NEAR
-        func updateNotesNearLocation(location: CLLocationCoordinate2D, locationName: String, completion: @escaping (Note?) -> Void) {
-
-            let maxDistance: CLLocationDistance = 500 // Adjust this value according to your requirements
+        func updateNotesNearLocation(location: CLLocationCoordinate2D, locationName: String) {
+            let maxDistance: CLLocationDistance = 300 // Adjust this value according to your requirements
             
             let locationGeoPoint = GeoPoint(latitude: location.latitude, longitude: location.longitude)
             
@@ -271,36 +268,37 @@ import UIKit
                     .getDocuments { querySnapshot, error in
                         if let e = error {
                             print("There was an issue retrieving data from Firestore: \(e)")
-                            completion(nil)
                         } else {
                             if let snapshotDocuments = querySnapshot?.documents {
-                                    print("Notes from Firestore:") // Add this print statement
-                                    for doc in snapshotDocuments {
-                                        let data = doc.data()
-                                        print(data) // Add this print statement
+                                for doc in snapshotDocuments {
+                                    let data = doc.data()
                                     if let locationData = data["location"] as? GeoPoint {
                                         let noteLocation = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
                                         let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
                                         let distance = noteLocation.distance(from: userCurrentLocation)
                                         
                                         if distance <= maxDistance {
-                                            if let locationName = data["locationName"] as? String {
-                                                let noteId = doc.documentID
-                                                let noteText = data["note"] as? String ?? ""
-                                                let updatedNote = Note(id: noteId, text: noteText, location: CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude), locationName: locationName)
-                                                completion(updatedNote)
-                                                return
+                                            let documentRef = self.db.collection("notes").document(doc.documentID)
+                                            documentRef.updateData([
+                                                "locationName": locationName
+                                            ]) { err in
+                                                if let err = err {
+                                                    print("Error updating document: \(err)")
+                                                } else {
+                                                    print("Document successfully updated")
+                                                }
                                             }
                                         }
                                     }
                                 }
-                                completion(nil)
+                                DispatchQueue.main.async {
+                                    self.loadNotes()
+                                }
                             }
                         }
                     }
             } else {
                 print("User email not found")
-                completion(nil)
             }
         }
 
@@ -432,7 +430,6 @@ import UIKit
 
                     // Save the image and location data to Firestore with the locationName
                     self.saveImageToFirestore(image: image, location: userLocation, locationName: locationName)
-
                 }
                 alertController.addAction(saveAction)
 
@@ -641,34 +638,29 @@ import UIKit
        }
     
     
-        func saveNoteToCloud(note: Note) {
+        private func saveNoteToCloud(note: Note) {
             if let userEmail = Auth.auth().currentUser?.email {
-                let noteDictionary: [String: Any] = [
-                    "note": note.text,
-                    "location": GeoPoint(latitude: note.location.latitude, longitude: note.location.longitude),
-                    "locationName": note.locationName,
-                    "user": userEmail,
-                    "timestamp": FieldValue.serverTimestamp()
-                ]
-                
-                db.collection("notes").addDocument(data: noteDictionary) { error in
-                    if let e = error {
-                        print("There was an issue saving data to Firestore: \(e)")
-                    } else {
-                        print("Note successfully saved to Firestore")
-                        DispatchQueue.main.async {
-                            self.loadNotes()
-                            print("Loaded view after saving note")
+                if !note.text.isEmpty || !note.locationName.isEmpty {
+                    let noteDocument = db.collection("notes").document(note.id)
+                    noteDocument.setData([
+                        "user": userEmail,
+                        "note": note.text,
+                        "location": GeoPoint(latitude: note.location.latitude, longitude: note.location.longitude),
+                        "timestamp": Timestamp(),
+                        "imageURL": note.locationName // Include imageURL here
+                    ]) { error in
+                        if let e = error {
+                            print("Error saving note: \(e)")
+                        } else {
+                            print("Note saved successfully.")
                         }
                     }
                 }
-            } else {
-                print("User email not found")
             }
         }
-        
+
         func fetchLocationNameFor(location: CLLocationCoordinate2D) -> String? {
-            let radius: CLLocationDistance = 500 // The radius in meters to consider notes as nearby
+            let radius: CLLocationDistance = 100 // The radius in meters to consider notes as nearby
             let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
             
             for note in self.notes {
@@ -683,19 +675,16 @@ import UIKit
         }
 
 
-
     
     
-        private func saveNote(note: Note) {
-            notes.append(note) // Add the new note to the existing notes array
-            let indexPath = IndexPath(row: notes.count - 1, section: 0)
-            tableView.insertRows(at: [indexPath], with: .automatic)
-            tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
-            updateProgressBar()
-            saveNoteToCloud(note: note) // Save the new note to the cloud
-            print("Called saveNoteToCloud")
-        }
-
+    private func saveNote(note: Note) {
+        notes.append(note) // Add the new note to the existing notes array
+        let indexPath = IndexPath(row: notes.count - 1, section: 0)
+        tableView.insertRows(at: [indexPath], with: .automatic)
+        tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+        updateProgressBar()
+        saveNoteToCloud(note: note) // Save the new note to the cloud
+    }
     
     
     

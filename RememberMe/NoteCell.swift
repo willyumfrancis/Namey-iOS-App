@@ -36,18 +36,11 @@ class NoteCell: UITableViewCell {
    }
 
 extension NoteCell: UITextFieldDelegate {
-    func textFieldDidBeginEditing(_ textField: UITextField) {
-        if let homeVC = delegate as? HomeViewController {
-            homeVC.activeNoteCell = self
-        }
-    }
-
     func textFieldDidEndEditing(_ textField: UITextField) {
         if let noteText = textField.text, let location = noteLocation {
             let noteId = String(tag)
             let updatedNote = Note(id: noteId, text: noteText, location: location, locationName: "")
         }
-        delegate?.noteCellDidEndEditing(self)
+        delegate?.noteCellDidEndEditing(self) // Add this line
     }
 }
-
