@@ -196,13 +196,20 @@ import UIKit
 
         }
 
-        //Update Notes Count Label
+        //Update Name Goal
         func updateNotesCountLabel() {
-            let currentPeople = notes.count
+            let currentPeople = displayedNotes.count
             if let userLocation = locationManager.location?.coordinate {
                 let locationName = fetchLocationNameFor(location: userLocation) ?? "Some Spot"
-                let labelText = "You know \(currentPeople) people at \(locationName)"
-                notesCountLabel.text = labelText
+                if currentPeople == 0 {
+                    notesCountLabel.text = "Go meet some people!"
+                } else if currentPeople == 1 {
+                    let labelText = "You know 1 person at \(locationName)"
+                    notesCountLabel.text = labelText
+                } else {
+                    let labelText = "You know \(currentPeople) people at \(locationName)"
+                    notesCountLabel.text = labelText
+                }
             } else {
                 print("User location not available yet")
             }
@@ -210,9 +217,10 @@ import UIKit
 
 
 
+
     func updateProgressBar() {
         updateNotesCountLabel()
-        let currentPeople = notes.count
+        let currentPeople = displayedNotes.count
         let progress = min(Float(currentPeople) / Float(maxPeople), 1.0)
         
         Progressbar.setProgress(progress, animated: true)
@@ -718,8 +726,6 @@ import UIKit
                                     self.updateDisplayedNotes() // Call updateDisplayedNotes here
                                     self.updateProgressBar()
                                     self.updateLocationNameLabel(location: userLocation) // Update the location name label
-                                    self.updateNotesCountLabel() // Update the notes count label
-
                                 }
                             }
                         }
@@ -781,13 +787,15 @@ import UIKit
     
         private func saveNote(note: Note) {
             displayedNotes.append(note) // Add the new note to the displayedNotes array
-            let indexPath = IndexPath(row: notes.count - 1, section: 0)
+            let indexPath = IndexPath(row: displayedNotes.count - 1, section: 0)
             tableView.insertRows(at: [indexPath], with: .automatic)
             tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
             updateProgressBar()
             saveNoteToCloud(note: note) // Save the new note to the cloud
             print("Called saveNoteToCloud")
         }
+
+
 
     
     
