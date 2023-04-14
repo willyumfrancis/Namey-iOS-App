@@ -34,7 +34,7 @@ import UIKit
     @IBOutlet weak var NewNameLook: UIButton!
     @IBOutlet weak var LocationButtonOutlet: UIButton!
     
-        @IBOutlet weak var notesCountLabel: UILabel!
+    @IBOutlet weak var notesCountLabel: UILabel!
         
     //FireBase Cloud Storage
     let db = Firestore.firestore()
@@ -89,7 +89,7 @@ import UIKit
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
         print("Location Button Pressed")
-        updateCurrentLocationAndFetchNotes()
+           updateCurrentLocationAndFetchNotes()
 
     }
     
@@ -115,21 +115,26 @@ import UIKit
     //Create New Name
     @IBAction func NewName(_ sender: UIButton) {
         if let currentLocation = self.currentLocation {
-            let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: "") // Change "" to the default image URL value
-                saveNote(note: newNote)
-                selectedNote = newNote // Add this line to update the selectedNote variable
+               let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: "")
+               displayedNotes.append(newNote)
+               selectedNote = newNote
 
-                // Make the text field in the new note cell the first responder
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                    guard let self = self else { return }
-                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                        let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                        newCell.noteTextField.becomeFirstResponder()
-                    }
-                }
-            }
-        }
-    
+               DispatchQueue.main.async {
+                   self.tableView.beginUpdates()
+                   self.tableView.insertRows(at: [IndexPath(row: self.displayedNotes.count - 1, section: 0)], with: .automatic)
+                   self.tableView.endUpdates()
+
+                   DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                       guard let self = self else { return }
+                       if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                           let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                           newCell.noteTextField.becomeFirstResponder()
+                       }
+                   }
+               }
+           }
+       }
+        
     
     
     
@@ -255,7 +260,7 @@ import UIKit
 //MARK: - LOCATION
         
         @objc func appWillEnterForeground() {
-            updateCurrentLocationAndFetchNotes()
+                    updateCurrentLocationAndFetchNotes()
         }
 
         
@@ -280,8 +285,8 @@ import UIKit
         }
 
         
-        // UPDATE NEAR
-        func updateNotesNearLocation(location: CLLocationCoordinate2D, newLocationName: String, completion: @escaping ([Note]) -> Void) {
+        //Updates the locationName of the notes that are within a certain distance.
+        func updateNotesLocationName(location: CLLocationCoordinate2D, newLocationName: String, completion: @escaping ([Note]) -> Void) {
             let maxDistance: CLLocationDistance = 500 // Adjust this value according to your requirements
             let locationGeoPoint = GeoPoint(latitude: location.latitude, longitude: location.longitude)
             
@@ -547,9 +552,24 @@ import UIKit
 
     
     //Update Location via Button Function
-    func updateCurrentLocationAndFetchNotes() {
-        locationManager.startUpdatingLocation()
-    }
+        func updateCurrentLocationAndFetchNotes() {
+            locationManager.startUpdatingLocation()
+            if let userLocation = locationManager.location?.coordinate {
+                // Load notes based on the updated location
+                loadNotes()
+
+                // Update displayed notes based on the updated location
+                updateDisplayedNotes()
+
+                // Update the image based on the updated location
+                displayImageForLocation(location: userLocation)
+            } else {
+                print("User location not available yet")
+            }
+        }
+
+
+    
     
     //Location Manager
     func setupLocationManager() {
@@ -605,6 +625,18 @@ import UIKit
     }
     
     //MARK: - NOTES
+        
+        //Filter Function
+        func filterNotesByLocation(notes: [Note], currentLocation: CLLocationCoordinate2D, threshold: Double) -> [Note] {
+            let userCurrentLocation = CLLocation(latitude: currentLocation.latitude, longitude: currentLocation.longitude)
+            
+            return notes.filter { note in
+                let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
+                let distance = noteLocation.distance(from: userCurrentLocation)
+                return distance <= threshold
+            }
+        }
+
     
         // Update Notes Based on Location
         func updateDisplayedNotes() {
@@ -613,12 +645,7 @@ import UIKit
                 return
             }
 
-            displayedNotes = notes.filter { note in
-                let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
-                let userCurrentLocation = CLLocation(latitude: userLocation.latitude, longitude: userLocation.longitude)
-                let distance = noteLocation.distance(from: userCurrentLocation)
-                return distance <= 300
-            }
+            displayedNotes = filterNotesByLocation(notes: notes, currentLocation: userLocation, threshold: 300)
             print("Showing \(displayedNotes.count) notes based on location")
 
             UIView.performWithoutAnimation {
@@ -637,6 +664,7 @@ import UIKit
                 displayImageForLocation(location: closestNote.location)
             }
         }
+
 
 
     
@@ -761,8 +789,9 @@ extension UITableView {
 
 extension HomeViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return notes.count
+        return displayedNotes.count
     }
+    
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "NoteCell", for: indexPath) as! NoteCell
@@ -772,27 +801,30 @@ extension HomeViewController: UITableViewDataSource {
         cell.delegate = self
         
         // Apply the drop-down animation
-               cell.transform = CGAffineTransform(translationX: 0, y: tableView.bounds.size.height)
-               UIView.animate(withDuration: 0.5,
-                              delay: 0.05 * Double(indexPath.row),
-                              usingSpringWithDamping: 0.8,
-                              initialSpringVelocity: 0,
-                              options: .curveEaseInOut,
-                              animations: {
-                               cell.transform = CGAffineTransform.identity
-                              },
-                              completion: nil)
-               
-               return cell
-           }
+        cell.transform = CGAffineTransform(translationX: 0, y: tableView.bounds.size.height)
+        UIView.animate(withDuration: 0.5,
+                       delay: 0.05 * Double(indexPath.row),
+                       usingSpringWithDamping: 0.8,
+                       initialSpringVelocity: 0,
+                       options: .curveEaseInOut,
+                       animations: {
+            cell.transform = CGAffineTransform.identity
+        },
+                       completion: nil)
+        
+        return cell
+    }
     
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            let note = notes[indexPath.row]
-            notes.remove(at: indexPath.row)
+            let noteToDelete = displayedNotes[indexPath.row]
+            if let indexInNotes = notes.firstIndex(where: { $0.id == noteToDelete.id }) {
+                notes.remove(at: indexInNotes)
+            }
+            displayedNotes.remove(at: indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .fade)
-            let noteID = note.id
+            let noteID = noteToDelete.id
             db.collection("notes").document(noteID).delete { error in
                 if let e = error {
                     print("There was an issue deleting the note: \(e)")
@@ -803,6 +835,7 @@ extension HomeViewController: UITableViewDataSource {
         }
     }
 }
+
 
 extension HomeViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
