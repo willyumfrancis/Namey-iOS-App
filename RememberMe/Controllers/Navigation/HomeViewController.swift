@@ -18,7 +18,8 @@ import UIKit
     import FirebaseStorage
     import SDWebImage
 
-
+// UpdateDisplayedNotes is the filtered notes function that works based on geolocation
+//
 
 
 
@@ -34,7 +35,8 @@ import UIKit
     @IBOutlet weak var NewNameLook: UIButton!
     @IBOutlet weak var LocationButtonOutlet: UIButton!
     
-    @IBOutlet weak var notesCountLabel: UILabel!
+        @IBOutlet weak var locationNameLabel: UILabel!
+        @IBOutlet weak var notesCountLabel: UILabel!
         
     //FireBase Cloud Storage
     let db = Firestore.firestore()
@@ -157,6 +159,7 @@ import UIKit
 
 
         //Apparance of App//
+                
         NewNameLook.layer.cornerRadius = 12
         NewNameLook.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
         NewNameLook.layer.borderWidth = 3
@@ -184,18 +187,27 @@ import UIKit
  
         let goalButton = UIBarButtonItem(title: "Set Goal", style: .plain, target: self, action: #selector(goalButtonTapped))
         navigationItem.rightBarButtonItem = goalButton
-
-        
-
-
-
     }
         
+        func updateLocationNameLabel(location: CLLocationCoordinate2D) {
+            let locationName = fetchLocationNameFor(location: location) ?? "Some Spot"
+            locationNameLabel.text = "\(locationName)"
+            print("Location name is \(locationName)")
+
+        }
+
+        //Update Notes Count Label
         func updateNotesCountLabel() {
             let currentPeople = notes.count
-            let labelText = "You know \(currentPeople) people at \(currentLocationName ?? "some spot.")"
-            notesCountLabel.text = labelText
+            if let userLocation = locationManager.location?.coordinate {
+                let locationName = fetchLocationNameFor(location: userLocation) ?? "Some Spot"
+                let labelText = "You know \(currentPeople) people at \(locationName)"
+                notesCountLabel.text = labelText
+            } else {
+                print("User location not available yet")
+            }
         }
+
 
 
     func updateProgressBar() {
@@ -274,15 +286,23 @@ import UIKit
         func saveImageToFirestore(image: UIImage, location: CLLocationCoordinate2D, locationName: String) {
             uploadImage(image: image, location: location, locationName: locationName) { result in
                 switch result {
-                   case .success(let url):
-                       print("Image successfully uploaded to URL: \(url)")
-                       let newNote = Note(id: UUID().uuidString, text: "", location: location, locationName: locationName)
-                       self.saveNote(note: newNote)
-                   case .failure(let error):
-                       print("Error uploading image: \(error)")
-                   }
+                case .success(let imageURL):
+                    print("Image successfully uploaded, URL: \(imageURL)")
+
+                    // Update location name for notes
+                    self.updateNotesLocationName(location: location, newLocationName: locationName) { updatedNotes in
+                        self.notes.removeAll() // Clear the notes array
+                        self.notes = updatedNotes
+                        self.locationNameLabel.text = locationName
+                        self.tableView.reloadData() // Reload the tableView to reflect the changes
+                    }
+
+                case .failure(let error):
+                    print("Error uploading image: \(error)")
+                }
             }
         }
+
 
         
         //Updates the locationName of the notes that are within a certain distance.
@@ -455,7 +475,7 @@ import UIKit
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
             if let image = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
                 // Show an alert to get the location name from the user
-                let alertController = UIAlertController(title: "Location Name", message: "Please enter a name for this location:", preferredStyle: .alert)
+                let alertController = UIAlertController(title: "Spot Name", message: "Please enter a name for this place:", preferredStyle: .alert)
                 alertController.addTextField()
 
                 let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
@@ -486,39 +506,6 @@ import UIKit
                 }
             }
         }
-
-
-           //Resize and Crop Local Image
-           func resizeAndCrop(image: UIImage, targetSize: CGSize) -> UIImage {
-               let size = image.size
-               let widthRatio = targetSize.width / size.width
-               let heightRatio = targetSize.height / size.height
-
-               let ratio = max(widthRatio, heightRatio)
-               let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
-               let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
-
-               UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
-               image.draw(in: rect)
-               let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
-               UIGraphicsEndImageContext()
-
-               guard let resized = resizedImage else { return image }
-
-               let cropRect = CGRect(x: (resized.size.width - targetSize.width) / 2,
-                                     y: (resized.size.height - targetSize.height) / 2,
-                                     width: targetSize.width, height: targetSize.height)
-
-               guard let cgImage = resized.cgImage?.cropping(to: cropRect) else { return image }
-               return UIImage(cgImage: cgImage)
-           }
-
-           
-           //Phone Doc Function for Image Picker
-           func getDocumentsDirectory() -> URL {
-               let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-               return paths[0]
-           }
 
 
            //Image Picker iOS
@@ -567,8 +554,6 @@ import UIKit
                 print("User location not available yet")
             }
         }
-
-
     
     
     //Location Manager
@@ -578,8 +563,7 @@ import UIKit
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
     }
-    
-    //Location Manager Delegate
+        // Location Manager Delegate
         func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
             if let location = locations.last {
                 currentLocation = location.coordinate
@@ -587,9 +571,11 @@ import UIKit
                 locationManager.stopUpdatingLocation()
                 loadNotes()
                 displayImageForLocation(location: currentLocation!)
-
+                updateLocationNameLabel(location: currentLocation!)
             }
         }
+
+
 
     
     private func setupRoundedImageView() {
@@ -623,6 +609,39 @@ import UIKit
         }
         
     }
+        
+        //Resize and Crop Local Image
+        func resizeAndCrop(image: UIImage, targetSize: CGSize) -> UIImage {
+            let size = image.size
+            let widthRatio = targetSize.width / size.width
+            let heightRatio = targetSize.height / size.height
+
+            let ratio = max(widthRatio, heightRatio)
+            let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
+            let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
+
+            UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+            image.draw(in: rect)
+            let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+            UIGraphicsEndImageContext()
+
+            guard let resized = resizedImage else { return image }
+
+            let cropRect = CGRect(x: (resized.size.width - targetSize.width) / 2,
+                                  y: (resized.size.height - targetSize.height) / 2,
+                                  width: targetSize.width, height: targetSize.height)
+
+            guard let cgImage = resized.cgImage?.cropping(to: cropRect) else { return image }
+            return UIImage(cgImage: cgImage)
+        }
+
+        
+        //Phone Doc Function for Image Picker
+        func getDocumentsDirectory() -> URL {
+            let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+            return paths[0]
+        }
+
     
     //MARK: - NOTES
         
@@ -697,8 +716,10 @@ import UIKit
                                 }
                                 DispatchQueue.main.async {
                                     self.updateDisplayedNotes() // Call updateDisplayedNotes here
-                                    self.tableView.reloadData()
                                     self.updateProgressBar()
+                                    self.updateLocationNameLabel(location: userLocation) // Update the location name label
+                                    self.updateNotesCountLabel() // Update the notes count label
+
                                 }
                             }
                         }
@@ -713,7 +734,6 @@ import UIKit
             }
         }
 
-    
     
         func saveNoteToCloud(note: Note) {
             if let userEmail = Auth.auth().currentUser?.email {
@@ -731,7 +751,6 @@ import UIKit
                     } else {
                         print("Note successfully saved to Firestore")
                         DispatchQueue.main.async {
-                            self.loadNotes()
                             print("Loaded view after saving note")
                         }
                     }
@@ -761,7 +780,7 @@ import UIKit
     
     
         private func saveNote(note: Note) {
-            notes.append(note) // Add the new note to the existing notes array
+            displayedNotes.append(note) // Add the new note to the displayedNotes array
             let indexPath = IndexPath(row: notes.count - 1, section: 0)
             tableView.insertRows(at: [indexPath], with: .automatic)
             tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
@@ -795,7 +814,7 @@ extension HomeViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "NoteCell", for: indexPath) as! NoteCell
-        let note = notes[indexPath.row]
+        let note = displayedNotes[indexPath.row]
         cell.noteTextField.text = note.text
         cell.noteLocation = note.location // Update the cell's noteLocation property
         cell.delegate = self
@@ -871,4 +890,5 @@ extension HomeViewController: NoteCellDelegate {
         cell.saveButtonPressed = false // Reset the flag
     }
 }
+
 
