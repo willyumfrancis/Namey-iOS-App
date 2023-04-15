@@ -51,7 +51,8 @@ import UIKit
         
         var maxPeople = 3
         
-        
+        var notesLoaded = false
+
         
         var notes: [Note] = []
         var authStateListenerHandle: AuthStateDidChangeListenerHandle?
@@ -62,19 +63,7 @@ import UIKit
         var currentLocationName: String?
         var fetchedLocationKeys: Set<String> = []
         var notesFetched = false
-        private var notesLoaded = false
-
-
-
-
         
-        
-
-
-    
-
-    
-    
 
 
     @IBAction func uploadImageButton(_ sender: UIButton) {
@@ -106,7 +95,7 @@ import UIKit
                 let locationName = fetchLocationNameFor(location: location) ?? ""
                 let newNote = Note(id: UUID().uuidString, text: activeCell.noteTextField.text ?? "", location: location, locationName: locationName)
                 saveNote(note: newNote)
-                print("Saved note to local array")
+                print("Saved Note Button Pressed")
             } else {
                 print("Failed to get user's current location")
             }
@@ -139,8 +128,6 @@ import UIKit
         
     
     
-    
-    
     //MARK: - APPEARANCE
     
     
@@ -155,8 +142,6 @@ import UIKit
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        NotificationCenter.default.addObserver(self, selector: #selector(appWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
-
 
         //Apparance of App//
                 
@@ -179,15 +164,25 @@ import UIKit
         setupRoundedImageView()
         setupRoundedProgressBar()
         
-        if !notesFetched {
-              notesFetched = true
-              loadNotes()
-          }
-        
  
         let goalButton = UIBarButtonItem(title: "Set Goal", style: .plain, target: self, action: #selector(goalButtonTapped))
         navigationItem.rightBarButtonItem = goalButton
     }
+        //ENDVIEWDIDLOAD
+        
+        
+        
+        func createAttributedString(from noteText: String) -> NSAttributedString {
+            let attributedString = NSMutableAttributedString(string: noteText)
+            
+            if let range = noteText.range(of: " - ") {
+                let boldRange = NSRange(noteText.startIndex..<range.lowerBound, in: noteText)
+                attributedString.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 17), range: boldRange)
+            }
+            
+            return attributedString
+        }
+
         
         func updateLocationNameLabel(location: CLLocationCoordinate2D) {
             let locationName = fetchLocationNameFor(location: location) ?? "Some Spot"
@@ -196,6 +191,8 @@ import UIKit
 
         }
 
+        
+        
         //Update Name Goal
         func updateNotesCountLabel() {
             let currentPeople = displayedNotes.count
@@ -207,7 +204,7 @@ import UIKit
                     let labelText = "You know 1 person at \(locationName)"
                     notesCountLabel.text = labelText
                 } else {
-                    let labelText = "You know \(currentPeople) people at \(locationName)"
+                    let labelText = "You know \(currentPeople) people at \(locationName)."
                     notesCountLabel.text = labelText
                 }
             } else {
@@ -235,34 +232,40 @@ import UIKit
     }
 
     //MARK: - POP-UPS
-    
-    @objc func goalButtonTapped() {
-        let alertController = UIAlertController(title: "Set Goal", message: "\n\n\n\n\n", preferredStyle: .alert)
-        
-        sliderValueLabel = UILabel(frame: CGRect(x: 10, y: 80, width: 250, height: 20))
-        sliderValueLabel.textAlignment = .center
-        
-        let slider = UISlider(frame: CGRect(x: 10, y: 60, width: 250, height: 20))
-        slider.minimumValue = 1
-        slider.maximumValue = 7
-        slider.value = Float(maxPeople)
-        slider.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
-        
-        sliderValueLabel.text = "\(Int(slider.value))"
-        
-        alertController.view.addSubview(slider)
-        alertController.view.addSubview(sliderValueLabel)
-        
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
-        let doneAction = UIAlertAction(title: "Done", style: .default) { [weak self] _ in
-            self?.maxPeople = Int(slider.value)
-            self?.updateProgressBar()
+        @objc func goalButtonTapped() {
+            let alertController = UIAlertController(title: "Set Goal", message: "\n\n\n\n\n", preferredStyle: .alert)
+            
+            sliderValueLabel = UILabel(frame: CGRect(x: 10, y: 100, width: 250, height: 20)) // Increase y value to create space
+            sliderValueLabel.textAlignment = .center
+            sliderValueLabel.font = UIFont.systemFont(ofSize: 24) // Change font size here
+            
+            let slider = UISlider(frame: CGRect(x: 10, y: 60, width: 250, height: 20))
+            slider.minimumValue = 1
+            slider.maximumValue = 7
+            slider.value = Float(maxPeople)
+            slider.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
+            
+            sliderValueLabel.text = "\(Int(slider.value))"
+            
+            alertController.view.addSubview(slider)
+            alertController.view.addSubview(sliderValueLabel)
+            
+            let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+            let doneAction = UIAlertAction(title: "Done", style: .default) { [weak self] _ in
+                self?.maxPeople = Int(slider.value)
+                self?.updateProgressBar()
+            }
+            
+            alertController.addAction(cancelAction)
+            alertController.addAction(doneAction)
+            
+            // Change the size of the alert box
+            let height: NSLayoutConstraint = NSLayoutConstraint(item: alertController.view!, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 200)
+            alertController.view.addConstraint(height)
+            
+            present(alertController, animated: true)
         }
-        
-        alertController.addAction(cancelAction)
-        alertController.addAction(doneAction)
-        present(alertController, animated: true)
-    }
+
 
 
 
@@ -279,9 +282,7 @@ import UIKit
 
 //MARK: - LOCATION
         
-        @objc func appWillEnterForeground() {
-                    updateCurrentLocationAndFetchNotes()
-        }
+
 
         
         //SAFEFILENAME
@@ -551,7 +552,7 @@ import UIKit
             locationManager.startUpdatingLocation()
             if let userLocation = locationManager.location?.coordinate {
                 // Load notes based on the updated location
-                loadNotes()
+//                loadNotes()
 
                 // Update displayed notes based on the updated location
                 updateDisplayedNotes()
@@ -667,15 +668,18 @@ import UIKit
     
         // Update Notes Based on Location
         func updateDisplayedNotes() {
+            print("updateDisplayedNotes called")
+
             guard let userLocation = locationManager.location?.coordinate else {
                 print("User location not available yet")
                 return
             }
 
-            displayedNotes = filterNotesByLocation(notes: notes, currentLocation: userLocation, threshold: 300)
-            print("Showing \(displayedNotes.count) notes based on location")
+          
 
             UIView.performWithoutAnimation {
+                displayedNotes = filterNotesByLocation(notes: notes, currentLocation: userLocation, threshold: 300)
+                print("Showing \(displayedNotes.count) notes based on location")
                 tableView.reloadData()
             }
             updateProgressBar()
@@ -695,8 +699,10 @@ import UIKit
 
 
     
-    //LOAD NOTES FIRESTORE
+        //LOAD NOTES FIRESTORE
         private func loadNotes() {
+            print("loadNotes called")
+
             guard !notesLoaded else { return }
             if let userEmail = Auth.auth().currentUser?.email,
                let userLocation = locationManager.location?.coordinate { // Get user's location
@@ -733,7 +739,7 @@ import UIKit
                 
                 // Add this line to update the image based on user's location
                 displayImageForLocation(location: userLocation)
-                notesLoaded = true
+                notesLoaded = true // Set notesLoaded to true after the notes have been loaded and the image is updated based on user's location
 
             } else {
                 print("User email not found or user location not available yet")
@@ -741,7 +747,7 @@ import UIKit
         }
 
     
-        func saveNoteToCloud(note: Note) {
+        private func saveNote(note: Note) {
             if let userEmail = Auth.auth().currentUser?.email {
                 let noteDictionary: [String: Any] = [
                     "note": note.text,
@@ -757,6 +763,12 @@ import UIKit
                     } else {
                         print("Note successfully saved to Firestore")
                         DispatchQueue.main.async {
+                            // Add the new note to the displayedNotes array
+                            self.displayedNotes.append(note)
+                            let indexPath = IndexPath(row: self.displayedNotes.count - 1, section: 0)
+                            self.tableView.insertRows(at: [indexPath], with: .automatic)
+                            self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+                            self.updateProgressBar()
                             print("Loaded view after saving note")
                         }
                     }
@@ -765,6 +777,8 @@ import UIKit
                 print("User email not found")
             }
         }
+
+
         
         func fetchLocationNameFor(location: CLLocationCoordinate2D) -> String? {
             let radius: CLLocationDistance = 500 // The radius in meters to consider notes as nearby
@@ -785,16 +799,7 @@ import UIKit
 
     
     
-        private func saveNote(note: Note) {
-            displayedNotes.append(note) // Add the new note to the displayedNotes array
-            let indexPath = IndexPath(row: displayedNotes.count - 1, section: 0)
-            tableView.insertRows(at: [indexPath], with: .automatic)
-            tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
-            updateProgressBar()
-            saveNoteToCloud(note: note) // Save the new note to the cloud
-            print("Called saveNoteToCloud")
-        }
-
+       
 
 
     
@@ -823,7 +828,9 @@ extension HomeViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "NoteCell", for: indexPath) as! NoteCell
         let note = displayedNotes[indexPath.row]
-        cell.noteTextField.text = note.text
+        
+        cell.noteTextField.attributedText = createAttributedString(from: note.text) // Set the attributed string here
+//        cell.noteTextField.text = note.text
         cell.noteLocation = note.location // Update the cell's noteLocation property
         cell.delegate = self
         
@@ -877,10 +884,22 @@ extension HomeViewController: NoteCellDelegate {
     func noteCell(_ cell: NoteCell, didUpdateNote note: Note) {
         if let indexPath = tableView.indexPath(for: cell) {
             notes[indexPath.row] = note
-            saveNoteToCloud(note: note)
-            print("Auto-Saved to Cloud")
+            // Update the note in Firestore directly
+            db.collection("notes").document(note.id).updateData([
+                "note": note.text,
+                "location": GeoPoint(latitude: note.location.latitude, longitude: note.location.longitude),
+                "locationName": note.locationName
+            ]) { error in
+                if let e = error {
+                    print("There was an issue updating the note in Firestore: \(e)")
+                } else {
+                    print("Note successfully updated in Firestore")
+                }
+            }
         }
     }
+    
+
 
     func noteCellDidEndEditing(_ cell: NoteCell) {
         if let indexPath = tableView.indexPath(for: cell), indexPath.row < notes.count {
@@ -889,13 +908,13 @@ extension HomeViewController: NoteCellDelegate {
                 let updatedNote = Note(id: note.id, text: cell.noteTextField.text!, location: note.location, locationName: note.locationName) // Include the imageURL parameter
                 notes[indexPath.row] = updatedNote
                 if cell.saveButtonPressed { // Add this condition
-                    saveNoteToCloud(note: updatedNote)
+                   saveNote(note: updatedNote)
                     print("Auto-Saved to Cloud")
                 }
             }
 
         }
-        cell.saveButtonPressed = false // Reset the flag
+       cell.saveButtonPressed = false // Reset the flag
     }
 }
 

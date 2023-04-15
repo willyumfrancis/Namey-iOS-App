@@ -46,6 +46,8 @@ extension NoteCell: UITextFieldDelegate {
         if let noteText = textField.text, let location = noteLocation {
             let noteId = String(tag)
             let updatedNote = Note(id: noteId, text: noteText, location: location, locationName: "")
+            delegate?.noteCell(self, didUpdateNote: updatedNote) // Add this line
+
         }
         delegate?.noteCellDidEndEditing(self)
     }
