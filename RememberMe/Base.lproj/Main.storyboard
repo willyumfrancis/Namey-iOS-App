@@ -159,7 +159,7 @@
                                     <action selector="LocationButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="leo-ba-I0l"/>
                                 </connections>
                             </button>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" restorationIdentifier="locationNameLabel" text="Some Spot" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pBH-KN-QLt">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" restorationIdentifier="locationNameLabel" text="Some Spot" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumScaleFactor="0.5" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="pBH-KN-QLt">
                                 <rect key="frame" x="52" y="428" width="201" height="27"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="27" id="Fr7-gD-DfM"/>
@@ -181,8 +181,8 @@
                             <progressView opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="750" progress="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="qT4-kL-fdE">
                                 <rect key="frame" x="51" y="129" width="289" height="4"/>
                             </progressView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Go meet some people!" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Ja3-s1-LKd">
-                                <rect key="frame" x="51.999999999999986" y="88" width="191.66666666666663" height="17.666666666666671"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="Go meet some people!" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumScaleFactor="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="Ja3-s1-LKd">
+                                <rect key="frame" x="52" y="88" width="172" height="18"/>
                                 <fontDescription key="fontDescription" name="Roboto-Bold" family="Roboto" pointSize="19"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>

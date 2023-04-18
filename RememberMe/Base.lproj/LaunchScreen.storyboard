@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="21701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21678"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -20,26 +21,35 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" image="Signature" translatesAutoresizingMaskIntoConstraints="NO" id="aZy-U0-D7Q">
-                                <rect key="frame" x="160" y="398" width="72" height="57"/>
-                            </imageView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="Made for SF ❤️" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="h5Q-eT-V40">
-                                <rect key="frame" x="99" y="356" width="195" height="34"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Made for SF ❤️" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="h5Q-eT-V40">
+                                <rect key="frame" x="99" y="240" width="195" height="45"/>
                                 <fontDescription key="fontDescription" name="Roboto-Bold" family="Roboto" pointSize="29"/>
                                 <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="jellydev" adjustsImageSizeForAccessibilityContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="dj9-2G-gBd">
+                                <rect key="frame" x="75" y="283" width="243" height="286"/>
+                            </imageView>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Signature" translatesAutoresizingMaskIntoConstraints="NO" id="aZy-U0-D7Q">
+                                <rect key="frame" x="238" y="-220" width="56" height="1575"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="1575" id="PFZ-YT-cpC"/>
+                                </constraints>
+                            </imageView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
-                            <constraint firstItem="aZy-U0-D7Q" firstAttribute="top" secondItem="h5Q-eT-V40" secondAttribute="bottom" constant="8" id="8ow-JS-ZDB"/>
-                            <constraint firstItem="h5Q-eT-V40" firstAttribute="centerX" secondItem="aZy-U0-D7Q" secondAttribute="centerX" id="L43-qc-2d6"/>
-                            <constraint firstItem="h5Q-eT-V40" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="297" id="PAc-eI-LXB"/>
-                            <constraint firstItem="aZy-U0-D7Q" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="RBB-9g-lJF"/>
-                            <constraint firstItem="aZy-U0-D7Q" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="bLK-xZ-cQY"/>
-                            <constraint firstItem="aZy-U0-D7Q" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="160" id="cpa-BJ-Mvc"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="aZy-U0-D7Q" secondAttribute="bottom" constant="363" id="ddq-JT-SoU"/>
+                            <constraint firstItem="h5Q-eT-V40" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="181" id="1s9-y4-hyZ"/>
+                            <constraint firstItem="dj9-2G-gBd" firstAttribute="top" secondItem="h5Q-eT-V40" secondAttribute="bottom" constant="-2" id="5jw-Iq-NHi"/>
+                            <constraint firstItem="aZy-U0-D7Q" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="topMargin" constant="-279" id="6wz-Ip-qrp"/>
+                            <constraint firstItem="h5Q-eT-V40" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Emx-Ld-3qh"/>
+                            <constraint firstItem="dj9-2G-gBd" firstAttribute="centerX" secondItem="h5Q-eT-V40" secondAttribute="centerX" id="IoL-Pk-OCK"/>
+                            <constraint firstItem="dj9-2G-gBd" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="Mpg-nm-neM"/>
+                            <constraint firstItem="aZy-U0-D7Q" firstAttribute="trailing" secondItem="Ze5-6b-2t3" secondAttribute="trailingMargin" constant="-83" id="Pjj-wk-bOL"/>
+                            <constraint firstItem="aZy-U0-D7Q" firstAttribute="leading" secondItem="h5Q-eT-V40" secondAttribute="trailing" constant="-56" id="TRF-9j-T0M"/>
+                            <constraint firstItem="dj9-2G-gBd" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="75" id="W7R-dh-2h8"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="dj9-2G-gBd" secondAttribute="bottom" constant="249" id="Zg0-1f-uqR"/>
                         </constraints>
                     </view>
                 </viewController>
@@ -50,5 +60,6 @@
     </scenes>
     <resources>
         <image name="Signature" width="226" height="114"/>
+        <image name="jellydev" width="2161" height="3260"/>
     </resources>
 </document>

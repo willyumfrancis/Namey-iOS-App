@@ -20,5 +20,276 @@
             landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "77A1D5BE-11D5-415B-A5C9-44F00A9123B8"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "928"
+            endingLineNumber = "928"
+            landmarkName = "noteCell(_:didUpdateNote:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "77A1D5BE-11D5-415B-A5C9-44F00A9123B8 - 913391ce18a582cb"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "RememberMe.HomeViewController.noteCell(_: RememberMe.NoteCell, didUpdateNote: RememberMe.Note) -&gt; ()"
+                  moduleName = "RememberMe"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/williammisiaszek/%E3%82%B3%E3%83%BC%E3%83%88%E3%82%99/Namey/RememberMe/Controllers/Navigation/HomeViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "894"
+                  endingLineNumber = "894"
+                  offsetFromSymbolStart = "1344">
+               </Location>
+               <Location
+                  uuid = "77A1D5BE-11D5-415B-A5C9-44F00A9123B8 - ba7e08694f069f4d"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (Swift.Optional&lt;Swift.Error&gt;) -&gt; () in RememberMe.HomeViewController.noteCell(_: RememberMe.NoteCell, didUpdateNote: RememberMe.Note) -&gt; ()"
+                  moduleName = "RememberMe"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/williammisiaszek/%E3%82%B3%E3%83%BC%E3%83%88%E3%82%99/Namey/RememberMe/Controllers/Navigation/HomeViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "900"
+                  endingLineNumber = "900"
+                  offsetFromSymbolStart = "292">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "D3131813-A5FB-4015-8886-D33B79F8D3DF"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "460"
+            endingLineNumber = "460"
+            landmarkName = "uploadImage(image:location:locationName:completion:)"
+            landmarkType = "9">
+            <Locations>
+               <Location
+                  uuid = "D3131813-A5FB-4015-8886-D33B79F8D3DF - 2c6e706e504fb5f7"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (Swift.Optional&lt;Foundation.URL&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in RememberMe.HomeViewController.downloadAndDisplayImage(locationName: Swift.String) -&gt; ()"
+                  moduleName = "RememberMe"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/williammisiaszek/%E3%82%B3%E3%83%BC%E3%83%88%E3%82%99/Namey/RememberMe/Controllers/Navigation/HomeViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "442"
+                  endingLineNumber = "442"
+                  offsetFromSymbolStart = "1556">
+               </Location>
+               <Location
+                  uuid = "D3131813-A5FB-4015-8886-D33B79F8D3DF - 55abdd951b33e206"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "RememberMe.HomeViewController.uploadImage(image: __C.UIImage, location: __C.CLLocationCoordinate2D, locationName: Swift.String, completion: (Swift.Result&lt;Foundation.URL, Swift.Error&gt;) -&gt; ()) -&gt; ()"
+                  moduleName = "RememberMe"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/williammisiaszek/%E3%82%B3%E3%83%BC%E3%83%88%E3%82%99/Namey/RememberMe/Controllers/Navigation/HomeViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "442"
+                  endingLineNumber = "442"
+                  offsetFromSymbolStart = "2052">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "6D2A19B8-D4C0-4319-A129-41353C8FC8D6"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "482"
+            endingLineNumber = "482"
+            landmarkName = "uploadImage(image:location:locationName:completion:)"
+            landmarkType = "9">
+            <Locations>
+               <Location
+                  uuid = "6D2A19B8-D4C0-4319-A129-41353C8FC8D6 - 55abdd951b33e7aa"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "RememberMe.HomeViewController.uploadImage(image: __C.UIImage, location: __C.CLLocationCoordinate2D, locationName: Swift.String, completion: (Swift.Result&lt;Foundation.URL, Swift.Error&gt;) -&gt; ()) -&gt; ()"
+                  moduleName = "RememberMe"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/williammisiaszek/%E3%82%B3%E3%83%BC%E3%83%88%E3%82%99/Namey/RememberMe/Controllers/Navigation/HomeViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "462"
+                  endingLineNumber = "462"
+                  offsetFromSymbolStart = "2252">
+               </Location>
+               <Location
+                  uuid = "6D2A19B8-D4C0-4319-A129-41353C8FC8D6 - d94aef84b78e7e14"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (Swift.Optional&lt;FirebaseStorage.StorageMetadata&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in RememberMe.HomeViewController.uploadImage(image: __C.UIImage, location: __C.CLLocationCoordinate2D, locationName: Swift.String, completion: (Swift.Result&lt;Foundation.URL, Swift.Error&gt;) -&gt; ()) -&gt; ()"
+                  moduleName = "RememberMe"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/williammisiaszek/%E3%82%B3%E3%83%BC%E3%83%88%E3%82%99/Namey/RememberMe/Controllers/Navigation/HomeViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "462"
+                  endingLineNumber = "462"
+                  offsetFromSymbolStart = "344">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "C4080050-1475-49DA-99C1-C2E63F88A277"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "488"
+            endingLineNumber = "488"
+            landmarkName = "SaveName(_:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "C4080050-1475-49DA-99C1-C2E63F88A277 - d94aef84b78e7f52"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (Swift.Optional&lt;FirebaseStorage.StorageMetadata&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in RememberMe.HomeViewController.uploadImage(image: __C.UIImage, location: __C.CLLocationCoordinate2D, locationName: Swift.String, completion: (Swift.Result&lt;Foundation.URL, Swift.Error&gt;) -&gt; ()) -&gt; ()"
+                  moduleName = "RememberMe"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/williammisiaszek/%E3%82%B3%E3%83%BC%E3%83%88%E3%82%99/Namey/RememberMe/Controllers/Navigation/HomeViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "468"
+                  endingLineNumber = "468"
+                  offsetFromSymbolStart = "176">
+               </Location>
+               <Location
+                  uuid = "C4080050-1475-49DA-99C1-C2E63F88A277 - 8ace175139da2913"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (Swift.Optional&lt;Foundation.URL&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in closure #1 (Swift.Optional&lt;FirebaseStorage.StorageMetadata&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in RememberMe.HomeViewController.uploadImage(image: __C.UIImage, location: __C.CLLocationCoordinate2D, locationName: Swift.String, completion: (Swift.Result&lt;Foundation.URL, Swift.Error&gt;) -&gt; ()) -&gt; ()"
+                  moduleName = "RememberMe"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/williammisiaszek/%E3%82%B3%E3%83%BC%E3%83%88%E3%82%99/Namey/RememberMe/Controllers/Navigation/HomeViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "468"
+                  endingLineNumber = "468"
+                  offsetFromSymbolStart = "468">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "18F6BA4F-10A2-4B29-8461-EB93A6A8A54E"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "493"
+            endingLineNumber = "493"
+            landmarkName = "imagePickerController(_:didFinishPickingMediaWithInfo:)"
+            landmarkType = "9">
+            <Locations>
+               <Location
+                  uuid = "18F6BA4F-10A2-4B29-8461-EB93A6A8A54E - d94aef84b78e7fb9"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (Swift.Optional&lt;FirebaseStorage.StorageMetadata&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in RememberMe.HomeViewController.uploadImage(image: __C.UIImage, location: __C.CLLocationCoordinate2D, locationName: Swift.String, completion: (Swift.Result&lt;Foundation.URL, Swift.Error&gt;) -&gt; ()) -&gt; ()"
+                  moduleName = "RememberMe"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/williammisiaszek/%E3%82%B3%E3%83%BC%E3%83%88%E3%82%99/Namey/RememberMe/Controllers/Navigation/HomeViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "473"
+                  endingLineNumber = "473"
+                  offsetFromSymbolStart = "280">
+               </Location>
+               <Location
+                  uuid = "18F6BA4F-10A2-4B29-8461-EB93A6A8A54E - 8ace175139da29d9"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (Swift.Optional&lt;Foundation.URL&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in closure #1 (Swift.Optional&lt;FirebaseStorage.StorageMetadata&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in RememberMe.HomeViewController.uploadImage(image: __C.UIImage, location: __C.CLLocationCoordinate2D, locationName: Swift.String, completion: (Swift.Result&lt;Foundation.URL, Swift.Error&gt;) -&gt; ()) -&gt; ()"
+                  moduleName = "RememberMe"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/williammisiaszek/%E3%82%B3%E3%83%BC%E3%83%88%E3%82%99/Namey/RememberMe/Controllers/Navigation/HomeViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "474"
+                  endingLineNumber = "474"
+                  offsetFromSymbolStart = "364">
+               </Location>
+               <Location
+                  uuid = "18F6BA4F-10A2-4B29-8461-EB93A6A8A54E - 8ace175139da29f8"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (Swift.Optional&lt;Foundation.URL&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in closure #1 (Swift.Optional&lt;FirebaseStorage.StorageMetadata&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in RememberMe.HomeViewController.uploadImage(image: __C.UIImage, location: __C.CLLocationCoordinate2D, locationName: Swift.String, completion: (Swift.Result&lt;Foundation.URL, Swift.Error&gt;) -&gt; ()) -&gt; ()"
+                  moduleName = "RememberMe"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/williammisiaszek/%E3%82%B3%E3%83%BC%E3%83%88%E3%82%99/Namey/RememberMe/Controllers/Navigation/HomeViewController.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "473"
+                  endingLineNumber = "473"
+                  offsetFromSymbolStart = "560">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "C56425C9-7552-4007-9967-C569047D1D28"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "489"
+            endingLineNumber = "489"
+            landmarkName = "imagePickerController(_:didFinishPickingMediaWithInfo:)"
+            landmarkType = "9">
+         </BreakpointContent>
+      </BreakpointProxy>
    </Breakpoints>
 </Bucket>
