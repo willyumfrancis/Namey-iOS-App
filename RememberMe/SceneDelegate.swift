@@ -6,18 +6,58 @@
 //
 
 import UIKit
+import FirebaseCore
+import FirebaseAuth
+
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
+
+    @objc func showInitialViewController() {
+        let mainStoryboard = UIStoryboard(name: "Main", bundle: nil)
+        let initialViewController = mainStoryboard.instantiateViewController(withIdentifier: "StartViewController") // Replace "StartViewController" with the appropriate identifier for your initial view controller
+        
+        // Create a new UIWindowScene to replace the current one
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            let newWindow = UIWindow(windowScene: windowScene)
+            newWindow.rootViewController = initialViewController
+            newWindow.makeKeyAndVisible()
+            self.window = newWindow
+        }
+    }
+
 
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
         // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let _ = (scene as? UIWindowScene) else { return }
+        
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+        
+        let window = UIWindow(windowScene: windowScene)
+        self.window = window
+
+        // Check if the user is already logged in
+        if let _ = Auth.auth().currentUser {
+            // User is already logged in, set the root view controller to HomeViewController
+            let mainStoryboard = UIStoryboard(name: "Main", bundle: nil)
+            let menuController = mainStoryboard.instantiateViewController(withIdentifier: "HomeMenuController") as! MenuController
+            window.rootViewController = menuController
+        } else {
+            // If user is not logged in, set the root view controller to your initial view controller (e.g., Login or Signup view controller)
+            let mainStoryboard = UIStoryboard(name: "Main", bundle: nil)
+            let initialViewController = mainStoryboard.instantiateViewController(withIdentifier: "StartViewController") // Replace "InitialViewController" with the appropriate identifier
+
+            window.rootViewController = initialViewController
+        }
+        
+        window.makeKeyAndVisible()
+        NotificationCenter.default.addObserver(self, selector: #selector(showInitialViewController), name: .didSignOut, object: nil)
+
     }
+
 
     func sceneDidDisconnect(_ scene: UIScene) {
         // Called as the scene is being released by the system.
@@ -52,4 +92,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 
 }
+
+extension Notification.Name {
+    static let didSignOut = Notification.Name("didSignOut")
+}
+
 

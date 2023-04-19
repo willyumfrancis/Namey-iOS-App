@@ -15,13 +15,16 @@ class SettingsViewController: UIViewController {
 
     @IBAction func LogOutButton(_ sender: UIBarButtonItem) {
         let firebaseAuth = Auth.auth()
-        do {
-          try firebaseAuth.signOut()
-        } catch let signOutError as NSError {
-          print("Error signing out: %@", signOutError)
-        }
-        navigationController?.popToRootViewController(animated: true)
-    }
+           do {
+               try firebaseAuth.signOut()
+
+               // Notify the scene delegate to show the initial view controller
+               NotificationCenter.default.post(name: .didSignOut, object: nil)
+
+           } catch let signOutError as NSError {
+               print("Error signing out: %@", signOutError)
+           }
+       }
     
     override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
