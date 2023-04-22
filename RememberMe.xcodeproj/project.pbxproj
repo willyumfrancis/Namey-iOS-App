@@ -13,6 +13,8 @@
 		7545750C29C00848004242C5 /* PlacesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750B29C00848004242C5 /* PlacesViewController.swift */; };
 		7545750F29C00868004242C5 /* NamesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750E29C00868004242C5 /* NamesViewController.swift */; };
 		7545751129C0086F004242C5 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545751029C0086F004242C5 /* SettingsViewController.swift */; };
+		7579D8CF29F1F6A7003FEBA3 /* LocationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7579D8CD29F1F6A7003FEBA3 /* LocationCell.swift */; };
+		7579D8D029F1F6A7003FEBA3 /* LocationCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7579D8CE29F1F6A7003FEBA3 /* LocationCell.xib */; };
 		75A2588E29D21A1200A8D509 /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A2588D29D21A1200A8D509 /* Note.swift */; };
 		75A2589529D2380000A8D509 /* NoteCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A2589329D2380000A8D509 /* NoteCell.swift */; };
 		75A2589629D2380000A8D509 /* NoteCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 75A2589429D2380000A8D509 /* NoteCell.xib */; };
@@ -39,6 +41,8 @@
 		7545750B29C00848004242C5 /* PlacesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesViewController.swift; sourceTree = "<group>"; };
 		7545750E29C00868004242C5 /* NamesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NamesViewController.swift; sourceTree = "<group>"; };
 		7545751029C0086F004242C5 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
+		7579D8CD29F1F6A7003FEBA3 /* LocationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationCell.swift; sourceTree = "<group>"; };
+		7579D8CE29F1F6A7003FEBA3 /* LocationCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LocationCell.xib; sourceTree = "<group>"; };
 		75A2588D29D21A1200A8D509 /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
 		75A2589329D2380000A8D509 /* NoteCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteCell.swift; sourceTree = "<group>"; };
 		75A2589429D2380000A8D509 /* NoteCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NoteCell.xib; sourceTree = "<group>"; };
@@ -140,6 +144,8 @@
 				75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */,
 				75A2589329D2380000A8D509 /* NoteCell.swift */,
 				75A2589429D2380000A8D509 /* NoteCell.xib */,
+				7579D8CD29F1F6A7003FEBA3 /* LocationCell.swift */,
+				7579D8CE29F1F6A7003FEBA3 /* LocationCell.xib */,
 				75B69CD629BFEEE40049D4F5 /* SceneDelegate.swift */,
 				75B69CEB29BFF4FB0049D4F5 /* Controllers */,
 				75B69CDA29BFEEE40049D4F5 /* Main.storyboard */,
@@ -234,6 +240,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7579D8D029F1F6A7003FEBA3 /* LocationCell.xib in Resources */,
 				75A2589629D2380000A8D509 /* NoteCell.xib in Resources */,
 				75B69CE429BFEEE50049D4F5 /* LaunchScreen.storyboard in Resources */,
 				7502561829CE4A1C004FE87A /* GoogleService-Info.plist in Resources */,
@@ -297,6 +304,7 @@
 				75B69CD529BFEEE40049D4F5 /* AppDelegate.swift in Sources */,
 				7545751129C0086F004242C5 /* SettingsViewController.swift in Sources */,
 				75A2589529D2380000A8D509 /* NoteCell.swift in Sources */,
+				7579D8CF29F1F6A7003FEBA3 /* LocationCell.swift in Sources */,
 				7545750A29C00798004242C5 /* LogInViewController.swift in Sources */,
 				75F5D89529C63D2A00272A2F /* MenuController.swift in Sources */,
 				7545750F29C00868004242C5 /* NamesViewController.swift in Sources */,

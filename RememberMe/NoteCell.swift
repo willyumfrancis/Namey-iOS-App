@@ -33,6 +33,7 @@ class NoteCell: UITableViewCell {
 
            // Configure the view for the selected state
        }
+    
    }
 
 extension NoteCell: UITextFieldDelegate {

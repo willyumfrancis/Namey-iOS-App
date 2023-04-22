@@ -85,26 +85,45 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     //Save Name Button
-    @IBAction func SaveName(_ sender: UIButton) {
-        // Save a new note
-        if let location = locationManager.location?.coordinate {
-            guard let activeCell = activeNoteCell else {
-                print("Failed to get active cell")
-                return
+    @IBAction func SaveNote(_ sender: UIButton) {
+
+            if let location = locationManager.location?.coordinate {
+                guard let activeCell = activeNoteCell else {
+                    print("Failed to get active cell")
+                    return
+                }
+                let locationName = fetchLocationNameFor(location: location) ?? ""
+                let newNote = Note(id: UUID().uuidString, text: activeCell.noteTextField.text ?? "", location: location, locationName: locationName)
+
+                // Save the new note using the saveNoteToFirestore function
+                saveNoteToFirestore(noteText: newNote.text, location: newNote.location, locationName: newNote.locationName, imageURL: "") { success in
+                    if success {
+                        print("Note saved successfully")
+
+                        if let selectedNoteIndex = self.displayedNotes.firstIndex(where: { $0.id == self.selectedNote!.id }) {
+                            self.displayedNotes[selectedNoteIndex] = newNote
+                            self.selectedNote = newNote
+
+                            let indexPath = IndexPath(row: selectedNoteIndex, section: 0)
+                            self.tableView.reloadRows(at: [indexPath], with: .automatic)
+
+                            self.updateProgressBar()
+                            print("Loaded view after saving note")
+                        } else {
+                            print("Error updating note")
+                        }
+                    } else {
+                        print("Error saving note")
+                    }
+                }
+            } else {
+                print("Failed to get user's current location")
             }
-            let locationName = fetchLocationNameFor(location: location) ?? ""
-            let newNote = Note(id: UUID().uuidString, text: activeCell.noteTextField.text ?? "", location: location, locationName: locationName)
-            saveNote(note: newNote)
-            print("Saved Note Button Pressed")
-        } else {
-            print("Failed to get user's current location")
         }
-    }
-    
-    
+
     
     //Create New Name
-    @IBAction func NewName(_ sender: UIButton) {
+    @IBAction func NewNote(_ sender: UIButton) {
         if let currentLocation = self.currentLocation {
             let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: "")
             displayedNotes.append(newNote)
@@ -570,8 +589,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     func updateCurrentLocationAndFetchNotes() {
         locationManager.startUpdatingLocation()
         if let userLocation = locationManager.location?.coordinate {
-            // Load notes based on the updated location
-            //                loadNotes()
             
             // Update displayed notes based on the updated location
             updateDisplayedNotes()
@@ -601,9 +618,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             loadNotes {
                 self.displayImageForLocation(location: self.currentLocation!)
                 
-                //MAY HAVE FOUND REPEATED CALL.
-//                self.updateLocationNameLabel(location: self.currentLocation!)
-//                self.updateDisplayedNotes()
             }
         }
     }
@@ -677,6 +691,57 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     //MARK: - NOTES
+    
+    func updateNoteInFirestore(noteID: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
+        let noteRef = db.collection("notes").document(noteID)
+
+        let noteData: [String: Any] = [
+            "text": noteText,
+            "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
+            "locationName": locationName,
+            "imageURL": imageURL,
+            "timestamp": Timestamp(date: Date())
+        ]
+
+        noteRef.updateData(noteData) { error in
+            if let error = error {
+                print("There was an issue updating the note in Firestore: \(error)")
+                completion(false)
+            } else {
+                print("Note successfully updated in Firestore")
+                completion(true)
+            }
+        }
+    }
+
+    
+    func saveNoteToFirestore(noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            completion(false)
+            return
+        }
+        
+        let noteData: [String: Any] = [
+            "user": userEmail,
+            "note": noteText,
+            "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
+            "locationName": locationName,
+            "imageURL": imageURL,
+            "timestamp": Timestamp(date: Date())
+        ]
+        
+        db.collection("notes").addDocument(data: noteData) { error in
+            if let error = error {
+                print("Error saving note to Firestore: \(error)")
+                completion(false)
+            } else {
+                print("Note successfully saved to Firestore")
+                completion(true)
+            }
+        }
+    }
+
     
     //Filter Function
     func filterNotesByLocation(notes: [Note], currentLocation: CLLocationCoordinate2D, threshold: Double) -> [Note] {
@@ -759,17 +824,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                     }
                 }
             
-            // Add this line to update the image based on user's location
-            displayImageForLocation(location: userLocation)
-            notesLoaded = true // Set notesLoaded to true after the notes have been loaded and the image is updated based on user's location
+            notesLoaded = true // Set notesLoaded to true after the notes have been loaded
             
         } else {
             print("User email not found or user location not available yet")
         }
     }
 
-    
-    
     private func saveNote(note: Note, noteId: String? = nil) {
         if let userEmail = Auth.auth().currentUser?.email {
             let noteDictionary: [String: Any] = [
@@ -830,15 +891,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
 }
 
 
@@ -864,7 +916,7 @@ extension HomeViewController: UITableViewDataSource {
         let note = displayedNotes[indexPath.row]
         
         cell.noteTextField.attributedText = createAttributedString(from: note.text) // Set the attributed string here
-        //        cell.noteTextField.text = note.text
+        cell.noteTextField.delegate = cell // Set the delegate to NoteCell
         cell.noteLocation = note.location // Update the cell's noteLocation property
         cell.delegate = self
         
@@ -882,6 +934,7 @@ extension HomeViewController: UITableViewDataSource {
         
         return cell
     }
+
     
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
@@ -935,6 +988,8 @@ extension HomeViewController: NoteCellDelegate {
     
     
     
+    
+    //Must refactor and eliminate.
     func noteCellDidEndEditing(_ cell: NoteCell) {
         if let indexPath = tableView.indexPath(for: cell), indexPath.row < notes.count {
             let note = notes[indexPath.row]
@@ -951,5 +1006,4 @@ extension HomeViewController: NoteCellDelegate {
         cell.saveButtonPressed = false // Reset the flag
     }
 }
-
 
