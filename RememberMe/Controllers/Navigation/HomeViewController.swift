@@ -86,40 +86,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //Save Name Button
     @IBAction func SaveNote(_ sender: UIButton) {
-
-            if let location = locationManager.location?.coordinate {
-                guard let activeCell = activeNoteCell else {
-                    print("Failed to get active cell")
-                    return
-                }
-                let locationName = fetchLocationNameFor(location: location) ?? ""
-                let newNote = Note(id: UUID().uuidString, text: activeCell.noteTextField.text ?? "", location: location, locationName: locationName)
-
-                // Save the new note using the saveNoteToFirestore function
-                saveNoteToFirestore(noteText: newNote.text, location: newNote.location, locationName: newNote.locationName, imageURL: "") { success in
-                    if success {
-                        print("Note saved successfully")
-
-                        if let selectedNoteIndex = self.displayedNotes.firstIndex(where: { $0.id == self.selectedNote!.id }) {
-                            self.displayedNotes[selectedNoteIndex] = newNote
-                            self.selectedNote = newNote
-
-                            let indexPath = IndexPath(row: selectedNoteIndex, section: 0)
-                            self.tableView.reloadRows(at: [indexPath], with: .automatic)
-
-                            self.updateProgressBar()
-                            print("Loaded view after saving note")
-                        } else {
-                            print("Error updating note")
-                        }
-                    } else {
-                        print("Error saving note")
-                    }
-                }
-            } else {
-                print("Failed to get user's current location")
-            }
-        }
+        saveNote()
+    }
+    
+    // textFieldShouldReturn method
+    func noteCellTextFieldShouldReturn(_ textField: UITextField) {
+        saveNote() // Perform the same action as the "Save Note" button
+    }
+    
 
     
     //Create New Name
@@ -691,6 +665,42 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     //MARK: - NOTES
+    
+    // New function to save the note
+    func saveNote() {
+        if let location = locationManager.location?.coordinate {
+            guard let activeCell = activeNoteCell else {
+                print("Failed to get active cell")
+                return
+            }
+            let locationName = fetchLocationNameFor(location: location) ?? ""
+            let newNote = Note(id: UUID().uuidString, text: activeCell.noteTextField.text ?? "", location: location, locationName: locationName)
+
+            // Save the new note using the saveNoteToFirestore function
+            saveNoteToFirestore(noteText: newNote.text, location: newNote.location, locationName: newNote.locationName, imageURL: "") { success in
+                if success {
+                    print("Note saved successfully")
+
+                    if let selectedNoteIndex = self.displayedNotes.firstIndex(where: { $0.id == self.selectedNote!.id }) {
+                        self.displayedNotes[selectedNoteIndex] = newNote
+                        self.selectedNote = newNote
+
+                        let indexPath = IndexPath(row: selectedNoteIndex, section: 0)
+                        self.tableView.reloadRows(at: [indexPath], with: .automatic)
+
+                        self.updateProgressBar()
+                        print("Loaded view after saving note")
+                    } else {
+                        print("Error updating note")
+                    }
+                } else {
+                    print("Error saving note")
+                }
+            }
+        } else {
+            print("Failed to get user's current location")
+        }
+    }
     
     func updateNoteInFirestore(noteID: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
         let noteRef = db.collection("notes").document(noteID)

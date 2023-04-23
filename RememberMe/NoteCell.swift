@@ -9,13 +9,23 @@ import UIKit
 import CoreLocation
 
 protocol NoteCellDelegate: AnyObject {
+    func noteCellTextFieldShouldReturn(_ textField: UITextField)
     func noteCell(_ cell: NoteCell, didUpdateNote note: Note)
     func noteCellDidEndEditing(_ cell: NoteCell) // Add this line
 }
 
+weak var delegate: NoteCellDelegate?
+
+
 class NoteCell: UITableViewCell {
     
     var saveButtonPressed = false
+
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        delegate?.noteCellTextFieldShouldReturn(textField)
+        return true
+    }
 
     
     @IBOutlet weak var noteTextField: UITextField!
@@ -26,6 +36,7 @@ class NoteCell: UITableViewCell {
            super.awakeFromNib()
            noteTextField.delegate = self
            noteTextField.tintColor = .black
+           
        }
        
        override func setSelected(_ selected: Bool, animated: Bool) {
