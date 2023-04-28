@@ -23,52 +23,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "77A1D5BE-11D5-415B-A5C9-44F00A9123B8"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1039"
-            endingLineNumber = "1039">
-            <Locations>
-               <Location
-                  uuid = "77A1D5BE-11D5-415B-A5C9-44F00A9123B8 - 913391ce18a582cb"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "RememberMe.HomeViewController.noteCell(_: RememberMe.NoteCell, didUpdateNote: RememberMe.Note) -&gt; ()"
-                  moduleName = "RememberMe"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/williammisiaszek/%E3%82%B3%E3%83%BC%E3%83%88%E3%82%99/Namey/RememberMe/Controllers/Navigation/HomeViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "894"
-                  endingLineNumber = "894"
-                  offsetFromSymbolStart = "1344">
-               </Location>
-               <Location
-                  uuid = "77A1D5BE-11D5-415B-A5C9-44F00A9123B8 - ba7e08694f069f4d"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 (Swift.Optional&lt;Swift.Error&gt;) -&gt; () in RememberMe.HomeViewController.noteCell(_: RememberMe.NoteCell, didUpdateNote: RememberMe.Note) -&gt; ()"
-                  moduleName = "RememberMe"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/williammisiaszek/%E3%82%B3%E3%83%BC%E3%83%88%E3%82%99/Namey/RememberMe/Controllers/Navigation/HomeViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "900"
-                  endingLineNumber = "900"
-                  offsetFromSymbolStart = "292">
-               </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "D3131813-A5FB-4015-8886-D33B79F8D3DF"
             shouldBeEnabled = "No"
             ignoreCount = "0"
@@ -76,9 +30,9 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "471"
-            endingLineNumber = "471"
-            landmarkName = "uploadImage(image:location:locationName:completion:)"
+            startingLineNumber = "626"
+            endingLineNumber = "626"
+            landmarkName = "setupRoundedProgressBar()"
             landmarkType = "7">
             <Locations>
                <Location
@@ -124,9 +78,9 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "493"
-            endingLineNumber = "493"
-            landmarkName = "uploadImage(image:location:locationName:completion:)"
+            startingLineNumber = "648"
+            endingLineNumber = "648"
+            landmarkName = "resizeAndCrop(image:targetSize:)"
             landmarkType = "7">
             <Locations>
                <Location
@@ -172,9 +126,9 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "499"
-            endingLineNumber = "499"
-            landmarkName = "imagePickerController(_:didFinishPickingMediaWithInfo:)"
+            startingLineNumber = "654"
+            endingLineNumber = "654"
+            landmarkName = "resizeAndCrop(image:targetSize:)"
             landmarkType = "7">
             <Locations>
                <Location
@@ -220,10 +174,10 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "504"
-            endingLineNumber = "504"
-            landmarkName = "imagePickerController(_:didFinishPickingMediaWithInfo:)"
-            landmarkType = "7">
+            startingLineNumber = "659"
+            endingLineNumber = "659"
+            landmarkName = "HomeViewController"
+            landmarkType = "3">
             <Locations>
                <Location
                   uuid = "18F6BA4F-10A2-4B29-8461-EB93A6A8A54E - d94aef84b78e7fb9"
@@ -283,9 +237,25 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "500"
-            endingLineNumber = "500"
-            landmarkName = "imagePickerController(_:didFinishPickingMediaWithInfo:)"
+            startingLineNumber = "655"
+            endingLineNumber = "655"
+            landmarkName = "resizeAndCrop(image:targetSize:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "34D6DCD1-CD6B-48A0-87F2-DDE7839AE6EF"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
+            startingColumnNumber = "13"
+            endingColumnNumber = "32"
+            startingLineNumber = "415"
+            endingLineNumber = "415"
+            landmarkName = "displayImageForLocation(location:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

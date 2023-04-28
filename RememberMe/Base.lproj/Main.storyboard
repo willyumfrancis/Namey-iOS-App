@@ -258,10 +258,10 @@
                         <viewLayoutGuide key="safeArea" id="XyK-48-Y4p"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="flH-qH-l4W" firstAttribute="top" secondItem="XyK-48-Y4p" secondAttribute="top" constant="81" id="038-cg-lBL"/>
-                            <constraint firstItem="flH-qH-l4W" firstAttribute="leading" secondItem="XyK-48-Y4p" secondAttribute="leading" constant="45" id="0pp-Td-HUc"/>
-                            <constraint firstItem="flH-qH-l4W" firstAttribute="centerX" secondItem="XW2-qi-g7n" secondAttribute="centerX" id="5Cc-d2-ITS"/>
-                            <constraint firstItem="flH-qH-l4W" firstAttribute="centerY" secondItem="XW2-qi-g7n" secondAttribute="centerY" id="n6B-Cb-vUK"/>
+                            <constraint firstItem="flH-qH-l4W" firstAttribute="top" secondItem="XyK-48-Y4p" secondAttribute="top" constant="81" id="2T9-9w-EGP"/>
+                            <constraint firstItem="flH-qH-l4W" firstAttribute="leading" secondItem="XyK-48-Y4p" secondAttribute="leading" constant="45" id="Amu-qh-BGc"/>
+                            <constraint firstItem="flH-qH-l4W" firstAttribute="centerX" secondItem="XW2-qi-g7n" secondAttribute="centerX" id="B4v-wI-aat"/>
+                            <constraint firstItem="flH-qH-l4W" firstAttribute="centerY" secondItem="XW2-qi-g7n" secondAttribute="centerY" id="SIT-Z9-E6B"/>
                         </constraints>
                     </view>
                     <tabBarItem key="tabBarItem" title="Places" image="building.2.fill" catalog="system" id="WL0-EW-oAH"/>
