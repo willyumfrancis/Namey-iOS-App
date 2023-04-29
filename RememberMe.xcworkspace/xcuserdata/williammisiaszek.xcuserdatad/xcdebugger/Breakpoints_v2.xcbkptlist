@@ -14,8 +14,8 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "86"
-            endingLineNumber = "86"
+            startingLineNumber = "87"
+            endingLineNumber = "87"
             landmarkName = "HomeViewController"
             landmarkType = "3">
          </BreakpointContent>
@@ -30,9 +30,9 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "626"
-            endingLineNumber = "626"
-            landmarkName = "setupRoundedProgressBar()"
+            startingLineNumber = "621"
+            endingLineNumber = "621"
+            landmarkName = "setupRoundedImageView()"
             landmarkType = "7">
             <Locations>
                <Location
@@ -78,8 +78,8 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "648"
-            endingLineNumber = "648"
+            startingLineNumber = "643"
+            endingLineNumber = "643"
             landmarkName = "resizeAndCrop(image:targetSize:)"
             landmarkType = "7">
             <Locations>
@@ -126,8 +126,8 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "654"
-            endingLineNumber = "654"
+            startingLineNumber = "649"
+            endingLineNumber = "649"
             landmarkName = "resizeAndCrop(image:targetSize:)"
             landmarkType = "7">
             <Locations>
@@ -174,10 +174,10 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "659"
-            endingLineNumber = "659"
-            landmarkName = "HomeViewController"
-            landmarkType = "3">
+            startingLineNumber = "654"
+            endingLineNumber = "654"
+            landmarkName = "resizeAndCrop(image:targetSize:)"
+            landmarkType = "7">
             <Locations>
                <Location
                   uuid = "18F6BA4F-10A2-4B29-8461-EB93A6A8A54E - d94aef84b78e7fb9"
@@ -237,8 +237,8 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "655"
-            endingLineNumber = "655"
+            startingLineNumber = "650"
+            endingLineNumber = "650"
             landmarkName = "resizeAndCrop(image:targetSize:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -252,9 +252,9 @@
             continueAfterRunningActions = "No"
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "13"
-            endingColumnNumber = "32"
-            startingLineNumber = "415"
-            endingLineNumber = "415"
+            endingColumnNumber = "13"
+            startingLineNumber = "403"
+            endingLineNumber = "403"
             landmarkName = "displayImageForLocation(location:)"
             landmarkType = "7">
          </BreakpointContent>

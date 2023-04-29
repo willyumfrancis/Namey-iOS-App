@@ -24,7 +24,8 @@ import SDWebImage
 
 
 
-class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate {
+    
     
     //MARK: - OUTLETS
     @IBOutlet weak var tableView: UITableView!
@@ -139,6 +140,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
         locationManager.delegate = self
 
+        tableView.dragDelegate = self
+                tableView.dropDelegate = self
+                tableView.dragInteractionEnabled = true
         
         
         //Apparance of App//
@@ -175,7 +179,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         if let range = noteText.range(of: " - ") {
             let boldRange = NSRange(noteText.startIndex..<range.lowerBound, in: noteText)
-            attributedString.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 17), range: boldRange)
+            attributedString.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 20), range: boldRange)
         }
         
         return attributedString
@@ -301,26 +305,30 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //SAVEIMAGE
     func saveImageToFirestore(image: UIImage, location: CLLocationCoordinate2D, locationName: String) {
-        print("Saving image to Firestore: \(image)")
-
+        // Upload the image and get the download URL
         uploadImage(image: image, location: location, locationName: locationName) { result in
             switch result {
             case .success(let imageURL):
-                print("Image successfully uploaded, URL: \(imageURL)")
-                
-                // Update location name for notes
-                self.updateNotesLocationName(location: location, newLocationName: locationName) { updatedNotes in
-                    self.notes.removeAll() // Clear the notes array
-                    self.notes = updatedNotes
-                    self.locationNameLabel.text = locationName
-                    self.tableView.reloadData() // Reload the tableView to reflect the changes
+                // Save the new note using the saveNoteToFirestore function
+                self.saveNoteToFirestore(noteText: "", location: location, locationName: locationName, imageURL: imageURL.absoluteString) { success in
+                    if success {
+                        print("Note saved successfully")
+                        
+                        // Update the locationName label on the main thread
+                        DispatchQueue.main.async {
+                            self.locationNameLabel.text = locationName
+                        }
+                        
+                    } else {
+                        print("Error saving note")
+                    }
                 }
-                
             case .failure(let error):
                 print("Error uploading image: \(error)")
             }
         }
     }
+
     
     
     
@@ -681,7 +689,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 if success {
                     print("Note saved successfully")
 
-                    if let selectedNoteIndex = self.displayedNotes.firstIndex(where: { $0.id == self.selectedNote!.id }) {
+                    if let selectedNote = self.selectedNote,
+                       let selectedNoteIndex = self.displayedNotes.firstIndex(where: { $0.id == selectedNote.id }) {
                         self.displayedNotes[selectedNoteIndex] = newNote
                         self.selectedNote = newNote
 
@@ -697,11 +706,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                     print("Error saving note")
                 }
             }
-        } else {
-            print("Failed to get user's current location")
-        }
-    }
-    
+            } else {
+                print("Failed to get user's current location")
+            }
+            }
+
     func updateNoteInFirestore(noteID: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
         let noteRef = db.collection("notes").document(noteID)
 
@@ -906,6 +915,48 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
 
 //MARK: - EXTENSIONS
+
+extension HomeViewController {
+    
+    // UITableViewDragDelegate
+    func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
+        let draggedNote = displayedNotes[indexPath.row]
+        let itemProvider = NSItemProvider(object: draggedNote.text as NSString)
+        let dragItem = UIDragItem(itemProvider: itemProvider)
+        dragItem.localObject = draggedNote
+        return [dragItem]
+    }
+    
+    // UITableViewDropDelegate
+    func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
+        let destinationIndexPath: IndexPath
+        if let indexPath = coordinator.destinationIndexPath {
+            destinationIndexPath = indexPath
+        } else {
+            let row = tableView.numberOfRows(inSection: 0)
+            destinationIndexPath = IndexPath(row: row, section: 0)
+        }
+        
+        coordinator.session.loadObjects(ofClass: NSString.self) { items in
+            guard let noteText = items.first as? String else { return }
+            if let sourceIndexPath = coordinator.items.first?.sourceIndexPath {
+                tableView.performBatchUpdates({
+                    let draggedNote = self.displayedNotes.remove(at: sourceIndexPath.row)
+                    self.displayedNotes.insert(draggedNote, at: destinationIndexPath.row)
+                    tableView.deleteRows(at: [sourceIndexPath], with: .automatic)
+                    tableView.insertRows(at: [destinationIndexPath], with: .automatic)
+                }, completion: nil)
+            }
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
+        if tableView.hasActiveDrag {
+            return UITableViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+        }
+        return UITableViewDropProposal(operation: .forbidden)
+    }
+}
 
 extension UITableView {
     var indexPathForLastRow: IndexPath? {
