@@ -14,9 +14,10 @@ class LocationCell: UITableViewCell {
     
     
     
-    override func awakeFromNib() {
+     override func awakeFromNib() {
         super.awakeFromNib()
         // Initialization code
+        locationImageView.contentMode = .scaleAspectFit
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {
@@ -26,3 +27,4 @@ class LocationCell: UITableViewCell {
     }
     
 }
+
