@@ -81,19 +81,22 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
         print("Location Button Pressed")
-        updateCurrentLocationAndFetchNotes()
+        // Update displayed notes based on the updated location
+        updateDisplayedNotes()
         
-    }
+        
+        // You need to get the user's current location here and pass it to the function as a CLLocationCoordinate2D instance
+        if let userLocation = locationManager.location {
+            displayImageForLocation(location: userLocation.coordinate)
+        } else {
+            print("Unable to get user's current location")
+        }    }
     
     //Save Name Button
     @IBAction func SaveNote(_ sender: UIButton) {
         saveNote()
     }
     
-    // textFieldShouldReturn method
-    func noteCellTextFieldShouldReturn(_ textField: UITextField) {
-        saveNote() // Perform the same action as the "Save Note" button
-    }
     
 
     
@@ -124,6 +127,26 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //MARK: - APPEARANCE
     
+    private func setupRoundedProgressBar() {
+        // Apply corner radius
+        Progressbar?.layer.cornerRadius = 8
+        Progressbar?.clipsToBounds = true
+        
+        // Customize the progress tint and track color
+        let progressTintColor = UIColor(red: 0.50, green: 0.23, blue: 0.27, alpha: 0.50)
+        Progressbar?.progressTintColor = progressTintColor
+        Progressbar?.trackTintColor = progressTintColor.withAlphaComponent(0.2)
+        
+        // Set the progress bar height
+        let height: CGFloat = 16
+        if let progressBarHeight = Progressbar?.frame.height {
+            let transform = CGAffineTransform(scaleX: 1.0, y: height / progressBarHeight)
+            Progressbar?.transform = transform
+        }
+        
+    }
+    
+    
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -136,7 +159,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        NotificationCenter.default.addObserver(self, selector: #selector(updateLocationWhenAppIsActive), name: UIApplication.willEnterForegroundNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(updateLocationWhenAppIsActive), name: UIApplication.didBecomeActiveNotification, object: nil)
+
 
         locationManager.delegate = self
 
@@ -179,7 +203,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         if let range = noteText.range(of: " - ") {
             let boldRange = NSRange(noteText.startIndex..<range.lowerBound, in: noteText)
-            attributedString.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 20), range: boldRange)
+            attributedString.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 19), range: boldRange)
         }
         
         return attributedString
@@ -235,14 +259,25 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //MARK: - POP-UPS
     
-    @objc func appBecameActive() {
-        // Update location and fetch notes
-        updateCurrentLocationAndFetchNotes()
-    }
+    
     
     @objc func updateLocationWhenAppIsActive() {
         locationManager.startUpdatingLocation()
+
+        if let userLocation = locationManager.location {
+            let locationName = fetchLocationNameFor(location: userLocation.coordinate)
+            if let locationName = locationName {
+                // Use the location name
+                print("Location name: \(locationName)")
+            } else {
+                // Use the placeholder text
+                print("Some Spot")
+            }
+        } else {
+            print("Unable to get user's current location")
+        }
     }
+
 
     @objc func goalButtonTapped() {
         let alertController = UIAlertController(title: "Set Goal", message: "\n\n\n\n\n", preferredStyle: .alert)
@@ -566,21 +601,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         present(alertController, animated: true, completion: nil)
     }
     
-    
-    //Update Location via Button Function
-    func updateCurrentLocationAndFetchNotes() {
-        locationManager.startUpdatingLocation()
-        if let userLocation = locationManager.location?.coordinate {
-            
-            // Update displayed notes based on the updated location
-            updateDisplayedNotes()
-            
-            // Update the image based on the updated location
-            displayImageForLocation(location: userLocation)
-        } else {
-            print("User location not available yet")
-        }
-    }
+
     
     
     //Location Manager
@@ -613,30 +634,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         CurrentPlace?.clipsToBounds = true
         
         // Apply border
-        CurrentPlace?.layer.borderWidth = 1
+        CurrentPlace?.layer.borderWidth = 2
         CurrentPlace?.layer.borderColor = UIColor.black.cgColor
         
         // Apply background color
         CurrentPlace?.backgroundColor = UIColor(red: 0.50, green: 0.23, blue: 0.27, alpha: 0.50)
-    }
-    
-    private func setupRoundedProgressBar() {
-        // Apply corner radius
-        Progressbar?.layer.cornerRadius = 8
-        Progressbar?.clipsToBounds = true
-        
-        // Customize the progress tint and track color
-        let progressTintColor = UIColor(red: 0.50, green: 0.23, blue: 0.27, alpha: 0.50)
-        Progressbar?.progressTintColor = progressTintColor
-        Progressbar?.trackTintColor = progressTintColor.withAlphaComponent(0.2)
-        
-        // Set the progress bar height
-        let height: CGFloat = 16
-        if let progressBarHeight = Progressbar?.frame.height {
-            let transform = CGAffineTransform(scaleX: 1.0, y: height / progressBarHeight)
-            Progressbar?.transform = transform
-        }
-        
     }
     
     //Resize and Crop Local Image
@@ -673,6 +675,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     //MARK: - NOTES
+    
+    // textFieldShouldReturn method
+    func noteCellTextFieldShouldReturn(_ textField: UITextField) {
+        saveNote() // Perform the same action as the "Save Note" button
+    }
     
     // New function to save the note
     func saveNote() {
@@ -850,48 +857,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
 
-    private func saveNote(note: Note, noteId: String? = nil) {
-        if let userEmail = Auth.auth().currentUser?.email {
-            let noteDictionary: [String: Any] = [
-                "note": note.text,
-                "location": GeoPoint(latitude: note.location.latitude, longitude: note.location.longitude),
-                "locationName": note.locationName,
-                "user": userEmail,
-                "timestamp": FieldValue.serverTimestamp()
-            ]
-            
-            if let noteId = noteId {
-                // Update the existing note
-                db.collection("notes").document(noteId).updateData(noteDictionary) { error in
-                    if let e = error {
-                        print("There was an issue updating data to Firestore: \(e)")
-                    } else {
-                        print("Note successfully updated in Firestore")
-                    }
-                }
-            } else {
-                // Add a new note
-                db.collection("notes").addDocument(data: noteDictionary) { error in
-                    if let e = error {
-                        print("There was an issue saving data to Firestore: \(e)")
-                    } else {
-                        print("Note successfully saved to Firestore")
-                        DispatchQueue.main.async {
-                            // Add the new note to the displayedNotes array
-                            self.displayedNotes.append(note)
-                            let indexPath = IndexPath(row: self.displayedNotes.count - 1, section: 0)
-                            self.tableView.insertRows(at: [indexPath], with: .automatic)
-                            self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
-                            self.updateProgressBar()
-                            print("Loaded view after saving note")
-                        }
-                    }
-                }
-            }
-        } else {
-            print("User email not found")
-        }
-    }
 
 
     func fetchLocationNameFor(location: CLLocationCoordinate2D) -> String? {
@@ -913,8 +878,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 }
 
 
-
-//MARK: - EXTENSIONS
 
 extension HomeViewController {
     
@@ -971,17 +934,15 @@ extension HomeViewController: UITableViewDataSource {
         return displayedNotes.count
     }
     
-    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "NoteCell", for: indexPath) as! NoteCell
         let note = displayedNotes[indexPath.row]
         
-        cell.noteTextField.attributedText = createAttributedString(from: note.text) // Set the attributed string here
-        cell.noteTextField.delegate = cell // Set the delegate to NoteCell
-        cell.noteLocation = note.location // Update the cell's noteLocation property
+        cell.noteTextField.attributedText = createAttributedString(from: note.text)
+        cell.noteTextField.delegate = cell
+        cell.noteLocation = note.location
         cell.delegate = self
         
-        // Apply the drop-down animation
         cell.transform = CGAffineTransform(translationX: 0, y: tableView.bounds.size.height)
         UIView.animate(withDuration: 0.5,
                        delay: 0.05 * Double(indexPath.row),
@@ -995,8 +956,6 @@ extension HomeViewController: UITableViewDataSource {
         
         return cell
     }
-
-    
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
@@ -1018,7 +977,6 @@ extension HomeViewController: UITableViewDataSource {
     }
 }
 
-
 extension HomeViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
@@ -1026,13 +984,15 @@ extension HomeViewController: UITableViewDelegate {
     }
 }
 
-
-
 extension HomeViewController: NoteCellDelegate {
+    func noteCellTextFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+
     func noteCell(_ cell: NoteCell, didUpdateNote note: Note) {
         if let indexPath = tableView.indexPath(for: cell) {
             notes[indexPath.row] = note
-            // Update the note in Firestore directly
             db.collection("notes").document(note.id).updateData([
                 "note": note.text,
                 "location": GeoPoint(latitude: note.location.latitude, longitude: note.location.longitude),
@@ -1046,25 +1006,18 @@ extension HomeViewController: NoteCellDelegate {
             }
         }
     }
-    
-    
-    
-    
-    //Must refactor and eliminate.
+
     func noteCellDidEndEditing(_ cell: NoteCell) {
         if let indexPath = tableView.indexPath(for: cell), indexPath.row < notes.count {
             let note = notes[indexPath.row]
             if cell.noteTextField.text != note.text {
-                let updatedNote = Note(id: note.id, text: cell.noteTextField.text!, location: note.location, locationName: note.locationName) // Include the imageURL parameter
+                let updatedNote = Note(id: note.id, text: cell.noteTextField.text!, location: note.location, locationName: note.locationName)
                 notes[indexPath.row] = updatedNote
-                if cell.saveButtonPressed { // Add this condition
-                    saveNote(note: updatedNote)
+                if cell.saveButtonPressed {
                     print("Auto-Saved to Cloud")
                 }
             }
-            
         }
-        cell.saveButtonPressed = false // Reset the flag
+        cell.saveButtonPressed = false
     }
 }
-

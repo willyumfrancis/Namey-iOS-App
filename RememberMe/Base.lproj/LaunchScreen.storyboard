@@ -21,33 +21,33 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Made for SF ❤️" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="h5Q-eT-V40">
-                                <rect key="frame" x="99" y="240" width="195" height="45"/>
-                                <fontDescription key="fontDescription" name="Roboto-Bold" family="Roboto" pointSize="29"/>
-                                <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <nil key="highlightedColor"/>
-                            </label>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="jellydev" adjustsImageSizeForAccessibilityContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="dj9-2G-gBd">
                                 <rect key="frame" x="75" y="283" width="243" height="286"/>
                             </imageView>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Signature" translatesAutoresizingMaskIntoConstraints="NO" id="aZy-U0-D7Q">
-                                <rect key="frame" x="238" y="-220" width="56" height="1575"/>
+                                <rect key="frame" x="35" y="34" width="56" height="1575"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="1575" id="PFZ-YT-cpC"/>
                                 </constraints>
                             </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Made for SF ❤️" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="h5Q-eT-V40">
+                                <rect key="frame" x="99" y="217" width="195" height="45"/>
+                                <fontDescription key="fontDescription" name="Roboto-Bold" family="Roboto" pointSize="29"/>
+                                <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
-                            <constraint firstItem="h5Q-eT-V40" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="181" id="1s9-y4-hyZ"/>
-                            <constraint firstItem="dj9-2G-gBd" firstAttribute="top" secondItem="h5Q-eT-V40" secondAttribute="bottom" constant="-2" id="5jw-Iq-NHi"/>
-                            <constraint firstItem="aZy-U0-D7Q" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="topMargin" constant="-279" id="6wz-Ip-qrp"/>
+                            <constraint firstItem="h5Q-eT-V40" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="158" id="1s9-y4-hyZ"/>
+                            <constraint firstItem="dj9-2G-gBd" firstAttribute="top" secondItem="h5Q-eT-V40" secondAttribute="bottom" constant="21" id="5jw-Iq-NHi"/>
+                            <constraint firstItem="aZy-U0-D7Q" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="topMargin" constant="-25" id="6wz-Ip-qrp"/>
                             <constraint firstItem="h5Q-eT-V40" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Emx-Ld-3qh"/>
                             <constraint firstItem="dj9-2G-gBd" firstAttribute="centerX" secondItem="h5Q-eT-V40" secondAttribute="centerX" id="IoL-Pk-OCK"/>
                             <constraint firstItem="dj9-2G-gBd" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="Mpg-nm-neM"/>
-                            <constraint firstItem="aZy-U0-D7Q" firstAttribute="trailing" secondItem="Ze5-6b-2t3" secondAttribute="trailingMargin" constant="-83" id="Pjj-wk-bOL"/>
-                            <constraint firstItem="aZy-U0-D7Q" firstAttribute="leading" secondItem="h5Q-eT-V40" secondAttribute="trailing" constant="-56" id="TRF-9j-T0M"/>
+                            <constraint firstItem="aZy-U0-D7Q" firstAttribute="trailing" secondItem="Ze5-6b-2t3" secondAttribute="trailingMargin" constant="-286" id="Pjj-wk-bOL"/>
+                            <constraint firstItem="aZy-U0-D7Q" firstAttribute="leading" secondItem="h5Q-eT-V40" secondAttribute="trailing" constant="-259" id="TRF-9j-T0M"/>
                             <constraint firstItem="dj9-2G-gBd" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="75" id="W7R-dh-2h8"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="dj9-2G-gBd" secondAttribute="bottom" constant="249" id="Zg0-1f-uqR"/>
                         </constraints>
