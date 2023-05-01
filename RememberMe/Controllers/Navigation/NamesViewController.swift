@@ -83,10 +83,27 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
                 }
         }
     }
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+            if editingStyle == .delete {
+                let noteToDelete = names[indexPath.row]
+                names.remove(at: indexPath.row)
+                tableView.deleteRows(at: [indexPath], with: .fade)
+                let noteID = noteToDelete.id
+                db.collection("notes").document(noteID).delete { error in
+                    if let e = error {
+                        print("There was an issue deleting the note: \(e)")
+                    } else {
+                        print("Note deleted successfully.")
+                    }
+                }
+            }
+        }
+    }
 
     
   
-  }
+
 
   // MARK: - UITableViewDataSource
   extension NamesViewController: UITableViewDataSource {
@@ -110,13 +127,13 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
   }
 
   // MARK: - UITableViewDelegate
-  extension NamesViewController: UITableViewDelegate {
-      func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-          tableView.deselectRow(at: indexPath, animated: true)
-          
-          // Perform any action when a name is selected, if needed
-      }
-  }
+extension NamesViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        // Perform any action when a name is selected, if needed
+    }
+}
 
 // In NamesViewController.swift
 extension NamesViewController: NoteCellDelegate {
