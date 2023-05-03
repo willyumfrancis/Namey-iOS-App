@@ -80,17 +80,20 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
-        print("Location Button Pressed")
-        // Update displayed notes based on the updated location
-        updateDisplayedNotes()
-        
-        
-        // You need to get the user's current location here and pass it to the function as a CLLocationCoordinate2D instance
-        if let userLocation = locationManager.location {
-            displayImageForLocation(location: userLocation.coordinate)
-        } else {
-            print("Unable to get user's current location")
-        }    }
+            print("Location Button Pressed")
+            // Update displayed notes based on the updated location
+            updateDisplayedNotes()
+
+            // You need to get the user's current location here and pass it to the function as a CLLocationCoordinate2D instance
+            if let userLocation = locationManager.location {
+                displayImageForLocation(location: userLocation.coordinate)
+                // Call the updateLocationNameLabel function with the user's current location
+                updateLocationNameLabel(location: userLocation.coordinate)
+            } else {
+                print("Unable to get user's current location")
+            }
+        }
+
     
     //Save Name Button
     @IBAction func SaveNote(_ sender: UIButton) {
@@ -369,7 +372,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //Updates the locationName of the notes that are within a certain distance.
     func updateNotesLocationName(location: CLLocationCoordinate2D, newLocationName: String, completion: @escaping ([Note]) -> Void) {
-        let maxDistance: CLLocationDistance = 100 // Adjust this value according to your requirements
+        let maxDistance: CLLocationDistance = 50 // Adjust this value according to your requirements
         _ = GeoPoint(latitude: location.latitude, longitude: location.longitude)
         
         if let userEmail = Auth.auth().currentUser?.email {
@@ -860,7 +863,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
 
     func fetchLocationNameFor(location: CLLocationCoordinate2D) -> String? {
-        let radius: CLLocationDistance = 100 // The radius in meters to consider notes as nearby
+        let radius: CLLocationDistance = 50 // The radius in meters to consider notes as nearby
         let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
         
         for note in self.notes {
