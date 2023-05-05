@@ -49,11 +49,12 @@ extension NoteCell: UITextFieldDelegate {
     
 
     func textFieldDidEndEditing(_ textField: UITextField) {
-        if let noteText = textField.text, let location = noteLocation {
+        if let noteText = textField.text, let location = noteLocation, !noteId.isEmpty {
             let updatedNote = Note(id: noteId, text: noteText, location: location, locationName: "")
             delegate?.noteCell(self, didUpdateNote: updatedNote)
         }
         delegate?.noteCellDidEndEditing(self)
     }
+
 
 }

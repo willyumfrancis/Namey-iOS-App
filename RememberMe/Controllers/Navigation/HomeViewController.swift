@@ -18,7 +18,7 @@ import MobileCoreServices
 import FirebaseStorage
 import SDWebImage
 
-// UpdateDisplayedNotes is the filtered notes function that works based on geolocation
+// loadNotes is the filtered notes function that works based on geolocation
 //
 
 
@@ -80,19 +80,20 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
-            print("Location Button Pressed")
-            // Update displayed notes based on the updated location
-            updateDisplayedNotes()
+        print("Location Button Pressed")
+           // Update displayed notes based on the updated location
+           loadNotes()
+        animateTableViewCells()
 
-            // You need to get the user's current location here and pass it to the function as a CLLocationCoordinate2D instance
-            if let userLocation = locationManager.location {
-                displayImageForLocation(location: userLocation.coordinate)
-                // Call the updateLocationNameLabel function with the user's current location
-                updateLocationNameLabel(location: userLocation.coordinate)
-            } else {
-                print("Unable to get user's current location")
-            }
-        }
+           // You need to get the user's current location here and pass it to the function as a CLLocationCoordinate2D instance
+           if let userLocation = locationManager.location {
+               displayImageForLocation(location: userLocation.coordinate)
+               // Call the updateLocationNameLabel function with the user's current location
+               updateLocationNameLabel(location: userLocation.coordinate)
+           } else {
+               print("Unable to get user's current location")
+           }
+       }
 
     
     //Save Name Button
@@ -262,6 +263,30 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //MARK: - POP-UPS
     
+    func animateTableViewCells() {
+        let cells = tableView.visibleCells
+        let tableViewHeight = tableView.bounds.size.height
+
+        for cell in cells {
+            cell.transform = CGAffineTransform(translationX: 0, y: tableViewHeight)
+        }
+
+        var delayCounter = 0
+        for cell in cells {
+            UIView.animate(withDuration: 0.5,
+                           delay: 0.05 * Double(delayCounter),
+                           usingSpringWithDamping: 0.8,
+                           initialSpringVelocity: 0,
+                           options: .curveEaseInOut,
+                           animations: {
+                cell.transform = CGAffineTransform.identity
+            },
+                           completion: nil)
+            delayCounter += 1
+        }
+    }
+
+    
     
     
     @objc func updateLocationWhenAppIsActive() {
@@ -347,32 +372,33 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         uploadImage(image: image, location: location, locationName: locationName) { result in
             switch result {
             case .success(let imageURL):
-                // Save the new note using the saveNoteToFirestore function
-                self.saveNoteToFirestore(noteText: "", location: location, locationName: locationName, imageURL: imageURL.absoluteString) { success in
-                    if success {
-                        print("Note saved successfully")
-                        
-                        // Update the locationName label on the main thread
-                        DispatchQueue.main.async {
-                            self.locationNameLabel.text = locationName
-                        }
-                        
-                    } else {
-                        print("Error saving note")
-                    }
+                // Save the new note using the saveNote function
+                guard let activeCell = self.activeNoteCell else {
+                    print("Failed to get active cell")
+                    return
                 }
+                activeCell.noteTextField.text = ""
+                self.selectedNote = nil
+                self.saveNote()
+                
+                // Update the locationName label on the main thread
+                DispatchQueue.main.async {
+                    self.locationNameLabel.text = locationName
+                }
+                
             case .failure(let error):
                 print("Error uploading image: \(error)")
             }
         }
     }
 
+
     
     
     
     //Updates the locationName of the notes that are within a certain distance.
     func updateNotesLocationName(location: CLLocationCoordinate2D, newLocationName: String, completion: @escaping ([Note]) -> Void) {
-        let maxDistance: CLLocationDistance = 50 // Adjust this value according to your requirements
+        let maxDistance: CLLocationDistance = 30 // Adjust this value according to your requirements
         _ = GeoPoint(latitude: location.latitude, longitude: location.longitude)
         
         if let userEmail = Auth.auth().currentUser?.email {
@@ -429,7 +455,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     // Display Image
     func displayImageForLocation(location: CLLocationCoordinate2D) {
-        let maxDistance: CLLocationDistance = 100
+        let maxDistance: CLLocationDistance = 30
         let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
         
         if let userEmail = Auth.auth().currentUser?.email {
@@ -621,10 +647,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("User's location: \(location)")
             locationManager.stopUpdatingLocation()
 
-            loadNotes {
-                self.displayImageForLocation(location: self.currentLocation!)
+            loadNotes()
+            self.displayImageForLocation(location: self.currentLocation!)
                 
-            }
+            
         }
     }
 
@@ -685,91 +711,101 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     // New function to save the note
-    func saveNote() {
-        if let location = locationManager.location?.coordinate {
-            guard let activeCell = activeNoteCell else {
-                print("Failed to get active cell")
-                return
-            }
-            let locationName = fetchLocationNameFor(location: location) ?? ""
-            let newNote = Note(id: UUID().uuidString, text: activeCell.noteTextField.text ?? "", location: location, locationName: locationName)
+        func saveNote() {
+            if let location = locationManager.location?.coordinate {
+                guard let activeCell = activeNoteCell else {
+                    print("Failed to get active cell")
+                    return
+                }
+                let locationName = fetchLocationNameFor(location: location) ?? ""
+                let newNote = Note(id: UUID().uuidString, text: activeCell.noteTextField.text ?? "", location: location, locationName: locationName)
 
-            // Save the new note using the saveNoteToFirestore function
-            saveNoteToFirestore(noteText: newNote.text, location: newNote.location, locationName: newNote.locationName, imageURL: "") { success in
-                if success {
-                    print("Note saved successfully")
+                // Save the new note using the saveNoteToFirestore function
+                saveNoteToFirestore(noteText: newNote.text, location: newNote.location, locationName: newNote.locationName, imageURL: "") { success in
+                    if success {
+                        print("Note saved successfully")
 
-                    if let selectedNote = self.selectedNote,
-                       let selectedNoteIndex = self.displayedNotes.firstIndex(where: { $0.id == selectedNote.id }) {
-                        self.displayedNotes[selectedNoteIndex] = newNote
-                        self.selectedNote = newNote
+                        if let selectedNote = self.selectedNote,
+                           let selectedNoteIndex = self.displayedNotes.firstIndex(where: { $0.id == selectedNote.id }) {
+                            self.displayedNotes[selectedNoteIndex] = newNote
+                            self.selectedNote = newNote
 
-                        let indexPath = IndexPath(row: selectedNoteIndex, section: 0)
-                        self.tableView.reloadRows(at: [indexPath], with: .automatic)
+                            let indexPath = IndexPath(row: selectedNoteIndex, section: 0)
+                            self.tableView.reloadRows(at: [indexPath], with: .automatic)
 
-                        self.updateProgressBar()
-                        print("Loaded view after saving note")
+                            self.updateProgressBar()
+                            print("Loaded view after saving note")
+                        } else {
+                            print("Error updating note")
+                        }
                     } else {
-                        print("Error updating note")
+                        print("Error saving note")
                     }
+                }
                 } else {
-                    print("Error saving note")
+                    print("Failed to get user's current location")
+                }
+                }
+
+        func updateNoteInFirestore(noteID: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
+            let noteRef = db.collection("notes").document(noteID)
+
+            let noteData: [String: Any] = [
+                "text": noteText,
+                "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
+                "locationName": locationName,
+                "imageURL": imageURL,
+                "timestamp": Timestamp(date: Date())
+            ]
+
+            noteRef.updateData(noteData) { error in
+                if let error = error {
+                    print("There was an issue updating the note in Firestore: \(error)")
+                    completion(false)
+                } else {
+                    print("Note successfully updated in Firestore")
+                    completion(true)
                 }
             }
-            } else {
-                print("Failed to get user's current location")
-            }
-            }
-
-    func updateNoteInFirestore(noteID: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
-        let noteRef = db.collection("notes").document(noteID)
-
-        let noteData: [String: Any] = [
-            "text": noteText,
-            "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
-            "locationName": locationName,
-            "imageURL": imageURL,
-            "timestamp": Timestamp(date: Date())
-        ]
-
-        noteRef.updateData(noteData) { error in
-            if let error = error {
-                print("There was an issue updating the note in Firestore: \(error)")
-                completion(false)
-            } else {
-                print("Note successfully updated in Firestore")
-                completion(true)
-            }
         }
-    }
 
     
     func saveNoteToFirestore(noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User email not found")
-            completion(false)
-            return
-        }
-        
-        let noteData: [String: Any] = [
-            "user": userEmail,
-            "note": noteText,
-            "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
-            "locationName": locationName,
-            "imageURL": imageURL,
-            "timestamp": Timestamp(date: Date())
-        ]
-        
-        db.collection("notes").addDocument(data: noteData) { error in
-            if let error = error {
-                print("Error saving note to Firestore: \(error)")
-                completion(false)
-            } else {
-                print("Note successfully saved to Firestore")
-                completion(true)
-            }
-        }
-    }
+          guard let userEmail = Auth.auth().currentUser?.email else {
+              print("User email not found")
+              completion(false)
+              return
+          }
+          
+          let noteData: [String: Any] = [
+              "user": userEmail,
+              "note": noteText,
+              "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
+              "locationName": locationName,
+              "imageURL": imageURL,
+              "timestamp": Timestamp(date: Date())
+          ]
+          
+          db.collection("notes").addDocument(data: noteData) { error in
+              if let error = error {
+                  print("Error saving note to Firestore: \(error)")
+                  completion(false)
+              } else {
+                  print("Note successfully saved to Firestore")
+                  completion(true)
+              }
+          }
+      }
+
+
+
+
+
+
+
+    
+
+    
 
     
     //Filter Function
@@ -783,46 +819,18 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
     
-    
-    // Update Notes Based on Location
-    func updateDisplayedNotes() {
-        print("updateDisplayedNotes called")
-            
-        guard let userLocation = locationManager.location?.coordinate else {
-            print("User location not available yet")
-            return
-        }
-            
-        UIView.performWithoutAnimation {
-            displayedNotes = filterNotesByLocation(notes: notes, currentLocation: userLocation, threshold: 100)
-            print("Showing \(displayedNotes.count) notes based on location")
-            tableView.reloadData()
-        }
-        updateProgressBar()
-            
-        if let closestNote = displayedNotes.min(by: { (note1, note2) -> Bool in
-            let note1Location = CLLocation(latitude: note1.location.latitude, longitude: note1.location.longitude)
-            let note2Location = CLLocation(latitude: note2.location.latitude, longitude: note2.location.longitude)
-            let userCurrentLocation = CLLocation(latitude: userLocation.latitude, longitude: userLocation.longitude)
-            let distance1 = note1Location.distance(from: userCurrentLocation)
-            let distance2 = note2Location.distance(from: userCurrentLocation)
-            return distance1 < distance2
-        }) {
-            displayImageForLocation(location: closestNote.location)
-        }
-    }
 
     
     
     //LOAD NOTES FIRESTORE
-    func loadNotes(completion: @escaping () -> Void) {
+    func loadNotes() {
         print("loadNotes called")
-        
+
         guard !notesLoaded else { return }
         if let userEmail = Auth.auth().currentUser?.email,
            let userLocation = locationManager.location?.coordinate { // Get user's location
             print("Loading notes for user: \(userEmail)")
-            
+
             db.collection("notes")
                 .whereField("user", isEqualTo: userEmail)
                 .order(by: "timestamp", descending: false)
@@ -844,17 +852,20 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                 }
                             }
                             DispatchQueue.main.async {
-                                self.updateDisplayedNotes() // Call updateDisplayedNotes here
+                                // Perform the filtering and updating of displayed notes here
+                                self.displayedNotes = self.filterNotesByLocation(notes: self.notes, currentLocation: userLocation, threshold: 30)
+                                print("Showing \(self.displayedNotes.count) notes based on location")
+                                self.tableView.reloadData()
+                                
                                 self.updateProgressBar()
                                 self.updateLocationNameLabel(location: userLocation) // Update the location name label
-                                completion() // Call the completion handler
                             }
                         }
                     }
                 }
-            
+
             notesLoaded = true // Set notesLoaded to true after the notes have been loaded
-            
+
         } else {
             print("User email not found or user location not available yet")
         }
@@ -862,8 +873,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
 
 
+
+
     func fetchLocationNameFor(location: CLLocationCoordinate2D) -> String? {
-        let radius: CLLocationDistance = 50 // The radius in meters to consider notes as nearby
+        let radius: CLLocationDistance = 30 // The radius in meters to consider notes as nearby
         let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
         
         for note in self.notes {
@@ -880,7 +893,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
 }
 
-
+//MARK: - EXTENSIONS
 
 extension HomeViewController {
     
@@ -990,8 +1003,14 @@ extension HomeViewController: UITableViewDelegate {
 extension HomeViewController: NoteCellDelegate {
     func noteCellTextFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
+        if let cell = textField.superview?.superview as? NoteCell {
+            activeNoteCell = cell
+            SaveNote(UIButton())
+        }
         return true
     }
+
+
 
     func noteCell(_ cell: NoteCell, didUpdateNote note: Note) {
         if let indexPath = tableView.indexPath(for: cell) {
