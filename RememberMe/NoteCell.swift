@@ -11,6 +11,7 @@ protocol NoteCellDelegate: AnyObject {
 
 
 class NoteCell: UITableViewCell {
+    
 
     weak var delegate: NoteCellDelegate?
     
@@ -24,6 +25,7 @@ class NoteCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
         noteTextField.delegate = self
+        noteTextField.isEnabled = true
         noteTextField.tintColor = .black
     }
        
@@ -42,19 +44,26 @@ extension NoteCell: UITextFieldDelegate {
     }
 
     func textFieldDidBeginEditing(_ textField: UITextField) {
+        print("Editing note with ID: \(noteId)")
         if let homeVC = delegate as? HomeViewController {
             homeVC.activeNoteCell = self
         }
     }
+
     
 
     func textFieldDidEndEditing(_ textField: UITextField) {
         if let noteText = textField.text, let location = noteLocation, !noteId.isEmpty {
+            print("Updating note with ID: \(noteId) and text: \(noteText)")
             let updatedNote = Note(id: noteId, text: noteText, location: location, locationName: "")
             delegate?.noteCell(self, didUpdateNote: updatedNote)
+        } else {
+            print("NoteId is empty or missing.")
         }
         delegate?.noteCellDidEndEditing(self)
     }
+
+
 
 
 }

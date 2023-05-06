@@ -956,6 +956,7 @@ extension HomeViewController: UITableViewDataSource {
         
         cell.noteTextField.attributedText = createAttributedString(from: note.text)
         cell.noteTextField.delegate = cell
+        cell.noteTextField.isEnabled = true
         cell.noteLocation = note.location
         cell.delegate = self
         
@@ -972,6 +973,19 @@ extension HomeViewController: UITableViewDataSource {
         
         return cell
     }
+    
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        if let cell = textField.superview?.superview as? NoteCell {
+            activeNoteCell = cell
+            saveNote()
+        }
+    }
+
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
