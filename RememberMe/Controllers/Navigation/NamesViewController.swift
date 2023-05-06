@@ -65,7 +65,8 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
                                     let noteID = queryDocumentSnapshot.documentID
                                     
                                     let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-                                    return Note(id: noteID, text: noteText, location: location, locationName: locationName)
+                                    let emptyURL = URL(string: "")
+                                    return Note(id: noteID, text: noteText, location: location, locationName: locationName, imageURL: emptyURL)
                                 } else {
                                     return nil
                                 }

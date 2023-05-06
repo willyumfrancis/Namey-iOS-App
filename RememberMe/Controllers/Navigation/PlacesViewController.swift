@@ -28,7 +28,10 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     struct LocationData {
         let name: String
         let location: CLLocationCoordinate2D
+        let imageURL: URL?
     }
+
+       
     
     var fetchedLocationKeys: Set<String> = []
     let locationManager = CLLocationManager()
@@ -103,13 +106,15 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                         for doc in snapshotDocuments {
                             let data = doc.data()
                             if let locationName = data["locationName"] as? String,
-                               let locationData = data["location"] as? GeoPoint {
+                               let locationData = data["location"] as? GeoPoint,
+                               let imageURLString = data["imageURL"] as? String,
+                               let imageURL = URL(string: imageURLString) {
                                 
                                 let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-                                let locationDataInstance = LocationData(name: locationName, location: location)
+                                let locationDataInstance = LocationData(name: locationName, location: location, imageURL: imageURL)
                                 self.locations.append(locationDataInstance)
                             } else {
-                                print("Failed to parse locationName for document ID: \(doc.documentID)")
+                                print("Failed to parse location data for document ID: \(doc.documentID)")
                             }
                         }
                         self.sortLocationsByDistance()
@@ -123,6 +128,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 }
             }
     }
+
+       
 
     
     func sortLocationsByDistance() {
@@ -146,53 +153,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
 
     
     
-    // Display Image
-    func displayImageForLocation(locationData: LocationData, cell: LocationCell) {
-        let maxDistance: CLLocationDistance = 100
-        let location = locationData.location
-        let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
-        
-        if let userEmail = Auth.auth().currentUser?.email {
-            db.collection("notes")
-                .whereField("user", isEqualTo: userEmail)
-                .getDocuments { querySnapshot, error in
-                    if let e = error {
-                        print("There was an issue retrieving data from Firestore: \(e)")
-                    } else {
-                        if let snapshotDocuments = querySnapshot?.documents {
-                            for doc in snapshotDocuments {
-                                let data = doc.data()
-                                if let locationDataFromFirestore = data["location"] as? GeoPoint {
-                                    let noteLocation = CLLocation(latitude: locationDataFromFirestore.latitude, longitude: locationDataFromFirestore.longitude)
-                                    let distance = noteLocation.distance(from: userCurrentLocation)
-                                    
-                                    if distance <= maxDistance {
-                                        let locationKey: String
-                                        if let locationName = data["locationName"] as? String, !locationName.isEmpty {
-                                            locationKey = locationName
-                                        } else {
-                                            locationKey = "\(locationDataFromFirestore.latitude),\(locationDataFromFirestore.longitude)"
-                                        }
-                                        
-                                        if !self.fetchedLocationKeys.contains(locationKey) {
-                                            self.fetchedLocationKeys.insert(locationKey)
-                                            let newLocationData = LocationData(name: locationKey, location: CLLocationCoordinate2D(latitude: locationDataFromFirestore.latitude, longitude: locationDataFromFirestore.longitude))
-                                            self.downloadAndDisplayImage(locationData: newLocationData) { url in
-                                                DispatchQueue.main.async {
-                                                    cell.locationImageView.sd_setImage(with: url, placeholderImage: UIImage(named: "placeholder"))
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-        } else {
-            print("User email not found")
-        }
-    }
+    
 
     
     func downloadAndDisplayImage(locationData: LocationData, completion: @escaping (URL) -> Void) {
@@ -221,16 +182,21 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             return min(locations.count, currentPage * pageSize)
         }
     
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath) as! LocationCell
         
         let locationData = locations[indexPath.row]
         
         cell.locationNameLabel.text = locationData.name
-        displayImageForLocation(locationData: locationData, cell: cell)
+        if let imageURL = locationData.imageURL {
+            cell.locationImageView.sd_setImage(with: imageURL, placeholderImage: UIImage(named: "placeholder"))
+        }
         
         return cell
     }
+
+
     
     
     

@@ -250,18 +250,18 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="140" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="flH-qH-l4W">
-                                <rect key="frame" x="45" y="103" width="303" height="666"/>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" fixedFrame="YES" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="140" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="flH-qH-l4W">
+                                <rect key="frame" x="25" y="126" width="343" height="600"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                             </tableView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="XyK-48-Y4p"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="flH-qH-l4W" firstAttribute="top" secondItem="XyK-48-Y4p" secondAttribute="top" id="2T9-9w-EGP"/>
-                            <constraint firstItem="flH-qH-l4W" firstAttribute="leading" secondItem="XyK-48-Y4p" secondAttribute="leading" constant="45" id="Amu-qh-BGc"/>
-                            <constraint firstItem="flH-qH-l4W" firstAttribute="centerX" secondItem="XW2-qi-g7n" secondAttribute="centerX" id="B4v-wI-aat"/>
-                            <constraint firstItem="flH-qH-l4W" firstAttribute="centerY" secondItem="XW2-qi-g7n" secondAttribute="centerY" constant="10" id="SIT-Z9-E6B"/>
+                            <constraint firstItem="flH-qH-l4W" firstAttribute="centerX" secondItem="XW2-qi-g7n" secondAttribute="centerX" id="AY7-Ui-FK9"/>
+                            <constraint firstItem="flH-qH-l4W" firstAttribute="centerY" secondItem="XW2-qi-g7n" secondAttribute="centerY" id="H89-pB-lM3"/>
+                            <constraint firstItem="flH-qH-l4W" firstAttribute="top" secondItem="XyK-48-Y4p" secondAttribute="top" constant="23" id="OND-Vr-yxX"/>
+                            <constraint firstItem="flH-qH-l4W" firstAttribute="leading" secondItem="XyK-48-Y4p" secondAttribute="leading" constant="25" id="uXf-YW-4wA"/>
                         </constraints>
                     </view>
                     <tabBarItem key="tabBarItem" title="Places" image="building.2.fill" catalog="system" id="WL0-EW-oAH"/>
@@ -281,7 +281,7 @@
                     <tabBar key="tabBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="k8e-pR-8Jb">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="49"/>
                         <autoresizingMask key="autoresizingMask"/>
-                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <color key="backgroundColor" red="1" green="0.90980392156862744" blue="0.83137254901960778" alpha="0.0" colorSpace="calibratedRGB"/>
                     </tabBar>
                     <connections>
                         <segue destination="BYZ-38-t0r" kind="relationship" relationship="viewControllers" id="RmS-1k-ouZ"/>
