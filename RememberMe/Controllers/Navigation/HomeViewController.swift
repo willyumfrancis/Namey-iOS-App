@@ -559,11 +559,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
 
     
+    let distanceFilter: CLLocationDistance = 30
     //SAVEIMAGE
     func saveImageToFirestore(image: UIImage, location: CLLocationCoordinate2D, locationName: String) {
         let safeFileName = self.safeFileName(for: locationName)
         let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
-        
+
         // Delete the old image from Firebase Storage
         storageRef.delete { [weak self] error in
             if let error = error {
@@ -571,15 +572,27 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             } else {
                 print("Old image deleted successfully")
             }
-            
+
             // Upload the new image and get the download URL
             self?.uploadImage(image: image, location: location, locationName: locationName) { result in
                 switch result {
                 case .success(let imageURL):
                     print("Image uploaded and saved with URL: \(imageURL)")
-                    
-                    // Update the imageURL for all notes
-                    self?.updateImageURLForAllNotes(with: imageURL)
+
+                    // Get all notes
+                    self?.getAllNotes(completion: { notes in
+                        let filteredNotes = notes.filter { note in
+                            let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
+                            let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+                            let distance = noteLocation.distance(from: currentLocation)
+                            return distance <= 30
+                        }
+
+                        // Update the imageURL for filtered notes
+                        filteredNotes.forEach { note in
+                            self?.updateImageURLForNote(note.id, newImageURL: imageURL)
+                        }
+                    })
 
                     // Save the new note using the saveNote function
                     guard let activeCell = self?.activeNoteCell else {
@@ -602,9 +615,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
 
+
+
+
     
     
     //MARK: - IMPORTANT UPDATE L NAME FUNCTION
+    
+
     //Updates the locationName of the notes that are within a certain distance.
     func updateNotesLocationName(location: CLLocationCoordinate2D, newLocationName: String, completion: @escaping ([Note]) -> Void) {
         let maxDistance: CLLocationDistance = 30 // Adjust this value according to your requirements
@@ -1011,6 +1029,42 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("Failed to get user's current location")
         }
     }
+    
+    func getAllNotes(completion: @escaping ([Note]) -> Void) {
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            completion([])
+            return
+        }
+
+        db.collection("notes")
+            .whereField("user", isEqualTo: userEmail)
+            .order(by: "timestamp", descending: false)
+            .getDocuments { querySnapshot, error in
+                if let e = error {
+                    print("There was an issue retrieving data from Firestore: \(e)")
+                    completion([])
+                } else {
+                    var notes: [Note] = []
+                    if let snapshotDocuments = querySnapshot?.documents {
+                        print("Found \(snapshotDocuments.count) notes")
+                        for doc in snapshotDocuments {
+                            let data = doc.data()
+                            if let noteText = data["note"] as? String,
+                               let locationData = data["location"] as? GeoPoint,
+                               let locationName = data["locationName"] as? String {
+                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                                let emptyURL = URL(string: "")
+                                let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: emptyURL)
+                                notes.append(newNote)
+                            }
+                        }
+                    }
+                    completion(notes)
+                }
+            }
+    }
+
     
     func updateNoteInFirestore(noteID: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
         let noteRef = db.collection("notes").document(noteID)
