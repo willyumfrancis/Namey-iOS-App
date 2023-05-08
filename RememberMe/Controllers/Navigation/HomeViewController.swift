@@ -52,7 +52,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     var maxPeople = 3
     var locationUpdateTimer: Timer?
-
+    
     
     var notesLoaded = false
     
@@ -72,29 +72,29 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     @IBAction func uploadImageButton(_ sender: UIButton)
     {
         print("Upload Image button pressed")
-
+        
         let alertController = UIAlertController(title: "Spot Name", message: "Please enter a name for this place:", preferredStyle: .alert)
         alertController.addTextField()
-
+        
         let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
             guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
                 print("Location name is empty.")
                 return
             }
-
+            
             self.currentLocationName = locationName
             self.updateNotesCountLabel()
-
+            
             self.presentImagePicker(locationName: locationName)
         }
         alertController.addAction(saveAction)
-
+        
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
         alertController.addAction(cancelAction)
-
+        
         self.present(alertController, animated: true)
     }
-
+    
     //Goal (Star) Button
     @IBAction func goalButton(_ sender: UIButton) {
         goalButtonTapped()
@@ -104,25 +104,34 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
         print("Location Button Pressed")
-
-        // Manually trigger location updates
-        locationManager.startUpdatingLocation()
-
-        // Update displayed notes based on the updated location
-        loadNotes()
-        animateTableViewCells()
-
-        // You need to get the user's current location here and pass it to the function as a CLLocationCoordinate2D instance
-        if let userLocation = locationManager.location {
-            displayImageForLocation(location: userLocation.coordinate)
-            // Call the updateLocationNameLabel function with the user's current location
-            updateLocationNameLabel(location: userLocation.coordinate)
-        } else {
-            print("Unable to get user's current location")
-        }
-    }
-
     
+    // Reset current location data
+    resetLocationData()
+
+    // Manually trigger location updates
+    locationManager.startUpdatingLocation()
+
+    // Update displayed notes based on the updated location
+    loadNotes()
+    animateTableViewCells()
+
+    // You need to get the user's current location here and pass it to the function as a CLLocationCoordinate2D instance
+    if let userLocation = locationManager.location {
+        displayImageForLocation(location: userLocation.coordinate)
+        // Call the updateLocationNameLabel function with the user's current location
+        updateLocationNameLabel(location: userLocation.coordinate)
+    } else {
+        print("Unable to get user's current location")
+    }
+}
+
+    func resetLocationData() {
+        currentLocationName = nil
+        CurrentPlace.image = nil
+        locationNameLabel.text = ""
+        notes = []
+        tableView.reloadData()
+    }
     
     //Save Name Button
     @IBAction func SaveNote(_ sender: UIButton) {
