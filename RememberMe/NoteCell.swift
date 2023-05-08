@@ -55,7 +55,7 @@ extension NoteCell: UITextFieldDelegate {
     func textFieldDidEndEditing(_ textField: UITextField) {
         if let noteText = textField.text, let location = noteLocation, !noteId.isEmpty {
             print("Updating note with ID: \(noteId) and text: \(noteText)")
-            let emptyURL = URL(string: "")!
+            let emptyURL = URL(string: "")
             let updatedNote = Note(id: noteId, text: noteText, location: location, locationName: "", imageURL: emptyURL)
             delegate?.noteCell(self, didUpdateNote: updatedNote)
         } else {
