@@ -104,34 +104,39 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
         print("Location Button Pressed")
+        
+        setupLocationManager()
+        loadNotes()
+        animateTableViewCells()
+
     
     // Reset current location data
-    resetLocationData()
+//    resetLocationData()
 
-    // Manually trigger location updates
-    locationManager.startUpdatingLocation()
-
-    // Update displayed notes based on the updated location
-    loadNotes()
-    animateTableViewCells()
+//    // Manually trigger location updates
+//    locationManager.startUpdatingLocation()
+//
+//    // Update displayed notes based on the updated location
+//    loadNotes()
+    //    animateTableViewCells()
 
     // You need to get the user's current location here and pass it to the function as a CLLocationCoordinate2D instance
-    if let userLocation = locationManager.location {
-        displayImageForLocation(location: userLocation.coordinate)
-        // Call the updateLocationNameLabel function with the user's current location
-        updateLocationNameLabel(location: userLocation.coordinate)
-    } else {
-        print("Unable to get user's current location")
-    }
+//    if let userLocation = locationManager.location {
+//        displayImageForLocation(location: userLocation.coordinate)
+//        // Call the updateLocationNameLabel function with the user's current location
+//        updateLocationNameLabel(location: userLocation.coordinate)
+//    } else {
+//        print("Unable to get user's current location")
+//    }
 }
 
-    func resetLocationData() {
-        currentLocationName = nil
-        CurrentPlace.image = nil
-        locationNameLabel.text = ""
-        notes = []
-        tableView.reloadData()
-    }
+//    func resetLocationData() {
+//        currentLocationName = nil
+//        CurrentPlace.image = nil
+//        locationNameLabel.text = ""
+//        notes = []
+//        tableView.reloadData()
+//    }
     
     //Save Name Button
     @IBAction func SaveNote(_ sender: UIButton) {
@@ -308,9 +313,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("User location not available yet")
         }
     }
-    
-    
-    
     
     func updateProgressBar() {
         updateNotesCountLabel()
@@ -1117,16 +1119,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     //Filter Function
     func filterNotesByLocation(notes: [Note], currentLocation: CLLocationCoordinate2D, threshold: Double) -> [Note] {
         let userCurrentLocation = CLLocation(latitude: currentLocation.latitude, longitude: currentLocation.longitude)
@@ -1137,8 +1129,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             return distance <= threshold
         }
     }
-    
-    
     
     
     //LOAD NOTES FIRESTORE

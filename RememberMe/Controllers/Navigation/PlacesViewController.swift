@@ -16,6 +16,7 @@ import MobileCoreServices
 import FirebaseStorage
 import SDWebImage
 
+
 func safeFileName(for locationName: String) -> String {
     let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
     let components = locationName.components(separatedBy: allowedCharacters.inverted)
@@ -25,27 +26,24 @@ func safeFileName(for locationName: String) -> String {
 
 class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate {
     
+    
     struct LocationData {
         let name: String
-        let location: CLLocationCoordinate2D
+        let location: CLLocation
         let imageURL: URL?
     }
-
-       
     
+    var locations: [LocationData] = []
     var fetchedLocationKeys: Set<String> = []
     let locationManager = CLLocationManager()
     var userLocation: CLLocation?
     var currentPage: Int = 0
     let pageSize: Int = 5
     
-    
     @IBOutlet weak var tableView: UITableView!
     
     let db = Firestore.firestore()
     let auth = Auth.auth()
-    
-    var locations: [LocationData] = [] // Change the type of locations array
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -71,6 +69,71 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         
         print("Locations loaded")
     }
+    
+    func clusterLocations(locations: [LocationData], eps: Double, minSamples: Int) -> [LocationData] {
+        var visited = [Bool](repeating: false, count: locations.count)
+        var noise = [Bool](repeating: false, count: locations.count)
+        var clusters = [Int: [LocationData]]()
+        var clusterIndex = 0
+        
+        for (index, _) in locations.enumerated() {
+            if visited[index] {
+                continue
+            }
+            visited[index] = true
+            var neighbors = regionQuery(locations: locations, pointIndex: index, eps: eps)
+            if neighbors.count < minSamples {
+                noise[index] = true
+            } else {
+                let cluster = expandCluster(locations: locations, pointIndex: index, neighbors: &neighbors, clusterIndex: clusterIndex, eps: eps, minSamples: minSamples, visited: &visited, clusters: &clusters)
+                if !cluster.isEmpty {
+                    clusters[clusterIndex] = cluster
+                    clusterIndex += 1
+                }
+            }
+        }
+        
+        // Choose a representative for each cluster
+        return clusters.values.map { locations in
+            // You can return any point from the cluster, here we choose the first one
+            return locations.first!
+        }
+    }
+
+    func expandCluster(locations: [LocationData], pointIndex: Int, neighbors: inout [Int], clusterIndex: Int, eps: Double, minSamples: Int, visited: inout [Bool], clusters: inout [Int: [LocationData]]) -> [LocationData] {
+        var cluster = [locations[pointIndex]]
+        var i = 0
+        while i < neighbors.count {
+            let neighborIndex = neighbors[i]
+            if !visited[neighborIndex] {
+                visited[neighborIndex] = true
+                let neighborNeighbors = regionQuery(locations: locations, pointIndex: neighborIndex, eps: eps)
+                if neighborNeighbors.count >= minSamples {
+                    neighbors.append(contentsOf: neighborNeighbors)
+                }
+            }
+            if clusters[clusterIndex]?.contains(where: {$0.name == locations[neighborIndex].name && $0.location.coordinate.latitude == locations[neighborIndex].location.coordinate.latitude && $0.location.coordinate.longitude == locations[neighborIndex].location.coordinate.longitude}) == nil {
+                cluster.append(locations[neighborIndex])
+            }
+            i += 1
+        }
+        
+        return cluster
+    }
+
+
+    
+    func regionQuery(locations: [LocationData], pointIndex: Int, eps: Double) -> [Int] {
+        var neighbors = [Int]()
+        for (index, location) in locations.enumerated() {
+            let distance = location.location.distance(from: locations[pointIndex].location)
+            if distance <= eps {
+                neighbors.append(index)
+            }
+        }
+        return neighbors
+    }
+
     
     // MARK: - CLLocationManagerDelegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -103,6 +166,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 } else {
                     if let snapshotDocuments = querySnapshot?.documents {
                         
+                        var fetchedLocations: [LocationData] = []
+                        
                         for doc in snapshotDocuments {
                             let data = doc.data()
                             if let locationName = data["locationName"] as? String,
@@ -110,16 +175,21 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                                let imageURLString = data["imageURL"] as? String,
                                let imageURL = URL(string: imageURLString) {
                                 
-                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                                let location = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
                                 let locationDataInstance = LocationData(name: locationName, location: location, imageURL: imageURL)
-                                self.locations.append(locationDataInstance)
+                                fetchedLocations.append(locationDataInstance)
                             } else {
                                 print("Failed to parse location data for document ID: \(doc.documentID)")
                             }
                         }
+                        
+                        let minSamples = 1
+                        self.locations = self.clusterLocations(locations: fetchedLocations, eps: 30.0, minSamples: minSamples)
                         self.sortLocationsByDistance()
                         self.loadNextPage()
+                        
                         DispatchQueue.main.async {
+                            print(self.locations)  // Debugging line
                             self.tableView.reloadData()
                         }
                     } else {
@@ -129,32 +199,50 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             }
     }
 
-       
 
+    
+    
+    
+    
     
     func sortLocationsByDistance() {
            guard let userLocation = userLocation else { return }
            locations.sort { locationData1, locationData2 in
-               let location1 = CLLocation(latitude: locationData1.location.latitude, longitude: locationData1.location.longitude)
-               let location2 = CLLocation(latitude: locationData2.location.latitude, longitude: locationData2.location.longitude)
-               return location1.distance(from: userLocation) < location2.distance(from: userLocation)
+               return
+               locationData1.location.distance(from: userLocation) < locationData2.location.distance(from: userLocation)
            }
        }
-
-       func loadNextPage() {
-           let startIndex = currentPage * pageSize
-           let endIndex = min((currentPage + 1) * pageSize, locations.count)
-
-           if startIndex < endIndex {
-               currentPage += 1
-               tableView.reloadData()
-           }
-       }
-
+    
+    
+    func loadNextPage() {
+        let startIndex = currentPage * pageSize
+        let endIndex = min((currentPage + 1) * pageSize, locations.count)
+        
+        if startIndex < endIndex {
+            currentPage += 1
+            tableView.reloadData()
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return min(locations.count, currentPage * pageSize)
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath) as! LocationCell
+        
+        let locationData = locations[indexPath.row]
+        
+        cell.locationNameLabel.text = locationData.name
+        if let imageURL = locationData.imageURL {
+            cell.locationImageView.sd_setImage(with: imageURL, placeholderImage: UIImage(named: "placeholder"))
+        }
+        
+        return cell
+    }
     
     
     
-
     
     func downloadAndDisplayImage(locationData: LocationData, completion: @escaping (URL) -> Void) {
         guard let userEmail = Auth.auth().currentUser?.email else {
@@ -176,31 +264,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             }
         }
     }
-    
-    
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-            return min(locations.count, currentPage * pageSize)
-        }
-    
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath) as! LocationCell
-        
-        let locationData = locations[indexPath.row]
-        
-        cell.locationNameLabel.text = locationData.name
-        if let imageURL = locationData.imageURL {
-            cell.locationImageView.sd_setImage(with: imageURL, placeholderImage: UIImage(named: "placeholder"))
-        }
-        
-        return cell
-    }
-
-
-    
-    
-    
-    
-    
 }
+    
+    
+
 
