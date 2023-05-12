@@ -18,13 +18,8 @@ import MobileCoreServices
 import FirebaseStorage
 import SDWebImage
 
-// loadNotes is the filtered notes function that works based on geolocation
-//
 
-
-
-
-class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate {
+class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, PlacesViewControllerDelegate {
     
     
     //MARK: - OUTLETS
@@ -55,6 +50,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     var notesLoaded = false
+    
+    var userLocation: CLLocationCoordinate2D?
+    var selectedLocation: CLLocationCoordinate2D?
+
     
     
     var notes: [Note] = []
@@ -103,19 +102,18 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
         print("Location Button Pressed")
-
+           
            guard let userLocation = locationManager.location?.coordinate else {
                print("User location not available yet")
                return
            }
-
-           loadAndFilterNotes()
+           
+        loadAndFilterNotes(for: userLocation, goalRadius: 7.0) // Provide the required parameters
            updateNotesWithImageURL() // Update the images for the notes
-
+           
            // Display image for the user's current location
            displayImageForLocation(location: userLocation)
        }
-
     
     //Save Name Button
     @IBAction func SaveNote(_ sender: UIButton) {
@@ -244,6 +242,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         setupRoundedImageView()
         setupRoundedProgressBar()
         
+        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
+        CurrentPlace.isUserInteractionEnabled = true
+        CurrentPlace.addGestureRecognizer(tapGestureRecognizer)
+
+        
         
         let goalButton = UIBarButtonItem(title: "Set Goal", style: .plain, target: self, action: #selector(goalButtonTapped))
         navigationItem.rightBarButtonItem = goalButton
@@ -270,6 +273,22 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         print("Location name is \(locationName)")
         
     }
+    
+    func presentPlacesViewController() {
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        if let placesVC = storyboard.instantiateViewController(withIdentifier: "PlacesViewController") as? PlacesViewController {
+            placesVC.delegate = self
+            navigationController?.pushViewController(placesVC, animated: true)
+        }
+    }
+
+    // In HomeViewController
+    func didSelectLocation(note: Note) {
+        let selectedLocation = note.location
+        loadAndFilterNotes(for: selectedLocation, goalRadius: 7.0)
+    }
+
+
     
     
     
@@ -300,7 +319,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         Progressbar.setProgress(progress, animated: true)
         
         if progress == 1.0 {
-            Progressbar.progressTintColor = #colorLiteral(red: 1, green: 0.9098039216, blue: 0.831372549, alpha: 1)
+            Progressbar.progressTintColor = #colorLiteral(red: 1, green: 0.909803216, blue: 0.831372549, alpha: 1)
             
         } else {
             Progressbar.progressTintColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
@@ -403,6 +422,30 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     //MARK: - LOCATION
+    
+    @objc func dismissFullscreenImage(_ sender: UITapGestureRecognizer) {
+        self.navigationController?.isNavigationBarHidden = false
+        self.tabBarController?.tabBar.isHidden = false
+        sender.view?.removeFromSuperview()
+    }
+
+    
+    @objc func imageTapped() {
+        guard let image = CurrentPlace.image else { return }
+        let imageView = UIImageView(image: image)
+        imageView.frame = UIScreen.main.bounds
+        imageView.backgroundColor = .black
+        imageView.contentMode = .scaleAspectFit
+        imageView.isUserInteractionEnabled = true
+
+        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissFullscreenImage))
+        imageView.addGestureRecognizer(tapGestureRecognizer)
+
+        self.view.addSubview(imageView)
+        self.navigationController?.isNavigationBarHidden = true
+        self.tabBarController?.tabBar.isHidden = true
+    }
+
     
     func updateImageURLForNote(_ documentID: String) {
         // Get the noteRef for the given document ID
@@ -539,7 +582,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
-    let distanceFilter: CLLocationDistance = 30
+    let distanceFilter: CLLocationDistance = 7
     //SAVEIMAGE
     func saveImageToFirestore(image: UIImage, location: CLLocationCoordinate2D, locationName: String) {
         let safeFileName = self.safeFileName(for: locationName)
@@ -565,7 +608,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
                             let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
                             let distance = noteLocation.distance(from: currentLocation)
-                            return distance <= 30
+                            return distance <= 7
                         }
                         
                         // Update the imageURL for filtered notes
@@ -605,7 +648,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //Updates the locationName of the notes that are within a certain distance.
     func updateNotesLocationName(location: CLLocationCoordinate2D, newLocationName: String, completion: @escaping ([Note]) -> Void) {
-        let maxDistance: CLLocationDistance = 30 // Adjust this value according to your requirements
+        let maxDistance: CLLocationDistance = 7 // Adjust this value according to your requirements
         _ = GeoPoint(latitude: location.latitude, longitude: location.longitude)
         
         if let userEmail = Auth.auth().currentUser?.email {
@@ -658,7 +701,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     // Display Image
     func displayImageForLocation(location: CLLocationCoordinate2D) {
-        let maxDistance: CLLocationDistance = 30
+        let maxDistance: CLLocationDistance = 7
         let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
         
         // Clear the image view
@@ -896,31 +939,52 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
-        
-        // Start the timer to update the location every 10 minutes (600 seconds)
-        locationUpdateTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { _ in
-            self.locationManager.startUpdatingLocation()
-        }
+
     }
+   
+    var hasProcessedLocationUpdate = false
+
+    // Location Manager Delegate
+    var lastLocationUpdateTime: Date?
+
+    // Location Manager Delegate
+    var lastProcessedLocation: CLLocationCoordinate2D?
+
     // Location Manager Delegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let newLocation = locations.last else { return }
         
+        // Check the distance from the last processed location
+        if let lastLocation = lastProcessedLocation {
+            let distance = newLocation.distance(from: CLLocation(latitude: lastLocation.latitude, longitude: lastLocation.longitude))
+            if distance < 10 { // Replace '10' with whatever threshold you see fit
+                // The new location is too close to the last processed location, so we skip this one.
+                return
+            }
+        }
+        
+        self.userLocation = newLocation.coordinate
         self.currentLocation = newLocation.coordinate
         print("User's location: \(newLocation)")
         
         // Call the updateLocationNameLabel function with the user's current location
         updateLocationNameLabel(location: newLocation.coordinate)
-        
         self.displayImageForLocation(location: self.currentLocation!)
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.loadAndFilterNotes()
+        if !hasProcessedLocationUpdate {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 7.0) // Provide the required parameters
+                self.hasProcessedLocationUpdate = true
+            }
         }
         
-        // Stop updating location after receiving the location update
-        locationManager.stopUpdatingLocation()
+        // Update the last processed location
+        lastProcessedLocation = newLocation.coordinate
     }
+
+
+
+
     
     
     
@@ -987,7 +1051,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 print("Failed to get active cell")
                 return
             }
-            if let noteText = activeCell.noteTextField.text, !noteText.isEmpty {
+            if let noteText = activeCell.noteTextField.text, !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 let locationName = fetchLocationNameFor(location: location) ?? ""
                 let emptyURL = URL(string: "")
                 let newNote = Note(id: UUID().uuidString, text: noteText, location: location, locationName: locationName, imageURL: emptyURL)
@@ -1002,19 +1066,19 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                         let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
                         let distance = currentLocation.distance(from: noteLocation) // in meters
 
-                        if distance <= 30 { // if within 30 meters
+                        if distance <= 7 { // if within 7 meters
                             // Add the new note to the notes array
                             self?.notes.append(newNote)
-                        }
-
-                        // Reload the table view on the main thread
-                        DispatchQueue.main.async {
-                            self?.tableView.reloadData()
+                            // Reload the table view on the main thread
+                            DispatchQueue.main.async {
+                                self?.tableView.reloadData()
+                                self?.tableView.scrollToRow(at: IndexPath(row: (self?.notes.count ?? 1) - 1, section: 0), at: .bottom, animated: true)
+                                self?.updateProgressBar()
+                            }
                         }
                     } else {
                         print("Error saving note")
                     }
-
                 }
             } else {
                 print("Note text field is empty")
@@ -1023,6 +1087,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("Failed to get user's current location")
         }
     }
+
+    // No changes in other functions
+
 
     
     func getAllNotes(completion: @escaping ([Note]) -> Void) {
@@ -1112,7 +1179,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     func fetchLocationNameFor(location: CLLocationCoordinate2D) -> String? {
-        let radius: CLLocationDistance = 30 // The radius in meters to consider notes as nearby
+        let radius: CLLocationDistance = 7 // The radius in meters to consider notes as nearby
         let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
 
         for note in self.notes {
@@ -1127,20 +1194,22 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
 
     
-    func loadAndFilterNotes() {
+    func loadAndFilterNotes(for location: CLLocationCoordinate2D, goalRadius: Double) {
         print("loadAndFilterNotes called")
         
-        guard let userEmail = Auth.auth().currentUser?.email,
-              let userLocation = locationManager.location?.coordinate else { // Get user's location
-            print("User email not found or user location not available yet")
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
             return
         }
+        
+        let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+        
         print("Loading and filtering notes for user: \(userEmail)")
         
         db.collection("notes")
             .whereField("user", isEqualTo: userEmail)
             .order(by: "timestamp", descending: false)
-            .getDocuments { [weak self] querySnapshot, error in // Use getDocuments instead of addSnapshotListener
+            .getDocuments { [weak self] querySnapshot, error in
                 if let e = error {
                     print("There was an issue retrieving data from Firestore: \(e)")
                 } else {
@@ -1151,15 +1220,15 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             let data = doc.data()
                             if let noteText = data["note"] as? String,
                                let locationData = data["location"] as? GeoPoint,
-                               let locationName = data["locationName"] as? String {
+                               let locationName = data["locationName"] as? String,
+                               !noteText.isEmpty {
                                 let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
                                 let emptyURL = URL(string: "")
                                 let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: emptyURL)
-                                // Filter notes directly when adding to the array
+                                
                                 let noteLocation = CLLocation(latitude: newNote.location.latitude, longitude: newNote.location.longitude)
-                                let currentLocation = CLLocation(latitude: userLocation.latitude, longitude: userLocation.longitude)
                                 let distance = noteLocation.distance(from: currentLocation)
-                                if distance <= 30 { // The radius in meters to consider notes as nearby
+                                if distance <= goalRadius {
                                     self?.notes.append(newNote)
                                 }
                             }
@@ -1169,13 +1238,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             self?.tableView.reloadData()
                             
                             self?.updateProgressBar()
-                            self?.updateLocationNameLabel(location: userLocation) // Update the location name label
-                            self?.updateNotesWithImageURL() // Call updateNotesWithImageURL after populating notes array
+                            self?.updateLocationNameLabel(location: location) // Update the location name label
+                            self?.updateNotesWithImageURL()
                         }
                     }
                 }
             }
     }
+
+
+
 
 }
     

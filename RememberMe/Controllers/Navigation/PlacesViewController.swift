@@ -40,6 +40,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     var currentPage: Int = 0
     let pageSize: Int = 5
     
+    var notes: [Note] = []
+    
     @IBOutlet weak var tableView: UITableView!
     
     let db = Firestore.firestore()
@@ -264,7 +266,38 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             }
         }
     }
+    
+    weak var delegate: PlacesViewControllerDelegate?
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        guard indexPath.row < notes.count else {
+            print("Invalid indexPath.row")
+            return
+        }
+        let note = notes[indexPath.row]
+        delegate?.didSelectLocation(note: note)
+        
+        // Switch to HomeViewController tab
+        if let tabBar = self.tabBarController {
+            tabBar.selectedIndex = 0 // Assuming the HomeViewController is at index 0
+        }
+    }
+
+
+
+
+
+
 }
+
+//MARK: - Extensions + Protocols
+protocol PlacesViewControllerDelegate: AnyObject {
+    func didSelectLocation(note: Note)
+}
+
+
+
+
     
     
 
