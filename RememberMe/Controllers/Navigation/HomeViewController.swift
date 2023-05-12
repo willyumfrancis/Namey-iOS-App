@@ -17,6 +17,8 @@ import Photos
 import MobileCoreServices
 import FirebaseStorage
 import SDWebImage
+import UserNotifications
+
 
 
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, PlacesViewControllerDelegate {
@@ -210,6 +212,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     // VIEWDIDLOAD BRO
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        requestNotificationAuthorization()
+        setupNotificationCategory()
+        UNUserNotificationCenter.current().delegate = self
+
+        
         updateNotesWithImageURL()
         NotificationCenter.default.addObserver(self, selector: #selector(updateLocationWhenAppIsActive), name: UIApplication.didBecomeActiveNotification, object: nil)
         
@@ -422,6 +430,72 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     //MARK: - LOCATION
+    func setupGeoFence(location: CLLocationCoordinate2D, radius: CLLocationDistance, identifier: String) {
+        let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
+        region.notifyOnEntry = true
+        region.notifyOnExit = false
+        locationManager.startMonitoring(for: region)
+    }
+        
+    func getLastNote() -> Note? {
+        return notes.last
+    }
+
+    func getLastFiveNotes() -> [Note] {
+        return Array(notes.suffix(5))
+    }
+
+    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        if let circularRegion = region as? CLCircularRegion {
+            // Fetch last note and location name
+            let locationName = fetchLocationNameFor(location: circularRegion.center) ?? "Some Spot"
+            let lastNote = getLastNote() // Implement this function to get the last note entered into the app
+            let lastFiveNotes = getLastFiveNotes() // Implement this function to get the last 5 notes entered into the app
+
+            // We need to convert the note objects to string
+            let lastNoteText = lastNote?.text ?? ""
+            let lastFiveNotesText = lastFiveNotes.map { $0.text }.joined(separator: "\n")
+                
+            // Trigger the notification
+            sendNotification(locationName: locationName, lastNote: lastNoteText, lastFiveNotes: lastFiveNotesText)
+        }
+    }
+
+        
+    func setupNotificationCategory() {
+        let viewLastFiveNotesAction = UNNotificationAction(identifier: "viewLastFiveNotes", title: "View last 5 notes", options: [.foreground])
+        let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastFiveNotesAction], intentIdentifiers: [], options: [])
+        UNUserNotificationCenter.current().setNotificationCategories([category])
+    }
+
+
+
+    func sendNotification(locationName: String, lastNote: String, lastFiveNotes: String) {
+        let content = UNMutableNotificationContent()
+        content.title = "Welcome to \(locationName)"
+        content.body = "Last note: \(lastNote)"
+        content.userInfo = ["lastFiveNotes": lastFiveNotes]
+        content.categoryIdentifier = "notesCategory"
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+    }
+
+
+    
+    func requestNotificationAuthorization() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
+            if granted {
+                print("Notification access granted")
+            } else {
+                print("Notification access denied")
+            }
+        }
+    }
+
     
     @objc func dismissFullscreenImage(_ sender: UITapGestureRecognizer) {
         self.navigationController?.isNavigationBarHidden = false
@@ -1409,3 +1483,18 @@ extension HomeViewController: NoteCellDelegate {
     }
 
 }
+
+extension HomeViewController: UNUserNotificationCenterDelegate {
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        if response.actionIdentifier == "viewLastFiveNotes" {
+            if let lastFiveNotes = response.notification.request.content.userInfo["lastFiveNotes"] as? [String] {
+                // Handle displaying the last 5 notes, e.g., present a view controller
+                // For example, here we'll just print them
+                               for note in lastFiveNotes {
+                                   print(note)
+                               }
+                           }
+                       }
+                       completionHandler()
+                   }
+               }
