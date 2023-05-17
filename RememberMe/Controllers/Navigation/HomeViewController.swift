@@ -41,6 +41,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     //MARK: - VARIABLES & CONSTANTS
+    
+    var currentLocationName: String?
+    var currentLocationImageURL: URL?
+    
     private let locationManager = CLLocationManager()
     var currentLocation: CLLocationCoordinate2D?
     var selectedNote: Note?
@@ -63,7 +67,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     var sliderValueLabel: UILabel!
     var activeNoteCell: NoteCell?
     
-    var currentLocationName: String?
     var fetchedLocationKeys: Set<String> = []
     var notesFetched = false
     
@@ -1166,28 +1169,31 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 return
             }
             if let noteText = activeCell.noteTextField.text, !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                let locationName = fetchLocationNameFor(location: location) ?? ""
-                let emptyURL = URL(string: "")
-                let newNote = Note(id: UUID().uuidString, text: noteText, location: location, locationName: locationName, imageURL: emptyURL)
-                
-                // Save the new note using the saveNoteToFirestore function
-                saveNoteToFirestore(noteText: newNote.text, location: newNote.location, locationName: newNote.locationName, imageURL: "") { [weak self] success in
+                let noteId = activeCell.note?.id ?? UUID().uuidString
+                let noteLocation = activeCell.note?.location ?? location
+                let locationName = activeCell.note?.locationName ?? fetchLocationNameFor(location: location) ?? ""
+                let imageURL = activeCell.note?.imageURL?.absoluteString ?? ""
+
+                // Save the updated note using the saveNoteToFirestore function
+                saveNoteToFirestore(noteId: noteId, noteText: noteText, location: noteLocation, locationName: locationName, imageURL: imageURL) { [weak self] success in
                     if success {
                         print("Note saved successfully")
                         
-                        // Check if the new note's location is within the threshold distance from the user's current location
-                        let noteLocation = CLLocation(latitude: newNote.location.latitude, longitude: newNote.location.longitude)
+                        // Check if the updated note's location is within the threshold distance from the user's current location
+                        let noteLocation = CLLocation(latitude: noteLocation.latitude, longitude: noteLocation.longitude)
                         let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
                         let distance = currentLocation.distance(from: noteLocation) // in meters
 
                         if distance <= 15 { // if within 15 meters
-                            // Add the new note to the notes array
-                            self?.notes.append(newNote)
-                            // Reload the table view on the main thread
-                            DispatchQueue.main.async {
-                                self?.tableView.reloadData()
-                                self?.tableView.scrollToRow(at: IndexPath(row: (self?.notes.count ?? 1) - 1, section: 0), at: .bottom, animated: true)
-                                self?.updateProgressBar()
+                            // Update the note in the notes array
+                            if let noteIndex = self?.notes.firstIndex(where: { $0.id == noteId }) {
+                                self?.notes[noteIndex].text = noteText
+                                // Reload the table view on the main thread
+                                DispatchQueue.main.async {
+                                    self?.tableView.reloadData()
+                                    self?.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
+                                    self?.updateProgressBar()
+                                }
                             }
                         }
                     } else {
@@ -1201,6 +1207,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("Failed to get user's current location")
         }
     }
+
+
 
     // No changes in other functions
 
@@ -1265,13 +1273,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
-    func saveNoteToFirestore(noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
+    func saveNoteToFirestore(noteId: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
             completion(false)
             return
         }
-        
+
         let noteData: [String: Any] = [
             "user": userEmail,
             "note": noteText,
@@ -1280,8 +1288,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             "imageURL": imageURL,
             "timestamp": Timestamp(date: Date())
         ]
-        
-        db.collection("notes").addDocument(data: noteData) { error in
+
+        db.collection("notes").document(noteId).setData(noteData) { error in
             if let error = error {
                 print("Error saving note to Firestore: \(error)")
                 completion(false)
@@ -1291,6 +1299,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
+
+
     
     func fetchLocationNameFor(location: CLLocationCoordinate2D) -> String? {
         let radius: CLLocationDistance = 15 // The radius in meters to consider notes as nearby
@@ -1360,6 +1370,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
     }
     
+
     func LoadPlacesNotes(for locationName: String) {
         print("loadNotes called")
         
@@ -1494,6 +1505,7 @@ extension HomeViewController: UITableViewDataSource {
         cell.noteTextField.delegate = cell
         cell.noteTextField.isEnabled = true
         cell.noteLocation = note.location
+        cell.note = note // Set the note property
         cell.delegate = self
         
         cell.transform = CGAffineTransform(translationX: 0, y: tableView.bounds.size.height)
@@ -1509,6 +1521,7 @@ extension HomeViewController: UITableViewDataSource {
         
         return cell
     }
+
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()

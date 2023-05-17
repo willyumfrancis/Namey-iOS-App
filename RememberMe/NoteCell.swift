@@ -12,6 +12,9 @@ protocol NoteCellDelegate: AnyObject {
 
 class NoteCell: UITableViewCell {
     
+    var note: Note? // Add this property to store the current note
+
+    
 
     weak var delegate: NoteCellDelegate?
     

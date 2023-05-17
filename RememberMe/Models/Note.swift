@@ -9,7 +9,7 @@ import CoreLocation
 
 struct Note {
     let id: String
-    let text: String
+    var text: String
     let location: CLLocationCoordinate2D
     var locationName: String
     var imageURL: URL?
