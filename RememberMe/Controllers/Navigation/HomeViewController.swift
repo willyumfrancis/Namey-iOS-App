@@ -472,8 +472,15 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Error adding notification: \(error)")
+            } else {
+                print("Notification added successfully")
+            }
+        }
     }
+
 
 
     
@@ -813,10 +820,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
     
-    func displayImageForLocationName(location: CLLocationCoordinate2D, locationName: String) {
-        let maxDistance: CLLocationDistance = 15
-        let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
-        
+    func displayImageForLocationName(locationName: String) {
         // Clear the image view
         self.CurrentPlace.image = nil
         
@@ -831,25 +835,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                         if let snapshotDocuments = querySnapshot?.documents {
                             for doc in snapshotDocuments {
                                 let data = doc.data()
-                                if let locationData = data["location"] as? GeoPoint {
-                                    let noteLocation = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
-                                    let distance = noteLocation.distance(from: userCurrentLocation)
+                                if let locationName = data["locationName"] as? String, !locationName.isEmpty {
+                                    self.locationNameLabel.text = "\(locationName)"
+                                    self.downloadAndDisplayImage(locationName: locationName)
                                     
-                                    if distance <= maxDistance {
-                                        if let locationName = data["locationName"] as? String, !locationName.isEmpty {
-                                            self.locationNameLabel.text = "\(locationName)"
-                                            self.downloadAndDisplayImage(locationName: locationName)
-                                        } else {
-                                            let locationKey = "\(locationData.latitude),\(locationData.longitude)"
-                                            if !self.fetchedLocationKeys.contains(locationKey) {
-                                                self.fetchedLocationKeys.insert(locationKey)
-                                                self.downloadAndDisplayImage(locationName: locationKey)
-                                            }
-                                        }
-                                        // If an image has been set, break the loop
-                                        if self.CurrentPlace.image != nil {
-                                            break
-                                        }
+                                    // If an image has been set, break the loop
+                                    if self.CurrentPlace.image != nil {
+                                        break
                                     }
                                 }
                             }
@@ -860,6 +852,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("User email not found")
         }
     }
+
 
 
     
@@ -1363,7 +1356,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
     }
     
-    func loadNotes(for locationName: String) {
+    func LoadPlacesNotes(for locationName: String) {
         print("loadNotes called")
         
         guard let userEmail = Auth.auth().currentUser?.email else {
@@ -1403,7 +1396,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             
                             self?.updateProgressBar()
                             // Update the location name label
-                            self?.locationNameLabel.text = "Notes for \(locationName)"
+                            self?.locationNameLabel.text = "\(locationName)"
                             self?.updateNotesWithImageURL()
                         }
                     }
@@ -1594,8 +1587,8 @@ extension HomeViewController: NoteCellDelegate {
     extension HomeViewController: PlacesViewControllerDelegate {
         func didSelectLocation(with locationName: String) {
             tabBarController?.selectedIndex = 0
-            loadNotes(for: locationName)
-            displayImageForLocationName(location: selectedLocation!, locationName: locationName)
+            LoadPlacesNotes(for: locationName)
+            displayImageForLocationName(locationName: locationName)
 
         }
     }
