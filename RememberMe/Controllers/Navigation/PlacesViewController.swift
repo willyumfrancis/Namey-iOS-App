@@ -16,6 +16,12 @@ import MobileCoreServices
 import FirebaseStorage
 import SDWebImage
 
+struct LocationData {
+    let name: String
+    let location: CLLocation
+    let imageURL: URL?
+}
+
 
 func safeFileName(for locationName: String) -> String {
     let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
@@ -26,13 +32,8 @@ func safeFileName(for locationName: String) -> String {
 
 class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate {
     
-    
-    struct LocationData {
-        let name: String
-        let location: CLLocation
-        let imageURL: URL?
-    }
-    
+    weak var delegate: PlacesViewControllerDelegate?
+
     var locations: [LocationData] = []
     var fetchedLocationKeys: Set<String> = []
     let locationManager = CLLocationManager()
@@ -70,6 +71,15 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         
         
         print("Locations loaded")
+        
+        loadNotes()
+        if let tabBarController = self.tabBarController, let viewControllers = tabBarController.viewControllers {
+               for viewController in viewControllers {
+                   if let homeViewController = viewController as? HomeViewController {
+                       self.delegate = homeViewController
+                   }
+               }
+           }
     }
     
     func clusterLocations(locations: [LocationData], eps: Double, minSamples: Int) -> [LocationData] {
@@ -167,16 +177,14 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                     print("There was an issue retrieving data from Firestore: \(e)")
                 } else {
                     if let snapshotDocuments = querySnapshot?.documents {
-                        
                         var fetchedLocations: [LocationData] = []
-                        
                         for doc in snapshotDocuments {
                             let data = doc.data()
                             if let locationName = data["locationName"] as? String,
-                               let locationData = data["location"] as? GeoPoint,
-                               let imageURLString = data["imageURL"] as? String,
-                               let imageURL = URL(string: imageURLString) {
-                                
+                                let locationData = data["location"] as? GeoPoint,
+                                let imageURLString = data["imageURL"] as? String,
+                                let imageURL = URL(string: imageURLString) {
+                                    
                                 let location = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
                                 let locationDataInstance = LocationData(name: locationName, location: location, imageURL: imageURL)
                                 fetchedLocations.append(locationDataInstance)
@@ -185,8 +193,12 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                             }
                         }
                         
+                        self.locations = fetchedLocations.filter { locationData in
+                            return locationData.name != "" && locationData.imageURL != nil
+                        }
+                        
                         let minSamples = 1
-                        self.locations = self.clusterLocations(locations: fetchedLocations, eps: 30.0, minSamples: minSamples)
+                        self.locations = self.clusterLocations(locations: self.locations, eps: 30.0, minSamples: minSamples)
                         self.sortLocationsByDistance()
                         self.loadNextPage()
                         
@@ -194,18 +206,13 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                             print(self.locations)  // Debugging line
                             self.tableView.reloadData()
                         }
-                    } else {
+                    }
+ else {
                         print("No snapshot documents found")
                     }
                 }
             }
     }
-
-
-    
-    
-    
-    
     
     func sortLocationsByDistance() {
            guard let userLocation = userLocation else { return }
@@ -214,6 +221,56 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                locationData1.location.distance(from: userLocation) < locationData2.location.distance(from: userLocation)
            }
        }
+    
+    func loadNotes() {
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            return
+        }
+
+        db.collection("notes")
+            .whereField("user", isEqualTo: userEmail)
+            .getDocuments { querySnapshot, error in
+                if let e = error {
+                    print("There was an issue retrieving data from Firestore: \(e)")
+                } else {
+                    if let snapshotDocuments = querySnapshot?.documents {
+                        var fetchedNotes: [Note] = []
+                        for doc in snapshotDocuments {
+                            let data = doc.data()
+                            print("Fetched data: \(data)")  // Debugging line
+                            
+                            // Extract the values from the data dictionary
+                            if let id = data["id"] as? String,
+                               let text = data["text"] as? String,
+                               let lat = data["latitude"] as? Double,
+                               let lon = data["longitude"] as? Double,
+                               let locationName = data["locationName"] as? String,
+                               let imageURLString = data["imageURL"] as? String,
+                               let imageURL = URL(string: imageURLString) {
+                                
+                                // Create a CLLocationCoordinate2D instance for the location
+                                let location = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                                
+                                // Create a Note instance
+                                let note = Note(id: id, text: text, location: location, locationName: locationName, imageURL: imageURL)
+                                
+                                print("Created note: \(note)")  // Debugging line
+                                fetchedNotes.append(note)
+                            } else {
+                                print("Failed to create a note from data: \(data)")  // Debugging line
+                            }
+                        }
+                        self.notes = fetchedNotes
+                        print("Loaded notes: \(self.notes)")  // Debugging line
+                    }
+                }
+            }
+    }
+
+
+
+
     
     
     func loadNextPage() {
@@ -230,18 +287,23 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         return min(locations.count, currentPage * pageSize)
     }
     
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath) as! LocationCell
         
         let locationData = locations[indexPath.row]
         
-        cell.locationNameLabel.text = locationData.name
+        // Check if the data is complete
         if let imageURL = locationData.imageURL {
             cell.locationImageView.sd_setImage(with: imageURL, placeholderImage: UIImage(named: "placeholder"))
+            cell.locationNameLabel.text = locationData.name
+        } else {
+            cell.isHidden = true // If data is not complete, hide the cell
         }
         
         return cell
     }
+
     
     
     
@@ -267,20 +329,10 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         }
     }
     
-    weak var delegate: PlacesViewControllerDelegate?
-    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        guard indexPath.row < notes.count else {
-            print("Invalid indexPath.row")
-            return
-        }
-        let note = notes[indexPath.row]
-        delegate?.didSelectLocation(note: note)
-        
-        // Switch to HomeViewController tab
-        if let tabBar = self.tabBarController {
-            tabBar.selectedIndex = 0 // Assuming the HomeViewController is at index 0
-        }
+        tableView.deselectRow(at: indexPath, animated: true)
+        let selectedLocation = locations[indexPath.row]
+        delegate?.didSelectLocation(with: selectedLocation.name)
     }
 
 
@@ -288,12 +340,17 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
 
 
 
+    
+
 }
 
 //MARK: - Extensions + Protocols
 protocol PlacesViewControllerDelegate: AnyObject {
-    func didSelectLocation(note: Note)
+    func didSelectLocation(with locationName: String)
 }
+
+
+
 
 
 

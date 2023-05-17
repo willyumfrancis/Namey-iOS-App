@@ -21,7 +21,7 @@ import UserNotifications
 
 
 
-class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, PlacesViewControllerDelegate {
+class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate {
     
     
     //MARK: - OUTLETS
@@ -110,7 +110,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                return
            }
            
-        loadAndFilterNotes(for: userLocation, goalRadius: 7.0) // Provide the required parameters
+        loadAndFilterNotes(for: userLocation, goalRadius: 15.0) // Provide the required parameters
            updateNotesWithImageURL() // Update the images for the notes
            
            // Display image for the user's current location
@@ -216,6 +216,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         requestNotificationAuthorization()
         setupNotificationCategory()
         UNUserNotificationCenter.current().delegate = self
+        
+        // Debugging: Send a notification when the app starts
+            sendNotification(locationName: "App Start", lastNote: "App Started", lastFiveNotes: "App Started")
 
         
         updateNotesWithImageURL()
@@ -281,23 +284,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         print("Location name is \(locationName)")
         
     }
-    
-    func presentPlacesViewController() {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        if let placesVC = storyboard.instantiateViewController(withIdentifier: "PlacesViewController") as? PlacesViewController {
-            placesVC.delegate = self
-            navigationController?.pushViewController(placesVC, animated: true)
-        }
-    }
-
-    // In HomeViewController
-    func didSelectLocation(note: Note) {
-        let selectedLocation = note.location
-        loadAndFilterNotes(for: selectedLocation, goalRadius: 7.0)
-    }
-
-
-    
     
     
     //Update Name Goal
@@ -430,12 +416,17 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     //MARK: - LOCATION
+
+    
+    
     func setupGeoFence(location: CLLocationCoordinate2D, radius: CLLocationDistance, identifier: String) {
+        print("Setting up GeoFence at \(location) with radius \(radius)") // Debugging line
         let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
         region.notifyOnEntry = true
         region.notifyOnExit = false
         locationManager.startMonitoring(for: region)
     }
+
         
     func getLastNote() -> Note? {
         return notes.last
@@ -471,6 +462,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
 
     func sendNotification(locationName: String, lastNote: String, lastFiveNotes: String) {
+        print("Sending notification for location: \(locationName)") // Debugging line
         let content = UNMutableNotificationContent()
         content.title = "Welcome to \(locationName)"
         content.body = "Last note: \(lastNote)"
@@ -656,7 +648,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
-    let distanceFilter: CLLocationDistance = 7
+    let distanceFilter: CLLocationDistance = 15
     //SAVEIMAGE
     func saveImageToFirestore(image: UIImage, location: CLLocationCoordinate2D, locationName: String) {
         let safeFileName = self.safeFileName(for: locationName)
@@ -682,7 +674,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
                             let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
                             let distance = noteLocation.distance(from: currentLocation)
-                            return distance <= 7
+                            return distance <= 15
                         }
                         
                         // Update the imageURL for filtered notes
@@ -722,7 +714,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //Updates the locationName of the notes that are within a certain distance.
     func updateNotesLocationName(location: CLLocationCoordinate2D, newLocationName: String, completion: @escaping ([Note]) -> Void) {
-        let maxDistance: CLLocationDistance = 7 // Adjust this value according to your requirements
+        let maxDistance: CLLocationDistance = 15 // Adjust this value according to your requirements
         _ = GeoPoint(latitude: location.latitude, longitude: location.longitude)
         
         if let userEmail = Auth.auth().currentUser?.email {
@@ -775,7 +767,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     // Display Image
     func displayImageForLocation(location: CLLocationCoordinate2D) {
-        let maxDistance: CLLocationDistance = 7
+        let maxDistance: CLLocationDistance = 15
         let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
         
         // Clear the image view
@@ -820,6 +812,55 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("User email not found")
         }
     }
+    
+    func displayImageForLocationName(location: CLLocationCoordinate2D, locationName: String) {
+        let maxDistance: CLLocationDistance = 15
+        let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+        
+        // Clear the image view
+        self.CurrentPlace.image = nil
+        
+        if let userEmail = Auth.auth().currentUser?.email {
+            db.collection("notes")
+                .whereField("user", isEqualTo: userEmail)
+                .whereField("locationName", isEqualTo: locationName)
+                .getDocuments { querySnapshot, error in
+                    if let e = error {
+                        print("There was an issue retrieving data from Firestore: \(e)")
+                    } else {
+                        if let snapshotDocuments = querySnapshot?.documents {
+                            for doc in snapshotDocuments {
+                                let data = doc.data()
+                                if let locationData = data["location"] as? GeoPoint {
+                                    let noteLocation = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
+                                    let distance = noteLocation.distance(from: userCurrentLocation)
+                                    
+                                    if distance <= maxDistance {
+                                        if let locationName = data["locationName"] as? String, !locationName.isEmpty {
+                                            self.locationNameLabel.text = "\(locationName)"
+                                            self.downloadAndDisplayImage(locationName: locationName)
+                                        } else {
+                                            let locationKey = "\(locationData.latitude),\(locationData.longitude)"
+                                            if !self.fetchedLocationKeys.contains(locationKey) {
+                                                self.fetchedLocationKeys.insert(locationKey)
+                                                self.downloadAndDisplayImage(locationName: locationKey)
+                                            }
+                                        }
+                                        // If an image has been set, break the loop
+                                        if self.CurrentPlace.image != nil {
+                                            break
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        } else {
+            print("User email not found")
+        }
+    }
+
 
     
     
@@ -1026,6 +1067,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     // Location Manager Delegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        print("Received location updates: \(locations)") // Debugging line
+
         guard let newLocation = locations.last else { return }
         
         // Check the distance from the last processed location
@@ -1047,7 +1090,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         if !hasProcessedLocationUpdate {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 7.0) // Provide the required parameters
+                self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 15.0) // Provide the required parameters
                 self.hasProcessedLocationUpdate = true
             }
         }
@@ -1140,7 +1183,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                         let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
                         let distance = currentLocation.distance(from: noteLocation) // in meters
 
-                        if distance <= 7 { // if within 7 meters
+                        if distance <= 15 { // if within 15 meters
                             // Add the new note to the notes array
                             self?.notes.append(newNote)
                             // Reload the table view on the main thread
@@ -1253,7 +1296,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     func fetchLocationNameFor(location: CLLocationCoordinate2D) -> String? {
-        let radius: CLLocationDistance = 7 // The radius in meters to consider notes as nearby
+        let radius: CLLocationDistance = 15 // The radius in meters to consider notes as nearby
         let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
 
         for note in self.notes {
@@ -1319,6 +1362,69 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 }
             }
     }
+    
+    func loadNotes(for locationName: String) {
+        print("loadNotes called")
+        
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            return
+        }
+        
+        print("Loading notes for user: \(userEmail)")
+        
+        db.collection("notes")
+            .whereField("user", isEqualTo: userEmail)
+            .whereField("locationName", isEqualTo: locationName)
+            .order(by: "timestamp", descending: false)
+            .getDocuments { [weak self] querySnapshot, error in
+                if let e = error {
+                    print("There was an issue retrieving data from Firestore: \(e)")
+                } else {
+                    self?.notes = [] // Clear the existing notes array
+                    if let snapshotDocuments = querySnapshot?.documents {
+                        print("Found \(snapshotDocuments.count) notes")
+                        for doc in snapshotDocuments {
+                            let data = doc.data()
+                            if let noteText = data["note"] as? String,
+                               let locationData = data["location"] as? GeoPoint,
+                               let locationName = data["locationName"] as? String,
+                               !noteText.isEmpty {
+                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                                let emptyURL = URL(string: "")
+                                let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: emptyURL)
+                                
+                                self?.notes.append(newNote)
+                            }
+                        }
+                        DispatchQueue.main.async {
+                            print("Showing \(self?.notes.count ?? 0) notes based on location")
+                            self?.tableView.reloadData()
+                            
+                            self?.updateProgressBar()
+                            // Update the location name label
+                            self?.locationNameLabel.text = "Notes for \(locationName)"
+                            self?.updateNotesWithImageURL()
+                        }
+                    }
+                }
+            }
+    }
+
+
+    func updateViewWithNote(_ note: Note) {
+        // Set current location
+        self.currentLocation = note.location
+
+        // Call the functions to update the image view, location name label, and notes count label
+        displayImageForLocation(location: note.location)
+        updateLocationNameLabel(location: note.location)
+        updateNotesCountLabel()
+
+        // Update the table view
+        self.tableView.reloadData()
+    }
+
 
 
 
@@ -1483,6 +1589,18 @@ extension HomeViewController: NoteCellDelegate {
     }
 
 }
+
+
+    extension HomeViewController: PlacesViewControllerDelegate {
+        func didSelectLocation(with locationName: String) {
+            tabBarController?.selectedIndex = 0
+            loadNotes(for: locationName)
+            displayImageForLocationName(location: selectedLocation!, locationName: locationName)
+
+        }
+    }
+
+
 
 extension HomeViewController: UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
