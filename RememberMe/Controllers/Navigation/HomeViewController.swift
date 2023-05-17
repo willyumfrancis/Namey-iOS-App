@@ -289,8 +289,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //Update Name Goal
     func updateNotesCountLabel() {
         let currentPeople = notes.count
-        if let userLocation = locationManager.location?.coordinate {
-            let locationName = fetchLocationNameFor(location: userLocation) ?? "Some Spot"
+        if let locationName = locationNameLabel.text {
             if currentPeople == 0 {
                 notesCountLabel.text = "Go meet some people!"
             } else if currentPeople == 1 {
@@ -304,6 +303,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("User location not available yet")
         }
     }
+
     
     func updateProgressBar() {
         updateNotesCountLabel()
@@ -837,12 +837,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                 let data = doc.data()
                                 if let locationName = data["locationName"] as? String, !locationName.isEmpty {
                                     self.locationNameLabel.text = "\(locationName)"
+                                    self.updateNotesCountLabel() // Add this line
                                     self.downloadAndDisplayImage(locationName: locationName)
-                                    
-                                    // If an image has been set, break the loop
-                                    if self.CurrentPlace.image != nil {
-                                        break
-                                    }
                                 }
                             }
                         }
@@ -852,6 +848,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("User email not found")
         }
     }
+
 
 
 
