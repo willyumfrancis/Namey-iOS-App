@@ -16,6 +16,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
 
     //MARK: - OUTLETS
     @IBOutlet weak var NameList: UITableView!
+    
     @IBOutlet weak var alphabetStackView: UIStackView!
     var names: [Note] = []
     var allNames: [Note] = [] // Add this line
@@ -36,18 +37,21 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
           fetchNames()
       }
       
-      override func viewDidLoad() {
-          super.viewDidLoad()
-          let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-            for letter in alphabet {
-                let button = UIButton()
-                button.setTitle(String(letter), for: .normal)
-                button.setTitleColor(.blue, for: .normal)
-                button.addTarget(self, action: #selector(alphabetButtonTapped), for: .touchUpInside)
-                alphabetStackView.addArrangedSubview(button)
-            }
-        
-      }
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        for letter in alphabet {
+            let button = UIButton()
+            button.setTitle(String(letter), for: .normal)
+            button.setTitleColor(.black, for: .normal)
+            button.titleLabel?.font = UIFont(name: "System", size: 18)
+            button.addTarget(self, action: #selector(alphabetButtonTapped), for: .touchUpInside)
+            alphabetStackView.addArrangedSubview(button)
+        }
+    }
+
+
+      
     
     @objc func alphabetButtonTapped(_ sender: UIButton) {
         guard let letter = sender.titleLabel?.text else { return }

@@ -42,6 +42,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //MARK: - VARIABLES & CONSTANTS
     
+    var notesFromAverageLocation: [Note] = []
+
+    
     var averageSelectedLocation: CLLocationCoordinate2D? {
         didSet {
             if let location = averageSelectedLocation {
@@ -128,18 +131,22 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
-        
-        guard let userLocation = locationManager.location?.coordinate else {
-                print("User location not available yet")
-                return
-            }
+
             
-            averageSelectedLocation = nil // Reset the average selected location
+            // Reset the selected location from the PlacesViewController
+            averageSelectedLocation = nil
+            averageSelectedLocationName = nil
+            
+            guard let userLocation = locationManager.location?.coordinate else {
+                    print("User location not available yet")
+                    return
+            }
 
             loadAndFilterNotes(for: userLocation, goalRadius: 15.0)
             displayImageForLocation(location: userLocation)
             updateNotesCountLabel()
         }
+
     
     //Save Name Button
     @IBAction func SaveNote(_ sender: UIButton) {
@@ -1265,6 +1272,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
 
 
+
     func getAllNotes(completion: @escaping ([Note]) -> Void) {
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
@@ -1370,8 +1378,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     
     func loadAndFilterNotes(for location: CLLocationCoordinate2D, goalRadius: Double) {
-        print("loadAndFilterNotes called")
-        
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
             return
@@ -1403,8 +1409,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                 
                                 let noteLocation = CLLocation(latitude: newNote.location.latitude, longitude: newNote.location.longitude)
                                 let distance = noteLocation.distance(from: currentLocation)
-                                if distance <= goalRadius {
-                                    self?.notes.append(newNote)
+                                
+                                if !self!.notesFromAverageLocation.contains(where: { $0.id == newNote.id }) {
+                                    if distance <= goalRadius {
+                                        self?.notes.append(newNote)
+                                    }
                                 }
                             }
                         }
