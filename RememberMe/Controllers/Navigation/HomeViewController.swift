@@ -1234,30 +1234,25 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         if let noteText = activeCell.noteTextField.text, !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let noteId = activeCell.note?.id ?? UUID().uuidString
-            let noteLocation = activeCell.note?.location ?? locationToSave
             let locationNameToSave = currentLocationName ?? fetchLocationNameFor(location: locationToSave) ?? ""
             let imageURLToSave = currentLocationImageURL?.absoluteString ?? ""
 
+            // Update the active cell's note location
+            activeCell.note?.location = locationToSave
+            
             // Save the updated note using the saveNoteToFirestore function
-            saveNoteToFirestore(noteId: noteId, noteText: noteText, location: noteLocation, locationName: locationNameToSave, imageURL: imageURLToSave) { [weak self] success in
+            saveNoteToFirestore(noteId: noteId, noteText: noteText, location: locationToSave, locationName: locationNameToSave, imageURL: imageURLToSave) { [weak self] success in
                 if success {
                     print("Note saved successfully")
                     
-                    // Check if the updated note's location is within the threshold distance from the user's current location
-                    let noteLocation = CLLocation(latitude: noteLocation.latitude, longitude: noteLocation.longitude)
-                    let currentLocation = CLLocation(latitude: locationToSave.latitude, longitude: locationToSave.longitude)
-                    let distance = currentLocation.distance(from: noteLocation) // in meters
-
-                    if distance <= 15 { // if within 15 meters
-                        // Update the note in the notes array
-                        if let noteIndex = self?.notes.firstIndex(where: { $0.id == noteId }) {
-                            self?.notes[noteIndex].text = noteText
-                            // Reload the table view on the main thread
-                            DispatchQueue.main.async {
-                                self?.tableView.reloadData()
-                                self?.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
-                                self?.updateProgressBar()
-                            }
+                    // Update the note in the notes array
+                    if let noteIndex = self?.notes.firstIndex(where: { $0.id == noteId }) {
+                        self?.notes[noteIndex].text = noteText
+                        // Reload the table view on the main thread
+                        DispatchQueue.main.async {
+                            self?.tableView.reloadData()
+                            self?.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
+                            self?.updateProgressBar()
                         }
                     }
                 } else {
@@ -1268,6 +1263,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("Note text field is empty")
         }
     }
+
+
+
 
 
 

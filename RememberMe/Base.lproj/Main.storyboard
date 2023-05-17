@@ -97,7 +97,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Namie" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="JH5-Iz-f7Q">
-                                <rect key="frame" x="51" y="88" width="123" height="9.3333333333333286"/>
+                                <rect key="frame" x="51" y="88" width="123" height="8.6666666666666714"/>
                                 <fontDescription key="fontDescription" name="MarkerFelt-Thin" family="Marker Felt" pointSize="42"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -142,7 +142,7 @@
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="S3I-vi-liH" userLabel="Goal Button">
-                                <rect key="frame" x="300.66666666666669" y="12.333333333333332" width="49.666666666666686" height="34.333333333333343"/>
+                                <rect key="frame" x="300.66666666666669" y="11.666666666666664" width="49.666666666666686" height="35"/>
                                 <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" image="star.circle" catalog="system" title=""/>
@@ -179,10 +179,10 @@
                                 </connections>
                             </button>
                             <progressView opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="750" progress="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="qT4-kL-fdE">
-                                <rect key="frame" x="51" y="128.33333333333334" width="289" height="4"/>
+                                <rect key="frame" x="51" y="127.66666666666669" width="289" height="4"/>
                             </progressView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Go meet some people!" textAlignment="natural" lineBreakMode="clip" baselineAdjustment="alignBaselines" minimumScaleFactor="0.5" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ja3-s1-LKd">
-                                <rect key="frame" x="52.000000000000014" y="87.333333333333329" width="161.33333333333337" height="18.333333333333329"/>
+                                <rect key="frame" x="52.000000000000014" y="86.666666666666671" width="161.33333333333337" height="19"/>
                                 <fontDescription key="fontDescription" name="Roboto-Bold" family="Roboto" pointSize="16"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -283,6 +283,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="49"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" red="1" green="0.90980392156862744" blue="0.83137254901960778" alpha="0.0" colorSpace="calibratedRGB"/>
+                        <color key="barTintColor" red="1" green="0.90980392160000001" blue="0.83137254900000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </tabBar>
                     <connections>
                         <segue destination="BYZ-38-t0r" kind="relationship" relationship="viewControllers" id="RmS-1k-ouZ"/>
@@ -412,6 +413,12 @@
                                 <viewLayoutGuide key="contentLayoutGuide" id="Tp3-Ys-BgW"/>
                                 <viewLayoutGuide key="frameLayoutGuide" id="nt3-m9-sQZ"/>
                             </scrollView>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="lPw-58-fB2">
+                                <rect key="frame" x="342" y="110" width="50" height="35"/>
+                                <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain" image="arrow.clockwise.circle.fill" catalog="system" title=""/>
+                            </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="cAv-iL-Nwz"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -423,6 +430,8 @@
                             <constraint firstItem="VWp-Gu-hNF" firstAttribute="leading" secondItem="cAv-iL-Nwz" secondAttribute="leading" constant="117" id="bPw-j9-4gX"/>
                             <constraint firstItem="SAe-PK-cg6" firstAttribute="centerX" secondItem="r8P-73-Z5k" secondAttribute="centerX" id="dkW-BF-ld1"/>
                             <constraint firstItem="SAe-PK-cg6" firstAttribute="top" secondItem="VWp-Gu-hNF" secondAttribute="bottom" constant="7.3333333333333428" id="gfq-hJ-LKi"/>
+                            <constraint firstItem="lPw-58-fB2" firstAttribute="top" secondItem="cAv-iL-Nwz" secondAttribute="top" constant="7" id="hWC-M4-EaD"/>
+                            <constraint firstItem="lPw-58-fB2" firstAttribute="leading" secondItem="VWp-Gu-hNF" secondAttribute="trailing" constant="64" id="sQ0-Xr-Jdq"/>
                             <constraint firstItem="VWp-Gu-hNF" firstAttribute="top" secondItem="cAv-iL-Nwz" secondAttribute="top" id="vUX-Uv-9JC"/>
                             <constraint firstItem="kfP-el-zin" firstAttribute="top" secondItem="SAe-PK-cg6" secondAttribute="bottom" constant="8" id="xhP-E2-nwf"/>
                         </constraints>
@@ -430,7 +439,9 @@
                     <tabBarItem key="tabBarItem" title="Names" image="person.text.rectangle.fill" catalog="system" id="OSO-27-sYu"/>
                     <connections>
                         <outlet property="NameList" destination="SAe-PK-cg6" id="OTC-b0-yJj"/>
+                        <outlet property="alphabetScrollView" destination="kfP-el-zin" id="ylz-i2-Ypk"/>
                         <outlet property="alphabetStackView" destination="zeo-Rm-vis" id="8b7-Ll-qvR"/>
+                        <outlet property="refreshButton" destination="lPw-58-fB2" id="0Vc-6k-R85"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Qaq-Od-ypJ" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
@@ -586,9 +597,10 @@
         </scene>
     </scenes>
     <inferredMetricsTieBreakers>
-        <segue reference="4Xd-G2-y6G"/>
+        <segue reference="aac-TS-kSO"/>
     </inferredMetricsTieBreakers>
     <resources>
+        <image name="arrow.clockwise.circle.fill" catalog="system" width="128" height="123"/>
         <image name="building.2.fill" catalog="system" width="128" height="108"/>
         <image name="gear" catalog="system" width="128" height="122"/>
         <image name="house.fill" catalog="system" width="128" height="104"/>

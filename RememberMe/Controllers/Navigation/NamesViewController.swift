@@ -17,6 +17,8 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
     //MARK: - OUTLETS
     @IBOutlet weak var NameList: UITableView!
     
+    @IBOutlet weak var alphabetScrollView: UIScrollView!
+    @IBOutlet weak var refreshButton: UIButton!
     @IBOutlet weak var alphabetStackView: UIStackView!
     var names: [Note] = []
     var allNames: [Note] = [] // Add this line
@@ -39,15 +41,29 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
       
     override func viewDidLoad() {
         super.viewDidLoad()
+        // Set border for the scrollView
+            alphabetScrollView.layer.borderColor = UIColor.black.cgColor
+            alphabetScrollView.layer.borderWidth = 2
+        alphabetScrollView.layer.cornerRadius = 10.0 // Add this line
+           alphabetScrollView.clipsToBounds = true
+            
         let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
         for letter in alphabet {
             let button = UIButton()
             button.setTitle(String(letter), for: .normal)
             button.setTitleColor(.black, for: .normal)
-            button.titleLabel?.font = UIFont(name: "System", size: 18)
+            button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 18)
+
             button.addTarget(self, action: #selector(alphabetButtonTapped), for: .touchUpInside)
             alphabetStackView.addArrangedSubview(button)
         }
+        refreshButton.addTarget(self, action: #selector(refreshNames), for: .touchUpInside)
+    }
+
+
+    @objc func refreshNames() {
+        names = allNames
+        NameList.reloadData()
     }
 
 
