@@ -16,7 +16,10 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
 
     //MARK: - OUTLETS
     @IBOutlet weak var NameList: UITableView!
+    @IBOutlet weak var alphabetStackView: UIStackView!
     var names: [Note] = []
+    var allNames: [Note] = [] // Add this line
+
 
       
       //FireBase Cloud Storage
@@ -35,7 +38,30 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
       
       override func viewDidLoad() {
           super.viewDidLoad()
+          let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+            for letter in alphabet {
+                let button = UIButton()
+                button.setTitle(String(letter), for: .normal)
+                button.setTitleColor(.blue, for: .normal)
+                button.addTarget(self, action: #selector(alphabetButtonTapped), for: .touchUpInside)
+                alphabetStackView.addArrangedSubview(button)
+            }
+        
       }
+    
+    @objc func alphabetButtonTapped(_ sender: UIButton) {
+        guard let letter = sender.titleLabel?.text else { return }
+        filterNames(startingWith: letter)
+    }
+    
+    func filterNames(startingWith letter: String) {
+        let filteredNames = allNames.filter { $0.text.uppercased().hasPrefix(letter) }
+        names = filteredNames
+        NameList.reloadData()
+    }
+
+
+
     
     func createAttributedString(from noteText: String) -> NSAttributedString {
         let attributedString = NSMutableAttributedString(string: noteText)
@@ -78,6 +104,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
                             
                             // Sort notes alphabetically
                             self.names.sort { $0.text.lowercased() < $1.text.lowercased() }
+                            self.allNames = self.names
                             
                             // Reload the table view
                             DispatchQueue.main.async {

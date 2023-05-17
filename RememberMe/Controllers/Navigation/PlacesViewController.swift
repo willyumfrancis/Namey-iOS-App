@@ -332,8 +332,37 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let selectedLocation = locations[indexPath.row]
+
+        // Calculate the average of the selected location's notes' coordinates
+        var totalLatitude = 0.0
+        var totalLongitude = 0.0
+        var notesCount = 0
+
+        for note in notes {
+            if note.locationName == selectedLocation.name {
+                totalLatitude += note.location.latitude
+                totalLongitude += note.location.longitude
+                notesCount += 1
+            }
+        }
+
+        if notesCount > 0 {
+            let averageLatitude = totalLatitude / Double(notesCount)
+            let averageLongitude = totalLongitude / Double(notesCount)
+            let averageLocation = CLLocationCoordinate2D(latitude: averageLatitude, longitude: averageLongitude)
+
+            let locationData = NSKeyedArchiver.archivedData(withRootObject: averageLocation)
+            UserDefaults.standard.set(locationData, forKey: "averageSelectedLocation")
+            UserDefaults.standard.set(selectedLocation.name, forKey: "averageSelectedLocationName")
+        } else {
+            UserDefaults.standard.removeObject(forKey: "averageSelectedLocation")
+            UserDefaults.standard.removeObject(forKey: "averageSelectedLocationName")
+        }
+
+        UserDefaults.standard.synchronize()
         delegate?.didSelectLocation(with: selectedLocation.name)
     }
+
 
 
 
