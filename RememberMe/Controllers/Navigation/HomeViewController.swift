@@ -103,19 +103,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
-        print("Location Button Pressed")
-           
-           guard let userLocation = locationManager.location?.coordinate else {
-               print("User location not available yet")
-               return
-           }
-           
-        loadAndFilterNotes(for: userLocation, goalRadius: 15.0) // Provide the required parameters
-           updateNotesWithImageURL() // Update the images for the notes
-           
-           // Display image for the user's current location
-           displayImageForLocation(location: userLocation)
-       }
+        
+        guard let userLocation = locationManager.location?.coordinate else {
+                print("User location not available yet")
+                return
+            }
+
+            loadAndFilterNotes(for: userLocation, goalRadius: 15.0)
+            displayImageForLocation(location: userLocation)
+            updateNotesCountLabel()
+        }
     
     //Save Name Button
     @IBAction func SaveNote(_ sender: UIButton) {
@@ -289,20 +286,21 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //Update Name Goal
     func updateNotesCountLabel() {
         let currentPeople = notes.count
-        if let locationName = locationNameLabel.text {
-            if currentPeople == 0 {
-                notesCountLabel.text = "Go meet some people!"
-            } else if currentPeople == 1 {
-                let labelText = "You know 1 person at \(locationName)"
-                notesCountLabel.text = labelText
-            } else {
-                let labelText = "You know \(currentPeople) people at \(locationName)."
-                notesCountLabel.text = labelText
-            }
+        let displayedLocationName = locationNameLabel.text ?? "Unknown Location"
+
+        if currentPeople == 0 {
+            notesCountLabel.text = "Go meet some people!"
+        } else if currentPeople == 1 {
+            let labelText = "You know 1 person at \(displayedLocationName)"
+            notesCountLabel.text = labelText
         } else {
-            print("User location not available yet")
+            let labelText = "You know \(currentPeople) people at \(displayedLocationName)."
+            notesCountLabel.text = labelText
         }
     }
+
+
+
 
     
     func updateProgressBar() {
@@ -480,6 +478,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
+
 
 
 
@@ -776,10 +775,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     func displayImageForLocation(location: CLLocationCoordinate2D) {
         let maxDistance: CLLocationDistance = 15
         let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
-        
+
         // Clear the image view
         self.CurrentPlace.image = nil
-        
+
         if let userEmail = Auth.auth().currentUser?.email {
             db.collection("notes")
                 .whereField("user", isEqualTo: userEmail)
@@ -793,15 +792,22 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                 if let locationData = data["location"] as? GeoPoint {
                                     let noteLocation = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
                                     let distance = noteLocation.distance(from: userCurrentLocation)
-                                    
+
                                     if distance <= maxDistance {
                                         if let locationName = data["locationName"] as? String, !locationName.isEmpty {
-                                            self.locationNameLabel.text = "\(locationName)"
+                                            DispatchQueue.main.async {
+                                                self.locationNameLabel.text = "\(locationName)"
+                                                self.updateNotesCountLabel()
+                                            }
                                             self.downloadAndDisplayImage(locationName: locationName)
                                         } else {
                                             let locationKey = "\(locationData.latitude),\(locationData.longitude)"
                                             if !self.fetchedLocationKeys.contains(locationKey) {
-                                                self.fetchedLocationKeys.insert(locationKey)
+                                                DispatchQueue.main.async {
+                                                    self.fetchedLocationKeys.insert(locationKey)
+                                                    self.locationNameLabel.text = locationKey
+                                                    self.updateNotesCountLabel()
+                                                }
                                                 self.downloadAndDisplayImage(locationName: locationKey)
                                             }
                                         }
@@ -819,6 +825,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("User email not found")
         }
     }
+
     
     func displayImageForLocationName(locationName: String) {
         // Clear the image view
