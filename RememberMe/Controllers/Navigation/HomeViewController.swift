@@ -568,22 +568,31 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         sender.view?.removeFromSuperview()
     }
 
-    
     @objc func imageTapped() {
         guard let image = CurrentPlace.image else { return }
+
+        let scrollView = UIScrollView(frame: UIScreen.main.bounds)
+        scrollView.delegate = self
+        scrollView.minimumZoomScale = 1.0
+        scrollView.maximumZoomScale = 6.0
+        scrollView.backgroundColor = .black
+
         let imageView = UIImageView(image: image)
         imageView.frame = UIScreen.main.bounds
-        imageView.backgroundColor = .black
         imageView.contentMode = .scaleAspectFit
         imageView.isUserInteractionEnabled = true
 
-        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissFullscreenImage))
-        imageView.addGestureRecognizer(tapGestureRecognizer)
+        scrollView.addSubview(imageView)
 
-        self.view.addSubview(imageView)
+        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissFullscreenImage))
+        scrollView.addGestureRecognizer(tapGestureRecognizer)
+
+        self.view.addSubview(scrollView)
         self.navigationController?.isNavigationBarHidden = true
         self.tabBarController?.tabBar.isHidden = true
     }
+
+
 
     
     func updateImageURLForNote(_ documentID: String) {
@@ -1715,6 +1724,13 @@ extension HomeViewController: NoteCellDelegate {
     }
 
 }
+
+extension HomeViewController: UIScrollViewDelegate {
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+        return scrollView.subviews.first
+    }
+}
+
 
 
     extension HomeViewController: PlacesViewControllerDelegate {
