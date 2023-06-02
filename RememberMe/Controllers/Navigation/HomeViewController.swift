@@ -83,7 +83,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     var notesLoaded = false
     
     var userLocation: CLLocationCoordinate2D?
-    var selectedLocation: CLLocationCoordinate2D?
 
     
     
@@ -1210,6 +1209,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //MARK: - NOTES
     
+    var selectedLocation: CLLocationCoordinate2D?
+
+    
     // textFieldShouldReturn method
     func noteCellTextFieldShouldReturn(_ textField: UITextField) {
         saveNote() // Perform the same action as the "Save Note" button
@@ -1217,13 +1219,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     // New function to save the note
     func saveNote() {
-        let locationToSave: CLLocationCoordinate2D
-        if let averageLocation = averageSelectedLocation {
-            locationToSave = averageLocation
+        var locationToSave: CLLocationCoordinate2D
+        
+        if let selectedLocation = selectedLocation {
+            locationToSave = selectedLocation
         } else if let currentLocation = locationManager.location?.coordinate {
             locationToSave = currentLocation
         } else {
-            print("Failed to get user's current location or average location")
+            print("Failed to get user's current location or selected location")
             return
         }
 
@@ -1263,6 +1266,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("Note text field is empty")
         }
     }
+
 
 
 
@@ -1428,69 +1432,64 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
     }
     
-
+//MARK: - LOAD PLACES VIEW CONTROLLER DATA
     func LoadPlacesNotes(for locationName: String) {
-        print("loadPlacesNotes called")
-        
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User email not found")
-            return
-        }
-        
-        print("Loading notes for user: \(userEmail)")
-        
-        db.collection("notes")
-            .whereField("user", isEqualTo: userEmail)
-            .whereField("locationName", isEqualTo: locationName)
-            .order(by: "timestamp", descending: false)
-            .getDocuments { [weak self] querySnapshot, error in
-                if let e = error {
-                    print("There was an issue retrieving data from Firestore: \(e)")
-                } else {
-                    self?.notes = [] // Clear the existing notes array
-                    
-                    if let snapshotDocuments = querySnapshot?.documents {
-                        print("Found \(snapshotDocuments.count) notes")
-                        for doc in snapshotDocuments {
-                            let data = doc.data()
-                            if let noteText = data["note"] as? String,
-                               let locationData = data["location"] as? GeoPoint,
-                               let locationName = data["locationName"] as? String,
-                               let imageURLString = data["imageURL"] as? String,
-                               !noteText.isEmpty {
-                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-                                let imageURL = URL(string: imageURLString)
-                                let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: imageURL)
-                                
-                                self?.notes.append(newNote)
-                            }
-                        }
+           print("loadPlacesNotes called")
+           
+           guard let userEmail = Auth.auth().currentUser?.email else {
+               print("User email not found")
+               return
+           }
+           
+           print("Loading notes for user: \(userEmail)")
+           
+           db.collection("notes")
+               .whereField("user", isEqualTo: userEmail)
+               .whereField("locationName", isEqualTo: locationName)
+               .order(by: "timestamp", descending: false)
+               .getDocuments { [weak self] querySnapshot, error in
+                   if let e = error {
+                       print("There was an issue retrieving data from Firestore: \(e)")
+                   } else {
+                       self?.notes = [] // Clear the existing notes array
+                       
+                       if let snapshotDocuments = querySnapshot?.documents {
+                           print("Found \(snapshotDocuments.count) notes")
+                           for doc in snapshotDocuments {
+                               let data = doc.data()
+                               if let noteText = data["note"] as? String,
+                                  let locationData = data["location"] as? GeoPoint,
+                                  let locationName = data["locationName"] as? String,
+                                  let imageURLString = data["imageURL"] as? String,
+                                  !noteText.isEmpty {
+                                   let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                                   let imageURL = URL(string: imageURLString)
+                                   let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: imageURL)
+                                   
+                                   // Store this location as the selected location
+                                   self?.selectedLocation = location
+                                   
+                                   self?.notes.append(newNote)
+                               }
+                           }
 
-                        // Retrieve the average location if available
-                        if let locationData = UserDefaults.standard.object(forKey: "averageSelectedLocation") as? Data,
-                           let averageLocation = NSKeyedUnarchiver.unarchiveObject(with: locationData) as? CLLocationCoordinate2D {
-                            self?.averageSelectedLocation = averageLocation
-                        } else {
-                            self?.averageSelectedLocation = nil
-                        }
-
-                        DispatchQueue.main.async {
-                            print("Showing \(self?.notes.count ?? 0) notes based on location")
-                            self?.tableView.reloadData()
-                            
-                            self?.updateProgressBar()
-                            // Update the location name label
-                            self?.locationNameLabel.text = "\(locationName)"
-                            self?.currentLocationName = locationName
-                            self?.fetchImageURLFor(locationName: locationName) { imageURL in
-                                self?.currentLocationImageURL = imageURL
-                                self?.updateNotesWithImageURL()
-                            }
-                        }
-                    }
-                }
-            }
-    }
+                           DispatchQueue.main.async {
+                               print("Showing \(self?.notes.count ?? 0) notes based on location")
+                               self?.tableView.reloadData()
+                               
+                               self?.updateProgressBar()
+                               // Update the location name label
+                               self?.locationNameLabel.text = "\(locationName)"
+                               self?.currentLocationName = locationName
+                               self?.fetchImageURLFor(locationName: locationName) { imageURL in
+                                   self?.currentLocationImageURL = imageURL
+                                   self?.updateNotesWithImageURL()
+                               }
+                           }
+                       }
+                   }
+               }
+       }
 
 
 

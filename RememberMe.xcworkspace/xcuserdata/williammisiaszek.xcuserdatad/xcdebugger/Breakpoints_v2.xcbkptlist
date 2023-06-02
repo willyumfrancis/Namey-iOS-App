@@ -30,10 +30,10 @@
             filePath = "RememberMe/Controllers/Navigation/PlacesViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "309"
-            endingLineNumber = "309"
-            landmarkName = "PlacesViewController"
-            landmarkType = "3">
+            startingLineNumber = "268"
+            endingLineNumber = "268"
+            landmarkName = "downloadAndDisplayImage(locationData:completion:)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>
