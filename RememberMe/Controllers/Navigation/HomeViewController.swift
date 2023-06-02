@@ -255,15 +255,23 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         UNUserNotificationCenter.current().delegate = self
         requestNotificationAuthorization()
         checkNotificationSettings()
+        
+        // Setting up location manager
+            locationManager.delegate = self
+            locationManager.desiredAccuracy = kCLLocationAccuracyBest
+            locationManager.distanceFilter = kCLDistanceFilterNone
+            locationManager.requestAlwaysAuthorization()
+
+            // Setting up notification center
+            UNUserNotificationCenter.current().delegate = self
+            requestNotificationAuthorization()
+            setupNotificationCategory()
 
 
         
         updateNotesWithImageURL()
-        NotificationCenter.default.addObserver(self, selector: #selector(updateLocationWhenAppIsActive), name: UIApplication.didBecomeActiveNotification, object: nil)
         
-        
-        locationManager.delegate = self
-        
+                
         tableView.dragDelegate = self
         tableView.dropDelegate = self
         tableView.dragInteractionEnabled = true
@@ -484,29 +492,31 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
 
         
-    func getLastNote() -> Note? {
-        return notes.last
+    func getLastNote(for locationName: String) -> Note? {
+        return notes.filter { $0.locationName == locationName }.last
     }
 
-    func getLastFiveNotes() -> [Note] {
-        return Array(notes.suffix(5))
+    func getLastFiveNotes(for locationName: String) -> [Note] {
+        return Array(notes.filter { $0.locationName == locationName }.suffix(5))
     }
+
 
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         if let circularRegion = region as? CLCircularRegion {
             // Fetch last note and location name
             let locationName = fetchLocationNameFor(location: circularRegion.center) ?? "Some Spot"
-            let lastNote = getLastNote() // Implement this function to get the last note entered into the app
-            let lastFiveNotes = getLastFiveNotes() // Implement this function to get the last 5 notes entered into the app
+            let lastNote = getLastNote(for: locationName) // Get the last note for this location
+            let lastFiveNotes = getLastFiveNotes(for: locationName) // Get the last 5 notes for this location
 
             // We need to convert the note objects to string
             let lastNoteText = lastNote?.text ?? ""
-            let lastFiveNotesText = lastFiveNotes.map { $0.text } // No join operation
+            let lastFiveNotesText = lastFiveNotes.map { $0.text }
 
             // Trigger the notification
             sendNotification(locationName: locationName, lastNote: lastNoteText, lastFiveNotes: lastFiveNotesText)
         }
     }
+
 
     func sendNotification(locationName: String, lastNote: String, lastFiveNotes: [String]) { // Changed lastFiveNotes type
         print("Sending notification for location: \(locationName)") // Debugging line

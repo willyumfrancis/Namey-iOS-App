@@ -15,6 +15,7 @@ import Photos
 import MobileCoreServices
 import FirebaseStorage
 import SDWebImage
+import UserNotifications
 
 struct LocationData {
     let name: String
@@ -30,8 +31,8 @@ func safeFileName(for locationName: String) -> String {
 }
 
 
-class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate {
-    
+class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate, UNUserNotificationCenterDelegate {
+
     weak var delegate: PlacesViewControllerDelegate?
 
     var locations: [LocationData] = []
@@ -40,6 +41,11 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     var userLocation: CLLocation?
     var currentPage: Int = 0
     let pageSize: Int = 5
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.alert, .sound])  // Replace with your preferred options
+    }
+
     
     var notes: [Note] = []
     
@@ -61,8 +67,21 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         
         tableView.dataSource = self
         tableView.delegate = self
+        UNUserNotificationCenter.current().delegate = self
+
+        
         
         loadLocationData()
+        
+        // Request for the notification authorization
+        requestNotificationAuthorization()
+        // Set up notification category
+        setupNotificationCategory()
+
+        // Call this after the locations are loaded
+        for locationData in locations {
+            addGeofenceForLocation(locationData)
+        }
         
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -81,6 +100,127 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                }
            }
     }
+    
+    //MARK: - GeoFencing
+    
+    // Add geofence for a given location
+        func addGeofenceForLocation(_ locationData: LocationData) {
+            let geofenceRegionCenter = CLLocationCoordinate2D(
+                latitude: locationData.location.coordinate.latitude,
+                longitude: locationData.location.coordinate.longitude
+            )
+
+            // Create a 500-meter radius geofence
+            let geofenceRegion = CLCircularRegion(
+                center: geofenceRegionCenter,
+                radius: 50,
+                identifier: safeFileName(for: locationData.name)
+            )
+            
+            geofenceRegion.notifyOnEntry = true
+            geofenceRegion.notifyOnExit = true
+
+            locationManager.startMonitoring(for: geofenceRegion)
+        }
+        
+        // Remove all existing geofences and set up new ones
+        func updateGeofences() {
+            for region in locationManager.monitoredRegions {
+                locationManager.stopMonitoring(for: region)
+            }
+            
+            for locationData in locations {
+                addGeofenceForLocation(locationData)
+            }
+        }
+        
+    
+    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        if let circularRegion = region as? CLCircularRegion {
+            // Fetch last note and location name
+            let locationName = region.identifier.replacingOccurrences(of: "_", with: " ") // Replace "_" with space in location name
+            let lastNote = getLastNote(for: locationName)?.text ?? "" // Get the last note for this location
+            let lastFiveNotes = getLastFiveNotes(for: locationName).map { $0.text } // Get the last 5 notes for this location
+
+            // Trigger the notification
+            sendNotification(locationName: locationName, lastNote: lastNote, lastFiveNotes: lastFiveNotes)
+        }
+    }
+      
+      func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
+          if region is CLCircularRegion {
+              // Handle exiting region
+              print("Exited region: \(region.identifier)")
+          }
+      }
+        
+    //MARK: - LOCATION
+
+
+        
+        func setupGeoFence(location: CLLocationCoordinate2D, radius: CLLocationDistance, identifier: String) {
+            print("Setting up GeoFence at \(location) with radius \(radius)") // Debugging line
+            let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
+            region.notifyOnEntry = true
+            region.notifyOnExit = false
+            locationManager.startMonitoring(for: region)
+        }
+
+            
+        func getLastNote(for locationName: String) -> Note? {
+            return notes.filter { $0.locationName == locationName }.last
+        }
+
+        func getLastFiveNotes(for locationName: String) -> [Note] {
+            return Array(notes.filter { $0.locationName == locationName }.suffix(5))
+        }
+
+
+
+    func sendNotification(locationName: String, lastNote: String, lastFiveNotes: [String]) {
+        print("Preparing to send notification for location: \(locationName)") // Debugging line
+        let content = UNMutableNotificationContent()
+        content.title = "Welcome to \(locationName)"
+        content.body = "Last note: \(lastNote)"
+        content.userInfo = ["lastFiveNotes": lastFiveNotes] // lastFiveNotes is now an array
+        content.categoryIdentifier = "notesCategory"
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Error adding notification: \(error)")
+            } else {
+                print("Notification added successfully for location: \(locationName)")
+            }
+        }
+    }
+
+
+        func requestNotificationAuthorization() {
+            print("Requesting notification authorization") // Debugging line
+            let center = UNUserNotificationCenter.current()
+            center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
+                if granted {
+                    print("Notification access granted")
+                } else {
+                    print("Notification access denied")
+                    if let error = error {
+                        print("Error requesting authorization: \(error)")
+                    }
+                }
+            }
+        }
+
+        func setupNotificationCategory() {
+            print("Setting up notification category") // Debugging line
+            let viewLastFiveNotesAction = UNNotificationAction(identifier: "viewLastFiveNotes", title: "View last 5 notes", options: [.foreground])
+            let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastFiveNotesAction], intentIdentifiers: [], options: [])
+            UNUserNotificationCenter.current().setNotificationCategories([category])
+        }
+        
+        
     
     func clusterLocations(locations: [LocationData], eps: Double, minSamples: Int) -> [LocationData] {
         var visited = [Bool](repeating: false, count: locations.count)
@@ -201,6 +341,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                         self.locations = self.clusterLocations(locations: self.locations, eps: 30.0, minSamples: minSamples)
                         self.sortLocationsByDistance()
                         self.loadNextPage()
+                        // Update geofences
+                                self.updateGeofences()
                         
                         DispatchQueue.main.async {
                             print(self.locations)  // Debugging line
