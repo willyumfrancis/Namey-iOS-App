@@ -1,4 +1,4 @@
-${PODS_ROOT}/Target Support Files/Pods-RememberMe/Pods-RememberMe-frameworks.sh
+${PODS_ROOT}/Target Support Files/Pods-Namey/Pods-Namey-frameworks.sh
 ${BUILT_PRODUCTS_DIR}/BoringSSL-GRPC/openssl_grpc.framework
 ${BUILT_PRODUCTS_DIR}/FirebaseAppCheckInterop/FirebaseAppCheckInterop.framework
 ${BUILT_PRODUCTS_DIR}/FirebaseAuth/FirebaseAuth.framework

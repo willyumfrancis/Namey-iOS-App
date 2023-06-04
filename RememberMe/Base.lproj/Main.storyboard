@@ -20,7 +20,7 @@
         <!--Welcome View Controller-->
         <scene sceneID="Zft-3a-YaC">
             <objects>
-                <viewController id="fxW-0V-mgA" customClass="WelcomeViewController" customModule="RememberMe" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="fxW-0V-mgA" customClass="WelcomeViewController" customModule="Namey" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="0AG-Tl-hLN">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -91,7 +91,7 @@
         <!--Home-->
         <scene sceneID="tne-QT-ifu">
             <objects>
-                <viewController storyboardIdentifier="HomeViewController" id="BYZ-38-t0r" customClass="HomeViewController" customModule="RememberMe" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="HomeViewController" id="BYZ-38-t0r" customClass="HomeViewController" customModule="Namey" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -246,7 +246,7 @@
         <!--Places-->
         <scene sceneID="lTb-Io-eMz">
             <objects>
-                <viewController id="CEP-KN-Br7" customClass="PlacesViewController" customModule="RememberMe" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="CEP-KN-Br7" customClass="PlacesViewController" customModule="Namey" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="XW2-qi-g7n">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -277,7 +277,7 @@
         <!--Menu Controller-->
         <scene sceneID="h0v-Fc-VPO">
             <objects>
-                <tabBarController storyboardIdentifier="HomeMenuController" id="BoO-Yj-oim" customClass="MenuController" customModule="RememberMe" customModuleProvider="target" sceneMemberID="viewController">
+                <tabBarController storyboardIdentifier="HomeMenuController" id="BoO-Yj-oim" customClass="MenuController" customModule="Namey" customModuleProvider="target" sceneMemberID="viewController">
                     <navigationItem key="navigationItem" id="gMi-nb-ops"/>
                     <tabBar key="tabBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="k8e-pR-8Jb">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="49"/>
@@ -299,7 +299,7 @@
         <!--Log In View Controller-->
         <scene sceneID="GiP-JS-tSm">
             <objects>
-                <viewController id="XD7-u9-rPt" customClass="LogInViewController" customModule="RememberMe" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="XD7-u9-rPt" customClass="LogInViewController" customModule="Namey" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="U0F-iU-TzX">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -375,7 +375,7 @@
         <!--Names-->
         <scene sceneID="sqX-Ek-aBg">
             <objects>
-                <viewController id="4YA-um-3Pa" customClass="NamesViewController" customModule="RememberMe" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="4YA-um-3Pa" customClass="NamesViewController" customModule="Namey" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="r8P-73-Z5k">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -387,11 +387,11 @@
                                 <nil key="highlightedColor"/>
                                 <color key="shadowColor" systemColor="opaqueSeparatorColor"/>
                             </label>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="SAe-PK-cg6">
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="SAe-PK-cg6">
                                 <rect key="frame" x="33" y="157" width="327" height="544"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                             </tableView>
-                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" showsVerticalScrollIndicator="NO" translatesAutoresizingMaskIntoConstraints="NO" id="kfP-el-zin">
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" translatesAutoresizingMaskIntoConstraints="NO" id="kfP-el-zin">
                                 <rect key="frame" x="33" y="709" width="327" height="60"/>
                                 <subviews>
                                     <stackView opaque="NO" contentMode="scaleToFill" distribution="equalSpacing" translatesAutoresizingMaskIntoConstraints="NO" id="zeo-Rm-vis">
@@ -451,7 +451,7 @@
         <!--Settings-->
         <scene sceneID="iqd-LP-qma">
             <objects>
-                <viewController id="xbb-iS-Kw8" customClass="SettingsViewController" customModule="RememberMe" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="xbb-iS-Kw8" customClass="SettingsViewController" customModule="Namey" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="qmZ-fR-ckv">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -503,7 +503,7 @@
         <!--Register View Controller-->
         <scene sceneID="7Lu-QK-jML">
             <objects>
-                <viewController id="ujR-y2-ycv" customClass="RegisterViewController" customModule="RememberMe" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="ujR-y2-ycv" customClass="RegisterViewController" customModule="Namey" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="zs2-E2-Aq7">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

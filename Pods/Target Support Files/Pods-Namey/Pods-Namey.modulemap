@@ -1,0 +1,6 @@
+framework module Pods_Namey {
+  umbrella header "Pods-Namey-umbrella.h"
+
+  export *
+  module * { export * }
+}

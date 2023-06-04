@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D236302C40BB898E3F71C0D /* Pods_Namey.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9CEC1B239EFD2CE1DAEA4441 /* Pods_Namey.framework */; };
 		7502561829CE4A1C004FE87A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7502561729CE4A1C004FE87A /* GoogleService-Info.plist */; };
 		7516ED2229D215CB00801960 /* K.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7516ED2129D215CB00801960 /* K.swift */; };
 		7545750A29C00798004242C5 /* LogInViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750929C00798004242C5 /* LogInViewController.swift */; };
@@ -28,7 +29,6 @@
 		75B69CED29BFF5120049D4F5 /* WelcomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CEC29BFF5120049D4F5 /* WelcomeViewController.swift */; };
 		75B69CEF29BFF5200049D4F5 /* RegisterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CEE29BFF5200049D4F5 /* RegisterViewController.swift */; };
 		75F5D89529C63D2A00272A2F /* MenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F5D89429C63D2A00272A2F /* MenuController.swift */; };
-		91F3948A7A2DED1E28F8DE05 /* Pods_RememberMe.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0CDA379DE75D8A61E96F863 /* Pods_RememberMe.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,7 +46,7 @@
 		75A2588D29D21A1200A8D509 /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
 		75A2589329D2380000A8D509 /* NoteCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteCell.swift; sourceTree = "<group>"; };
 		75A2589429D2380000A8D509 /* NoteCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NoteCell.xib; sourceTree = "<group>"; };
-		75B69CD129BFEEE40049D4F5 /* RememberMe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RememberMe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		75B69CD129BFEEE40049D4F5 /* Namey.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Namey.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		75B69CD629BFEEE40049D4F5 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		75B69CD829BFEEE40049D4F5 /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
@@ -58,8 +58,10 @@
 		75B69CEC29BFF5120049D4F5 /* WelcomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewController.swift; sourceTree = "<group>"; };
 		75B69CEE29BFF5200049D4F5 /* RegisterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterViewController.swift; sourceTree = "<group>"; };
 		75F5D89429C63D2A00272A2F /* MenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuController.swift; sourceTree = "<group>"; };
-		A0CDA379DE75D8A61E96F863 /* Pods_RememberMe.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RememberMe.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		9CEC1B239EFD2CE1DAEA4441 /* Pods_Namey.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Namey.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C61B636FCDA26CB4C0C103B5 /* Pods-Namey.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Namey.release.xcconfig"; path = "Target Support Files/Pods-Namey/Pods-Namey.release.xcconfig"; sourceTree = "<group>"; };
 		D52F56AC43D9BDF3ECF77AD1 /* Pods-RememberMe.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RememberMe.release.xcconfig"; path = "Target Support Files/Pods-RememberMe/Pods-RememberMe.release.xcconfig"; sourceTree = "<group>"; };
+		EFB17725452B99398D9115B9 /* Pods-Namey.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Namey.debug.xcconfig"; path = "Target Support Files/Pods-Namey/Pods-Namey.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,7 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				91F3948A7A2DED1E28F8DE05 /* Pods_RememberMe.framework in Frameworks */,
+				0D236302C40BB898E3F71C0D /* Pods_Namey.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,7 +79,7 @@
 		11CEAAF000DFB8545CCD8CBC /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				A0CDA379DE75D8A61E96F863 /* Pods_RememberMe.framework */,
+				9CEC1B239EFD2CE1DAEA4441 /* Pods_Namey.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -131,7 +133,7 @@
 		75B69CD229BFEEE40049D4F5 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				75B69CD129BFEEE40049D4F5 /* RememberMe.app */,
+				75B69CD129BFEEE40049D4F5 /* Namey.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -176,6 +178,8 @@
 			children = (
 				2E72DCCE94307E8B124BC5D3 /* Pods-RememberMe.debug.xcconfig */,
 				D52F56AC43D9BDF3ECF77AD1 /* Pods-RememberMe.release.xcconfig */,
+				EFB17725452B99398D9115B9 /* Pods-Namey.debug.xcconfig */,
+				C61B636FCDA26CB4C0C103B5 /* Pods-Namey.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -183,9 +187,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		75B69CD029BFEEE40049D4F5 /* RememberMe */ = {
+		75B69CD029BFEEE40049D4F5 /* Namey */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 75B69CE829BFEEE50049D4F5 /* Build configuration list for PBXNativeTarget "RememberMe" */;
+			buildConfigurationList = 75B69CE829BFEEE50049D4F5 /* Build configuration list for PBXNativeTarget "Namey" */;
 			buildPhases = (
 				E71311DD0B5C5654BDAABA3F /* [CP] Check Pods Manifest.lock */,
 				75B69CCD29BFEEE40049D4F5 /* Sources */,
@@ -197,9 +201,9 @@
 			);
 			dependencies = (
 			);
-			name = RememberMe;
+			name = Namey;
 			productName = RememberMe;
-			productReference = 75B69CD129BFEEE40049D4F5 /* RememberMe.app */;
+			productReference = 75B69CD129BFEEE40049D4F5 /* Namey.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -217,7 +221,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 75B69CCC29BFEEE40049D4F5 /* Build configuration list for PBXProject "RememberMe" */;
+			buildConfigurationList = 75B69CCC29BFEEE40049D4F5 /* Build configuration list for PBXProject "Namey" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -230,7 +234,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				75B69CD029BFEEE40049D4F5 /* RememberMe */,
+				75B69CD029BFEEE40049D4F5 /* Namey */,
 			);
 		};
 /* End PBXProject section */
@@ -258,15 +262,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-RememberMe/Pods-RememberMe-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-Namey/Pods-Namey-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-RememberMe/Pods-RememberMe-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-Namey/Pods-Namey-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-RememberMe/Pods-RememberMe-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Namey/Pods-Namey-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		E71311DD0B5C5654BDAABA3F /* [CP] Check Pods Manifest.lock */ = {
@@ -284,7 +288,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-RememberMe-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-Namey-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -454,7 +458,7 @@
 		};
 		75B69CE929BFEEE50049D4F5 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2E72DCCE94307E8B124BC5D3 /* Pods-RememberMe.debug.xcconfig */;
+			baseConfigurationReference = EFB17725452B99398D9115B9 /* Pods-Namey.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -463,6 +467,7 @@
 				DEVELOPMENT_TEAM = TV7YB5JDT2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RememberMe/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Namey;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to locate establishments you are visiting. It's a core function of the app.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -484,7 +489,7 @@
 		};
 		75B69CEA29BFEEE50049D4F5 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D52F56AC43D9BDF3ECF77AD1 /* Pods-RememberMe.release.xcconfig */;
+			baseConfigurationReference = C61B636FCDA26CB4C0C103B5 /* Pods-Namey.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -493,6 +498,7 @@
 				DEVELOPMENT_TEAM = TV7YB5JDT2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RememberMe/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Namey;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to locate establishments you are visiting. It's a core function of the app.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -515,7 +521,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		75B69CCC29BFEEE40049D4F5 /* Build configuration list for PBXProject "RememberMe" */ = {
+		75B69CCC29BFEEE40049D4F5 /* Build configuration list for PBXProject "Namey" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75B69CE629BFEEE50049D4F5 /* Debug */,
@@ -524,7 +530,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		75B69CE829BFEEE50049D4F5 /* Build configuration list for PBXNativeTarget "RememberMe" */ = {
+		75B69CE829BFEEE50049D4F5 /* Build configuration list for PBXNativeTarget "Namey" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75B69CE929BFEEE50049D4F5 /* Debug */,
