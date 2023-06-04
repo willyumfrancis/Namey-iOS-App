@@ -91,7 +91,9 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         
         print("Locations loaded")
         
-        loadNotes()
+        loadNotes() { _ in
+            // do nothing here
+        }
         if let tabBarController = self.tabBarController, let viewControllers = tabBarController.viewControllers {
                for viewController in viewControllers {
                    if let homeViewController = viewController as? HomeViewController {
@@ -137,15 +139,18 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         if let circularRegion = region as? CLCircularRegion {
-            // Fetch last note and location name
-            let locationName = region.identifier.replacingOccurrences(of: "_", with: " ") // Replace "_" with space in location name
-            let lastNote = getLastNote(for: locationName)?.text ?? "" // Get the last note for this location
-            let lastFiveNotes = getLastFiveNotes(for: locationName).map { $0.text } // Get the last 5 notes for this location
+            loadNotes() { notes in
+                // Fetch last note and location name
+                let locationName = region.identifier.replacingOccurrences(of: "_", with: " ") // Replace "_" with space in location name
+                let lastNote = self.getLastNote(for: locationName)?.text ?? "" // Get the last note for this location
+                let lastFiveNotes = self.getLastFiveNotes(for: locationName).map { $0.text } // Get the last 5 notes for this location
 
-            // Trigger the notification
-            sendNotification(locationName: locationName, lastNote: lastNote, lastFiveNotes: lastFiveNotes)
+                // Trigger the notification
+                self.sendNotification(locationName: locationName, lastNote: lastNote, lastFiveNotes: lastFiveNotes)
+            }
         }
     }
+
       
       func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
           if region is CLCircularRegion {
@@ -364,7 +369,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
            }
        }
     
-    func loadNotes() {
+    func loadNotes(completion: @escaping ([Note]) -> Void) {
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
             return
@@ -405,10 +410,12 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                         }
                         self.notes = fetchedNotes
                         print("Loaded notes: \(self.notes)")  // Debugging line
+                        completion(fetchedNotes)
                     }
                 }
             }
     }
+
 
 
 

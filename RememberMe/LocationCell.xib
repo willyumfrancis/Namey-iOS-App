@@ -18,37 +18,36 @@
                 <rect key="frame" x="0.0" y="0.0" width="519" height="119"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <view contentMode="scaleToFill" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="UcI-Y0-916">
+                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="UcI-Y0-916">
                         <rect key="frame" x="0.0" y="10" width="519" height="99"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>
                     <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Kls-gD-1yq">
                         <rect key="frame" x="20" y="10" width="106" height="98"/>
                         <constraints>
-                            <constraint firstAttribute="width" constant="106" id="Lsg-dK-nSe"/>
+                            <constraint firstAttribute="width" constant="106" id="71j-B9-IFn"/>
                         </constraints>
                     </imageView>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="Location Name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumScaleFactor="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="vf0-gh-fiA">
                         <rect key="frame" x="147" y="7" width="385" height="104"/>
-                        <constraints>
-                            <constraint firstAttribute="width" constant="385" id="23b-LE-Sxm"/>
-                        </constraints>
                         <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="19"/>
                         <nil key="textColor"/>
                         <nil key="highlightedColor"/>
                     </label>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="vf0-gh-fiA" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" constant="-63" id="0Mj-PF-j5U"/>
-                    <constraint firstItem="UcI-Y0-916" firstAttribute="top" secondItem="Kls-gD-1yq" secondAttribute="top" id="0oz-VX-Dvc"/>
-                    <constraint firstItem="Kls-gD-1yq" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" constant="-60" id="ABn-r3-UCL"/>
-                    <constraint firstItem="Kls-gD-1yq" firstAttribute="bottom" secondItem="vf0-gh-fiA" secondAttribute="bottom" constant="-3" id="EQ3-lE-HUC"/>
+                    <constraint firstItem="Kls-gD-1yq" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="3RR-Bh-N0t"/>
+                    <constraint firstItem="Kls-gD-1yq" firstAttribute="centerY" secondItem="UcI-Y0-916" secondAttribute="centerY" id="5NK-PP-CVx"/>
+                    <constraint firstItem="vf0-gh-fiA" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" constant="-63" id="L6y-hf-l2J"/>
                     <constraint firstItem="UcI-Y0-916" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" constant="-20" id="NMO-RG-X1W"/>
-                    <constraint firstItem="UcI-Y0-916" firstAttribute="centerY" secondItem="Kls-gD-1yq" secondAttribute="centerY" id="VAS-2x-Vyh"/>
+                    <constraint firstItem="vf0-gh-fiA" firstAttribute="centerY" secondItem="Kls-gD-1yq" secondAttribute="centerY" id="QAL-Qx-flz"/>
+                    <constraint firstItem="UcI-Y0-916" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="10" id="TRU-2d-6DW"/>
                     <constraint firstItem="UcI-Y0-916" firstAttribute="centerY" secondItem="H2p-sc-9uM" secondAttribute="centerY" id="Vb2-Hk-Md4"/>
-                    <constraint firstItem="vf0-gh-fiA" firstAttribute="leading" secondItem="Kls-gD-1yq" secondAttribute="trailing" constant="21" id="YBN-Y3-snp"/>
+                    <constraint firstAttribute="trailingMargin" secondItem="vf0-gh-fiA" secondAttribute="trailing" constant="-33" id="Vyp-0f-k4L"/>
+                    <constraint firstAttribute="bottom" secondItem="UcI-Y0-916" secondAttribute="bottom" constant="10" id="dx9-mQ-zH2"/>
                     <constraint firstItem="UcI-Y0-916" firstAttribute="centerX" secondItem="H2p-sc-9uM" secondAttribute="centerX" id="hXI-aj-svC"/>
-                    <constraint firstItem="Kls-gD-1yq" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="znM-cB-wMr"/>
+                    <constraint firstItem="vf0-gh-fiA" firstAttribute="leading" secondItem="Kls-gD-1yq" secondAttribute="trailing" constant="21" id="vuN-OJ-ltN"/>
+                    <constraint firstItem="Kls-gD-1yq" firstAttribute="top" secondItem="UcI-Y0-916" secondAttribute="top" id="xU8-ME-kvj"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>

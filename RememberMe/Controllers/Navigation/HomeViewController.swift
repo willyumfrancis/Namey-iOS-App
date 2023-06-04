@@ -256,6 +256,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         requestNotificationAuthorization()
         checkNotificationSettings()
         
+        // Retrieve the stored goal number from UserDefaults
+          let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
+          if storedValue != 0 {
+              maxPeople = storedValue
+          }
+        
         // Setting up location manager
             locationManager.delegate = self
             locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -267,6 +273,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             requestNotificationAuthorization()
             setupNotificationCategory()
 
+        // Update the progress bar according to the retrieved goal number
+           updateProgressBar()
 
         
         updateNotesWithImageURL()
@@ -436,7 +444,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let slider = UISlider(frame: CGRect(x: 10, y: 60, width: 250, height: 20))
         slider.minimumValue = 1
         slider.maximumValue = 7
-        slider.value = Float(maxPeople)
+        
+        // Retrieve value from UserDefaults
+        let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
+        slider.value = storedValue != 0 ? Float(storedValue) : Float(maxPeople)
+        
         slider.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
         
         sliderValueLabel.text = "\(Int(slider.value))"
@@ -447,6 +459,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
         let doneAction = UIAlertAction(title: "Done", style: .default) { [weak self] _ in
             self?.maxPeople = Int(slider.value)
+            
+            // Save value to UserDefaults when Done is pressed
+            UserDefaults.standard.set(self?.maxPeople, forKey: "GoalNumber")
+            
             self?.updateProgressBar()
         }
         
@@ -459,6 +475,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         present(alertController, animated: true)
     }
+
     
     
     
@@ -1186,7 +1203,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         CurrentPlace?.clipsToBounds = true
         
         // Apply border
-        CurrentPlace?.layer.borderWidth = 2
+        CurrentPlace?.layer.borderWidth = 3
         CurrentPlace?.layer.borderColor = UIColor.black.cgColor
         
         // Apply background color

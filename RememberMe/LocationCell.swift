@@ -20,12 +20,18 @@ class LocationCell: UITableViewCell {
         locationImageView.contentMode = .scaleAspectFit
          
          // Initialization code
-                locationImageView.contentMode = .scaleAspectFit
-                self.layer.borderWidth = 2.0  // Add a border width
+                self.layer.borderWidth = 1.0  // Add a border width
                 self.layer.borderColor = UIColor.black.cgColor  // Set border color
                 self.layer.cornerRadius = 0  // Add rounded corners
                 self.clipsToBounds = true  // This is important to ensure corners are visible
             
+         
+               locationImageView.contentMode = .scaleAspectFill // Scales the image to fit within the view’s bounds while maintaining the image’s aspect ratio
+               locationImageView.layer.borderWidth = 3.0
+               locationImageView.layer.borderColor = UIColor.black.cgColor
+               locationImageView.layer.cornerRadius = 10
+               locationImageView.clipsToBounds = true
+           
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {
