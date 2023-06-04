@@ -18,6 +18,14 @@ class LocationCell: UITableViewCell {
         super.awakeFromNib()
         // Initialization code
         locationImageView.contentMode = .scaleAspectFit
+         
+         // Initialization code
+                locationImageView.contentMode = .scaleAspectFit
+                self.layer.borderWidth = 2.0  // Add a border width
+                self.layer.borderColor = UIColor.black.cgColor  // Set border color
+                self.layer.cornerRadius = 0  // Add rounded corners
+                self.clipsToBounds = true  // This is important to ensure corners are visible
+            
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {
