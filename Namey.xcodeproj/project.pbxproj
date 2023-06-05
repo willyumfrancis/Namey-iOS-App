@@ -467,7 +467,7 @@
 				DEVELOPMENT_TEAM = TV7YB5JDT2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RememberMe/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Namey;
+				INFOPLIST_KEY_CFBundleDisplayName = Namie;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to locate establishments you are visiting. It's a core function of the app.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -499,7 +499,7 @@
 				DEVELOPMENT_TEAM = TV7YB5JDT2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RememberMe/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Namey;
+				INFOPLIST_KEY_CFBundleDisplayName = Namie;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to locate establishments you are visiting. It's a core function of the app.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;

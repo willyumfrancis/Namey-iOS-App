@@ -12,9 +12,10 @@ import FirebaseAuth
 
 class SettingsViewController: UIViewController {
     
-    var rotationSpeed = 1.0
+    var rotationSpeed = 0.5
 
-
+    @IBOutlet weak var betaTap: UILabel!
+    
     @IBOutlet weak var catImage: UIImageView!
     
     @IBAction func LogOutButton(_ sender: UIBarButtonItem) {
@@ -42,6 +43,12 @@ class SettingsViewController: UIViewController {
                let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
                catImage.isUserInteractionEnabled = true
                catImage.addGestureRecognizer(tapGestureRecognizer)
+        
+        // Add UITapGestureRecognizer to betaTap label
+              let labelTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(labelTapped))
+              betaTap.isUserInteractionEnabled = true
+              betaTap.addGestureRecognizer(labelTapGestureRecognizer)
+          
            }
         // Do any additional setup after loading the view.
     
@@ -53,6 +60,14 @@ class SettingsViewController: UIViewController {
            rotationAnimation.isCumulative = true
            rotationAnimation.repeatCount = Float.greatestFiniteMagnitude
            catImage.layer.add(rotationAnimation, forKey: "rotationAnimation")
+       }
+    
+    @objc private func labelTapped() {
+           if catImage.transform.d != 0 { // checking if the image is visible
+               UIView.animate(withDuration: 0.3, animations: {
+                   self.catImage.transform = self.catImage.transform.scaledBy(x: 0.9, y: 0.9) // reduce the size by 10%
+               })
+           }
        }
     
 
