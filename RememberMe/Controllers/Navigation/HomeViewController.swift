@@ -180,56 +180,68 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
+    //MARK: - Appearance
     
-    //MARK: - APPEARANCE
+    
+    
+    func updateProgressBar() {
+        updateNotesCountLabel()
+        let currentPeople = notes.count
+        let progress = min(Float(currentPeople) / Float(maxPeople), 1.0)
+        
+        Progressbar.setProgress(progress, animated: true)
+        
+        if progress == 1.0 {
+            Progressbar.progressTintColor = #colorLiteral(red: 0.4705882353, green: 0.7725490196, blue: 0.9450980392, alpha: 1)
+            
+        } else {
+            Progressbar.progressTintColor = #colorLiteral(red: 0.4705882353, green: 0.7725490196, blue: 0.9450980392, alpha: 1)
+            
+        }
+    }
+
+    
+    
     private func setupRoundedProgressBar() {
-        // Apply corner radius
-        Progressbar?.layer.cornerRadius = 12
-        Progressbar?.clipsToBounds = true
-        
-        // Customize the progress tint and track color
-        let progressTintColor = #colorLiteral(red: 1, green: 0.9098039216, blue: 0.831372549, alpha: 1)
-        Progressbar?.progressTintColor = progressTintColor
-        Progressbar?.trackTintColor = progressTintColor.withAlphaComponent(0.2)
-        
         // Set the progress bar height
         let height: CGFloat = 22
+
+        // Apply corner radius
+        Progressbar?.layer.cornerRadius = height / 2
+        Progressbar?.clipsToBounds = true
+
+        // Customize the progress tint and track color
+        let trackTintColor = #colorLiteral(red: 0.9450980392, green: 0.4705882353, blue: 0.4705882353, alpha: 1)  // red colors
+        Progressbar?.trackTintColor = trackTintColor
+
         if let progressBarHeight = Progressbar?.frame.height {
             let transform = CGAffineTransform(scaleX: 1.0, y: height / progressBarHeight)
             Progressbar?.transform = transform
         }
-        
-        
+
         // Add drop shadow
         Progressbar?.layer.shadowColor = UIColor.black.cgColor
-        Progressbar?.layer.shadowOffset = CGSize(width: 0, height: 2)
-        Progressbar?.layer.shadowRadius = 4
-        Progressbar?.layer.shadowOpacity = 0.3
+        Progressbar?.layer.shadowOffset = CGSize(width: 3, height: 20)
+        Progressbar?.layer.shadowRadius = 8
+        Progressbar?.layer.shadowOpacity = 0.8
         
-        // Add a black border to the progress bar (border width reduced by 50%)
-        Progressbar?.layer.borderColor = UIColor.black.cgColor
-        Progressbar?.layer.borderWidth = 0.3
-        
-        // Add a black border to the progress bar's layer (border width reduced by 50%)
+
+        // Add a black border to the progress bar's layer
         let progressBarBorderLayer = CALayer()
         let progressBarWidth = (Progressbar?.bounds.width ?? 0) * 1.3 // Increase width by 30%
         progressBarBorderLayer.frame = CGRect(x: 0, y: 0, width: progressBarWidth, height: height)
-        progressBarBorderLayer.borderColor = UIColor.black.cgColor
-        progressBarBorderLayer.borderWidth = 0.3
-        progressBarBorderLayer.cornerRadius = 7
+        progressBarBorderLayer.cornerRadius = height / 2 // To make border circular
         progressBarBorderLayer.masksToBounds = true
-        
+
         Progressbar?.layer.addSublayer(progressBarBorderLayer)
-        
+
         // Increase the width of the progress bar's frame by 30%
         if let progressBarSuperview = Progressbar?.superview {
             let progressBarFrame = Progressbar?.frame ?? .zero
-            let increasedWidth = progressBarFrame.width * 2
+            let increasedWidth = progressBarFrame.width * 1.3
             Progressbar?.frame = CGRect(x: progressBarFrame.origin.x, y: progressBarFrame.origin.y, width: increasedWidth, height: progressBarFrame.height)
         }
     }
-    
-    
 
     
     override func viewWillAppear(_ animated: Bool) {
@@ -358,22 +370,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
 
 
-    
-    func updateProgressBar() {
-        updateNotesCountLabel()
-        let currentPeople = notes.count
-        let progress = min(Float(currentPeople) / Float(maxPeople), 1.0)
-        
-        Progressbar.setProgress(progress, animated: true)
-        
-        if progress == 1.0 {
-            Progressbar.progressTintColor = #colorLiteral(red: 1, green: 0.909803216, blue: 0.831372549, alpha: 1)
-            
-        } else {
-            Progressbar.progressTintColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
-            
-        }
-    }
     
     //MARK: - POP-UPS
     
@@ -1196,7 +1192,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     //END LOCATION STUFF
-    
     private func setupRoundedImageView() {
         // Apply corner radius
         CurrentPlace?.layer.cornerRadius = 12
@@ -1207,10 +1202,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         CurrentPlace?.layer.borderColor = UIColor.black.cgColor
         
         // Apply background color
-        CurrentPlace?.backgroundColor = UIColor(red: 0.50, green: 0.23, blue: 0.27, alpha: 0.50)
+        CurrentPlace?.backgroundColor = UIColor.white.withAlphaComponent(0.5)
+        
+        // Set the content mode to ensure the image is scaled correctly in the UIImageView.
+        CurrentPlace?.contentMode = .scaleAspectFill
     }
-    
-    //Resize and Crop Local Image
+
     func resizeAndCrop(image: UIImage, targetSize: CGSize) -> UIImage {
         let size = image.size
         let widthRatio = targetSize.width / size.width
@@ -1232,8 +1229,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                               width: targetSize.width, height: targetSize.height)
         
         guard let cgImage = resized.cgImage?.cropping(to: cropRect) else { return image }
+        
+        // Set the image in the UIImageView.
+        CurrentPlace?.image = UIImage(cgImage: cgImage)
+        
         return UIImage(cgImage: cgImage)
     }
+
     
     
     //Phone Doc Function for Image Picker
