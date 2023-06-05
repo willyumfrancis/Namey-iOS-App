@@ -12,7 +12,11 @@ import FirebaseAuth
 
 class SettingsViewController: UIViewController {
     
+    var rotationSpeed = 1.0
 
+
+    @IBOutlet weak var catImage: UIImageView!
+    
     @IBAction func LogOutButton(_ sender: UIBarButtonItem) {
         let firebaseAuth = Auth.auth()
            do {
@@ -34,8 +38,22 @@ class SettingsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        // Add UITapGestureRecognizer to catImage
+               let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
+               catImage.isUserInteractionEnabled = true
+               catImage.addGestureRecognizer(tapGestureRecognizer)
+           }
         // Do any additional setup after loading the view.
-    }
+    
+    @objc private func imageTapped() {
+           rotationSpeed += 0.1
+           let rotationAnimation = CABasicAnimation(keyPath: "transform.rotation")
+           rotationAnimation.toValue = NSNumber(value: Double.pi * 2.0 * rotationSpeed)
+           rotationAnimation.duration = 1.0
+           rotationAnimation.isCumulative = true
+           rotationAnimation.repeatCount = Float.greatestFiniteMagnitude
+           catImage.layer.add(rotationAnimation, forKey: "rotationAnimation")
+       }
     
 
     /*

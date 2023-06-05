@@ -495,6 +495,9 @@
                         </constraints>
                     </view>
                     <tabBarItem key="tabBarItem" title="Settings" image="gear" catalog="system" id="JEa-ln-6ly"/>
+                    <connections>
+                        <outlet property="catImage" destination="eNI-Vd-Khi" id="Pqy-Yc-9AE"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="s9s-KS-LjM" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
