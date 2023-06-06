@@ -139,17 +139,20 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         if let circularRegion = region as? CLCircularRegion {
-            loadNotes() { notes in
-                // Fetch last note and location name
-                let locationName = region.identifier.replacingOccurrences(of: "_", with: " ") // Replace "_" with space in location name
-                let lastNote = self.getLastNote(for: locationName)?.text ?? "" // Get the last note for this location
-                let lastFiveNotes = self.getLastFiveNotes(for: locationName).map { $0.text } // Get the last 5 notes for this location
+            let locationName = region.identifier.replacingOccurrences(of: "_", with: " ") // Replace "_" with space in location name
 
-                // Trigger the notification
-                self.sendNotification(locationName: locationName, lastNote: lastNote, lastFiveNotes: lastFiveNotes)
+            getLastNote(for: locationName) { [weak self] lastNote in
+                let lastNoteText = lastNote?.text ?? "" // Get the last note for this location
+                self?.getLastFiveNotes(for: locationName) { lastFiveNotes in
+                    let lastFiveNotesTexts = lastFiveNotes.map { $0.text } // Get the last 5 notes for this location
+
+                    // Trigger the notification
+                    self?.sendNotification(locationName: locationName, lastNote: lastNoteText, lastFiveNotes: lastFiveNotesTexts)
+                }
             }
         }
     }
+
 
       
       func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
@@ -172,23 +175,108 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         }
 
             
-        func getLastNote(for locationName: String) -> Note? {
-            return notes.filter { $0.locationName == locationName }.last
+    func getLastNote(for locationName: String, completion: @escaping (Note?) -> Void) {
+        print("getLastNote called")
+
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            return
         }
 
-        func getLastFiveNotes(for locationName: String) -> [Note] {
-            return Array(notes.filter { $0.locationName == locationName }.suffix(5))
+        print("Loading notes for user: \(userEmail)")
+
+        db.collection("notes")
+            .whereField("user", isEqualTo: userEmail)
+            .whereField("locationName", isEqualTo: locationName)
+            .order(by: "timestamp", descending: true)
+            .getDocuments { [weak self] querySnapshot, error in
+                if let e = error {
+                    print("There was an issue retrieving data from Firestore: \(e)")
+                } else {
+                    self?.notes = [] // Clear the existing notes array
+
+                    if let snapshotDocuments = querySnapshot?.documents {
+                        print("Found \(snapshotDocuments.count) notes")
+                        for doc in snapshotDocuments {
+                            let data = doc.data()
+                            if let noteText = data["note"] as? String,
+                               let locationData = data["location"] as? GeoPoint,
+                               let locationName = data["locationName"] as? String,
+                               let imageURLString = data["imageURL"] as? String,
+                               !noteText.isEmpty {
+                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                                let imageURL = URL(string: imageURLString)
+                                let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: imageURL)
+
+                                self?.notes.append(newNote)
+                            }
+                        }
+
+                        let lastNote = self?.notes.last
+                        completion(lastNote)
+                    }
+                }
+            }
+    }
+
+    func getLastFiveNotes(for locationName: String, completion: @escaping ([Note]) -> Void) {
+        print("getLastFiveNotes called")
+
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            return
         }
+
+        print("Loading notes for user: \(userEmail)")
+
+        db.collection("notes")
+            .whereField("user", isEqualTo: userEmail)
+            .whereField("locationName", isEqualTo: locationName)
+            .order(by: "timestamp", descending: true)
+            .limit(to: 5)
+            .getDocuments { [weak self] querySnapshot, error in
+                if let e = error {
+                    print("There was an issue retrieving data from Firestore: \(e)")
+                } else {
+                    self?.notes = [] // Clear the existing notes array
+
+                    if let snapshotDocuments = querySnapshot?.documents {
+                        print("Found \(snapshotDocuments.count) notes")
+                        for doc in snapshotDocuments {
+                            let data = doc.data()
+                            if let noteText = data["note"] as? String,
+                               let locationData = data["location"] as? GeoPoint,
+                               let locationName = data["locationName"] as? String,
+                               let imageURLString = data["imageURL"] as? String,
+                               !noteText.isEmpty {
+                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                                let imageURL = URL(string: imageURLString)
+                                let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: imageURL)
+
+                                self?.notes.append(newNote)
+                            }
+                        }
+
+                        let lastFiveNotes = Array(self?.notes.suffix(5) ?? [])
+                        completion(lastFiveNotes)
+                    }
+                }
+            }
+    }
+
 
 
 
     func sendNotification(locationName: String, lastNote: String, lastFiveNotes: [String]) {
         print("Preparing to send notification for location: \(locationName)") // Debugging line
         let content = UNMutableNotificationContent()
-        content.title = "Welcome to \(locationName)"
-        content.body = "Last note: \(lastNote)"
-        content.userInfo = ["lastFiveNotes": lastFiveNotes] // lastFiveNotes is now an array
+        content.title = "\(locationName)"
+        content.body = "\(lastNote)"
+        content.userInfo = ["LastFiveNotes": lastFiveNotes] // lastFiveNotes is now an array
         content.categoryIdentifier = "notesCategory"
+
+        // Add a sound to the notification
+        content.sound = UNNotificationSound.default
         
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         
@@ -201,6 +289,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             }
         }
     }
+
 
 
         func requestNotificationAuthorization() {
@@ -220,7 +309,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
 
         func setupNotificationCategory() {
             print("Setting up notification category") // Debugging line
-            let viewLastFiveNotesAction = UNNotificationAction(identifier: "viewLastFiveNotes", title: "View last 5 notes", options: [.foreground])
+            let viewLastFiveNotesAction = UNNotificationAction(identifier: "viewLastFiveNotes", title: "View more n", options: [.foreground])
             let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastFiveNotesAction], intentIdentifiers: [], options: [])
             UNUserNotificationCenter.current().setNotificationCategories([category])
         }
