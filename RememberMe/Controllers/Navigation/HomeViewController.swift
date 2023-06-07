@@ -763,20 +763,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 case .success(let imageURL):
                     print("Image uploaded and saved with URL: \(imageURL)")
                     
-                    // Get all notes
-                    self?.getAllNotes(completion: { notes in
-                        let filteredNotes = notes.filter { note in
-                            let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
-                            let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
-                            let distance = noteLocation.distance(from: currentLocation)
-                            return distance <= 15
-                        }
-                        
-                        // Update the imageURL for filtered notes
-                        filteredNotes.forEach { note in
-                            self?.updateImageURLForNote(note.id, newImageURL: imageURL)
-                        }
-                    })
+                    // Load and filter notes
+                    self?.loadAndFilterNotes(for: location, goalRadius: 15.0)
+                    
+                    // Update the imageURL for notes
+                    self?.notes.forEach { note in
+                        self?.updateImageURLForNote(note.id, newImageURL: imageURL)
+                    }
                     
                     // Save the new note using the saveNote function
                     guard let activeCell = self?.activeNoteCell else {
@@ -798,6 +791,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
+
     
     
     
@@ -811,7 +805,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     func updateNotesLocationName(location: CLLocationCoordinate2D, newLocationName: String, completion: @escaping ([Note]) -> Void) {
         let maxDistance: CLLocationDistance = 15 // Adjust this value according to your requirements
         _ = GeoPoint(latitude: location.latitude, longitude: location.longitude)
-        
+
         if let userEmail = Auth.auth().currentUser?.email {
             db.collection("notes")
                 .whereField("user", isEqualTo: userEmail)
@@ -822,6 +816,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                     } else {
                         if let snapshotDocuments = querySnapshot?.documents {
                             var updatedNotes: [Note] = []
+                            var locationExistsInNotes = false
+                            
                             for doc in snapshotDocuments {
                                 let data = doc.data()
                                 if let locationData = data["location"] as? GeoPoint {
@@ -830,10 +826,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                     let distance = noteLocation.distance(from: userCurrentLocation)
                                     
                                     if distance <= maxDistance {
+                                        locationExistsInNotes = true
                                         let noteId = doc.documentID
-                                        let emptyURL = URL(string: "")
                                         let noteText = data["note"] as? String ?? ""
-                                        let updatedNote = Note(id: noteId, text: noteText, location: CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude), locationName: newLocationName, imageURL: emptyURL)
+                                        let imageURL = data["imageURL"] as? String ?? ""
+
+                                        let updatedNote = Note(id: noteId, text: noteText, location: CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude), locationName: newLocationName, imageURL: URL(string: imageURL))
                                         updatedNotes.append(updatedNote)
                                         
                                         // Update Firestore document with the new location name
@@ -849,6 +847,27 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                     }
                                 }
                             }
+
+                            if !locationExistsInNotes {
+                                // No note found within maxDistance, create new note with empty details
+                                let newNoteRef = self.db.collection("notes").document()
+                                newNoteRef.setData([
+                                    "user": userEmail,
+                                    "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
+                                    "locationName": newLocationName,
+                                    "note": "",
+                                    "imageURL": "",
+                                    "timestamp": Timestamp(date: Date())
+                                ]) { error in
+                                    if let error = error {
+                                        print("Error creating new note: \(error)")
+                                    } else {
+                                        let newNote = Note(id: newNoteRef.documentID, text: "", location: location, locationName: newLocationName, imageURL: nil)
+                                        updatedNotes.append(newNote)
+                                    }
+                                }
+                            }
+                            
                             completion(updatedNotes)
                         }
                     }
@@ -858,6 +877,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             completion([])
         }
     }
+
+    
+    
+    //MARK: - DISPLAY IMAGE FUNCTIONS
+    
     
     
     // Display Image
@@ -889,20 +913,17 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                                 self.updateNotesCountLabel()
                                             }
                                             self.downloadAndDisplayImage(locationName: locationName)
-                                        } else {
-                                            let locationKey = "\(locationData.latitude),\(locationData.longitude)"
-                                            if !self.fetchedLocationKeys.contains(locationKey) {
-                                                DispatchQueue.main.async {
-                                                    self.fetchedLocationKeys.insert(locationKey)
-                                                    self.locationNameLabel.text = locationKey
-                                                    self.updateNotesCountLabel()
-                                                }
-                                                self.downloadAndDisplayImage(locationName: locationKey)
+                                            // If an image has been set, break the loop
+                                            if self.CurrentPlace.image != nil {
+                                                break
                                             }
                                         }
-                                        // If an image has been set, break the loop
-                                        if self.CurrentPlace.image != nil {
-                                            break
+                                    }
+                                    // In case the note is empty and it is at the same location
+                                    if let noteText = data["note"] as? String, noteText.isEmpty, locationData.latitude == location.latitude, locationData.longitude == location.longitude {
+                                        DispatchQueue.main.async {
+                                            self.locationNameLabel.text = "\(data["locationName"] as? String ?? "")"
+                                            self.updateNotesCountLabel()
                                         }
                                     }
                                 }
@@ -914,6 +935,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("User email not found")
         }
     }
+
+
 
     
     func displayImageForLocationName(locationName: String) {
@@ -948,7 +971,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
 
 
-    
     
     
     func downloadAndDisplayImage(locationName: String) {
@@ -998,26 +1020,32 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
         
         storageRef.putFile(from: localFileURL, metadata: nil) { metadata, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            
-            storageRef.downloadURL { url, error in
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-                
-                guard let url = url else {
-                    completion(.failure(NSError(domain: "DownloadURLError", code: -1, userInfo: nil)))
-                    return
-                }
-                
-                completion(.success(url))
-            }
-        }
-    }
+               if let error = error {
+                   completion(.failure(error))
+                   return
+               }
+               
+               storageRef.downloadURL { url, error in
+                   if let error = error {
+                       completion(.failure(error))
+                       return
+                   }
+                   
+                   guard let url = url else {
+                       completion(.failure(NSError(domain: "DownloadURLError", code: -1, userInfo: nil)))
+                       return
+                   }
+                   
+                   // Success: tell the completion handler
+                   completion(.success(url))
+
+                   DispatchQueue.main.async {
+                       // reloadData is being called on main thread as UI update should be done on main thread.
+                       self.tableView.reloadData()
+                   }
+               }
+           }
+       }
     
     // Image Picker Delegate - Selection and Saving
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
@@ -1129,6 +1157,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         present(alertController, animated: true, completion: nil)
     }
+    
+    
+    
+    
     
     
     
@@ -1441,21 +1473,21 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             let data = doc.data()
                             if let noteText = data["note"] as? String,
                                let locationData = data["location"] as? GeoPoint,
-                               let locationName = data["locationName"] as? String,
-                               !noteText.isEmpty {
+                               let locationName = data["locationName"] as? String {
                                 let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
                                 let emptyURL = URL(string: "")
                                 let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: emptyURL)
-                                
+                                                        
                                 let noteLocation = CLLocation(latitude: newNote.location.latitude, longitude: newNote.location.longitude)
                                 let distance = noteLocation.distance(from: currentLocation)
-                                
+                                                        
                                 if !self!.notesFromAverageLocation.contains(where: { $0.id == newNote.id }) {
                                     if distance <= goalRadius {
                                         self?.notes.append(newNote)
                                     }
                                 }
                             }
+
                         }
                         DispatchQueue.main.async {
                             print("Showing \(self?.notes.count ?? 0) notes based on location")
@@ -1469,6 +1501,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 }
             }
     }
+
     
 //MARK: - LOAD PLACES VIEW CONTROLLER DATA
     func LoadPlacesNotes(for locationName: String) {
