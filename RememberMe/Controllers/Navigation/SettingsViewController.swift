@@ -48,9 +48,17 @@ class SettingsViewController: UIViewController {
               let labelTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(labelTapped))
               betaTap.isUserInteractionEnabled = true
               betaTap.addGestureRecognizer(labelTapGestureRecognizer)
+        
+        // Add UILongPressGestureRecognizer to betaTap label
+        let longPressGestureRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(labelLongPressed))
+        longPressGestureRecognizer.minimumPressDuration = 1.0 // 1 second
+        betaTap.addGestureRecognizer(longPressGestureRecognizer)
+
           
            }
         // Do any additional setup after loading the view.
+    
+    
     
     @objc private func imageTapped() {
            rotationSpeed += 0.1
@@ -69,6 +77,15 @@ class SettingsViewController: UIViewController {
                })
            }
        }
+    
+    @objc private func labelLongPressed(gesture: UILongPressGestureRecognizer) {
+        if gesture.state == .began { // Only perform the action when the long press begins
+            UIView.animate(withDuration: 3, animations: {
+                self.catImage.transform = self.catImage.transform.scaledBy(x: 2, y: 2) // increase the size by 50%
+            })
+        }
+    }
+
     
 
     /*

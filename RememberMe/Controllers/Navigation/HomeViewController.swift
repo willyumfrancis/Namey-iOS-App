@@ -894,7 +894,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     
-    // Display Image
     func displayImageForLocation(location: CLLocationCoordinate2D) {
         let maxDistance: CLLocationDistance = 15
         let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
@@ -939,12 +938,20 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                 }
                             }
                         }
+                        
+                        // If no image has been set, set the default image
+                        if self.CurrentPlace.image == nil {
+                            DispatchQueue.main.async {
+                                self.CurrentPlace.image = UIImage(named: "default_image")
+                            }
+                        }
                     }
                 }
         } else {
             print("User email not found")
         }
     }
+
 
 
 
