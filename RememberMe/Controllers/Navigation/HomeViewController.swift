@@ -153,8 +153,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
-    
-    
+
     //Create New Name
     @IBAction func NewNote(_ sender: UIButton) {
         if let currentLocation = self.currentLocation {
@@ -482,19 +481,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
+    //MARK: - NOTIFICATIONS
     
-    
-    
-    
-    
-    //MARK: - LOCATION
-    
-
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
         print("Exited region: \(region.identifier)")
     }
-
-
     
     func setupGeoFence(location: CLLocationCoordinate2D, radius: CLLocationDistance, identifier: String) {
         print("Setting up GeoFence at \(location) with radius \(radius)") // Debugging line
@@ -503,10 +494,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         region.notifyOnExit = false
         locationManager.startMonitoring(for: region)
     }
-
         
-    func getLastNote(for locationName: String) -> Note? {
-        return notes.filter { $0.locationName == locationName }.last
+    func getLastThreeNotes(for locationName: String) -> [Note] {
+        return Array(notes.filter { $0.locationName == locationName }.suffix(3))
     }
 
     func getLastFiveNotes(for locationName: String) -> [Note] {
@@ -516,28 +506,32 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         if let circularRegion = region as? CLCircularRegion {
-            // Fetch last note and location name
-            let locationName = fetchLocationNameFor(location: circularRegion.center) ?? "Some Spot"
-            let lastNote = getLastNote(for: locationName) // Get the last note for this location
-            let lastFiveNotes = getLastFiveNotes(for: locationName) // Get the last 5 notes for this location
+            guard let locationName = fetchLocationNameFor(location: circularRegion.center) else {
+                print("Unable to fetch location name.")
+                return
+            }
+            let lastThreeNotes = getLastThreeNotes(for: locationName)
 
-            // We need to convert the note objects to string
-            let lastNoteText = lastNote?.text ?? ""
-            let lastFiveNotesText = lastFiveNotes.map { $0.text }
+            // Convert Note objects to strings
+            let lastThreeNotesText = lastThreeNotes.map { $0.text }
 
             // Trigger the notification
-            sendNotification(locationName: locationName, lastNote: lastNoteText, lastFiveNotes: lastFiveNotesText)
+            sendNotification(locationName: locationName, lastThreeNotes: lastThreeNotesText)
         }
     }
 
 
-    func sendNotification(locationName: String, lastNote: String, lastFiveNotes: [String]) { // Changed lastFiveNotes type
+
+
+    func sendNotification(locationName: String, lastThreeNotes: [String]) {
         print("Sending notification for location: \(locationName)") // Debugging line
         let content = UNMutableNotificationContent()
-        content.title = "Welcome to \(locationName)"
-        content.body = "Last note: \(lastNote)"
-        content.userInfo = ["lastFiveNotes": lastFiveNotes] // lastFiveNotes is now an array
+        content.title = "Near \(locationName)"
+        
+        let notesText = lastThreeNotes.joined(separator: ", ")
+        content.body = "\(notesText)"
         content.categoryIdentifier = "notesCategory"
+        content.sound = UNNotificationSound.default
         
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         
@@ -550,6 +544,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
+
+
+
+
 
     func requestNotificationAuthorization() {
         print("Requesting notification authorization") // Debugging line
@@ -568,12 +566,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     func setupNotificationCategory() {
         print("Setting up notification category") // Debugging line
-        let viewLastFiveNotesAction = UNNotificationAction(identifier: "viewLastFiveNotes", title: "View last 5 notes", options: [.foreground])
+        let viewLastFiveNotesAction = UNNotificationAction(identifier: "viewLastFiveNotes", title: "View all notes", options: [.foreground])
         let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastFiveNotesAction], intentIdentifiers: [], options: [])
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 
-
+    
+    
+//MARK: - UPLOAD PHOTO CODE
     
     @objc func dismissFullscreenImage(_ sender: UITapGestureRecognizer) {
         self.navigationController?.isNavigationBarHidden = false

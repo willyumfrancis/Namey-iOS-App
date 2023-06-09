@@ -41,10 +41,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     var userLocation: CLLocation?
     var currentPage: Int = 0
     let pageSize: Int = 5
-    
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        completionHandler([.alert, .sound])  // Replace with your preferred options
-    }
+
 
     
     var notes: [Note] = []
@@ -72,11 +69,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         
         
         loadLocationData()
-        
-        // Request for the notification authorization
-        requestNotificationAuthorization()
-        // Set up notification category
-        setupNotificationCategory()
+      
 
         // Call this after the locations are loaded
         for locationData in locations {
@@ -136,34 +129,11 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             }
         }
         
+
+
     
-    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        if let circularRegion = region as? CLCircularRegion {
-            let locationName = region.identifier.replacingOccurrences(of: "_", with: " ") // Replace "_" with space in location name
-
-            getLastNote(for: locationName) { [weak self] lastNote in
-                let lastNoteText = lastNote?.text ?? "" // Get the last note for this location
-                self?.getLastFiveNotes(for: locationName) { lastFiveNotes in
-                    let lastFiveNotesTexts = lastFiveNotes.map { $0.text } // Get the last 5 notes for this location
-
-                    // Trigger the notification
-                    self?.sendNotification(locationName: locationName, lastNote: lastNoteText, lastFiveNotes: lastFiveNotesTexts)
-                }
-            }
-        }
-    }
-
-
-      
-      func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-          if region is CLCircularRegion {
-              // Handle exiting region
-              print("Exited region: \(region.identifier)")
-          }
-      }
         
     //MARK: - LOCATION
-
 
         
         func setupGeoFence(location: CLLocationCoordinate2D, radius: CLLocationDistance, identifier: String) {
@@ -174,145 +144,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             locationManager.startMonitoring(for: region)
         }
 
-            
-    func getLastNote(for locationName: String, completion: @escaping (Note?) -> Void) {
-        print("getLastNote called")
+    
 
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User email not found")
-            return
-        }
-
-        print("Loading notes for user: \(userEmail)")
-
-        db.collection("notes")
-            .whereField("user", isEqualTo: userEmail)
-            .whereField("locationName", isEqualTo: locationName)
-            .order(by: "timestamp", descending: true)
-            .getDocuments { [weak self] querySnapshot, error in
-                if let e = error {
-                    print("There was an issue retrieving data from Firestore: \(e)")
-                } else {
-                    self?.notes = [] // Clear the existing notes array
-
-                    if let snapshotDocuments = querySnapshot?.documents {
-                        print("Found \(snapshotDocuments.count) notes")
-                        for doc in snapshotDocuments {
-                            let data = doc.data()
-                            if let noteText = data["note"] as? String,
-                               let locationData = data["location"] as? GeoPoint,
-                               let locationName = data["locationName"] as? String,
-                               let imageURLString = data["imageURL"] as? String,
-                               !noteText.isEmpty {
-                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-                                let imageURL = URL(string: imageURLString)
-                                let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: imageURL)
-
-                                self?.notes.append(newNote)
-                            }
-                        }
-
-                        let lastNote = self?.notes.last
-                        completion(lastNote)
-                    }
-                }
-            }
-    }
-
-    func getLastFiveNotes(for locationName: String, completion: @escaping ([Note]) -> Void) {
-        print("getLastFiveNotes called")
-
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User email not found")
-            return
-        }
-
-        print("Loading notes for user: \(userEmail)")
-
-        db.collection("notes")
-            .whereField("user", isEqualTo: userEmail)
-            .whereField("locationName", isEqualTo: locationName)
-            .order(by: "timestamp", descending: true)
-            .limit(to: 5)
-            .getDocuments { [weak self] querySnapshot, error in
-                if let e = error {
-                    print("There was an issue retrieving data from Firestore: \(e)")
-                } else {
-                    self?.notes = [] // Clear the existing notes array
-
-                    if let snapshotDocuments = querySnapshot?.documents {
-                        print("Found \(snapshotDocuments.count) notes")
-                        for doc in snapshotDocuments {
-                            let data = doc.data()
-                            if let noteText = data["note"] as? String,
-                               let locationData = data["location"] as? GeoPoint,
-                               let locationName = data["locationName"] as? String,
-                               let imageURLString = data["imageURL"] as? String,
-                               !noteText.isEmpty {
-                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-                                let imageURL = URL(string: imageURLString)
-                                let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: imageURL)
-
-                                self?.notes.append(newNote)
-                            }
-                        }
-
-                        let lastFiveNotes = Array(self?.notes.suffix(5) ?? [])
-                        completion(lastFiveNotes)
-                    }
-                }
-            }
-    }
-
-
-
-
-    func sendNotification(locationName: String, lastNote: String, lastFiveNotes: [String]) {
-        print("Preparing to send notification for location: \(locationName)") // Debugging line
-        let content = UNMutableNotificationContent()
-        content.title = "\(locationName)"
-        content.body = "\(lastNote)"
-        content.userInfo = ["LastFiveNotes": lastFiveNotes] // lastFiveNotes is now an array
-        content.categoryIdentifier = "notesCategory"
-
-        // Add a sound to the notification
-        content.sound = UNNotificationSound.default
-        
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-        
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("Error adding notification: \(error)")
-            } else {
-                print("Notification added successfully for location: \(locationName)")
-            }
-        }
-    }
-
-
-
-        func requestNotificationAuthorization() {
-            print("Requesting notification authorization") // Debugging line
-            let center = UNUserNotificationCenter.current()
-            center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
-                if granted {
-                    print("Notification access granted")
-                } else {
-                    print("Notification access denied")
-                    if let error = error {
-                        print("Error requesting authorization: \(error)")
-                    }
-                }
-            }
-        }
-
-        func setupNotificationCategory() {
-            print("Setting up notification category") // Debugging line
-            let viewLastFiveNotesAction = UNNotificationAction(identifier: "viewLastFiveNotes", title: "View more n", options: [.foreground])
-            let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastFiveNotesAction], intentIdentifiers: [], options: [])
-            UNUserNotificationCenter.current().setNotificationCategories([category])
-        }
         
         
     
