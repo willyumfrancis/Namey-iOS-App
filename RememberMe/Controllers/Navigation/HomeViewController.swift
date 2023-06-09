@@ -265,8 +265,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     override func viewDidLoad() {
         super.viewDidLoad()
         UNUserNotificationCenter.current().delegate = self
-        requestNotificationAuthorization()
-        checkNotificationSettings()
         
         // Retrieve the stored goal number from UserDefaults
           let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
@@ -282,8 +280,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
             // Setting up notification center
             UNUserNotificationCenter.current().delegate = self
-            requestNotificationAuthorization()
-            setupNotificationCategory()
+           
 
         // Update the progress bar according to the retrieved goal number
            updateProgressBar()
@@ -366,25 +363,30 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             notesCountLabel.text = labelText
         }
     }
+    
+    private func setupRoundedImageView() {
+        // Apply corner radius
+        CurrentPlace?.layer.cornerRadius = 12
+        CurrentPlace?.clipsToBounds = true
+        
+        // Apply border
+        CurrentPlace?.layer.borderWidth = 3
+        CurrentPlace?.layer.borderColor = UIColor.black.cgColor
+        
+        // Apply background color
+        CurrentPlace?.backgroundColor = UIColor.white.withAlphaComponent(0.5)
+        
+        // Set the content mode to ensure the image is scaled correctly in the UIImageView.
+        CurrentPlace?.contentMode = .scaleAspectFill
+    }
+
 
 
 
 
     
     //MARK: - POP-UPS
-    
-    func checkNotificationSettings() {
-        UNUserNotificationCenter.current().getNotificationSettings { (settings) in
-            print("Notification settings: \(settings)")
-            guard settings.authorizationStatus == .authorized else { return }
-            if settings.alertSetting == .enabled {
-                // Alerts are enabled
-            } else {
-                // Alerts are disabled
-            }
-        }
-    }
-
+   
     
     func animateTableViewCells() {
         let cells = tableView.visibleCells
@@ -488,91 +490,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     //MARK: - LOCATION
-    
-
-    func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-        print("Exited region: \(region.identifier)")
-    }
-
-
-    
-    func setupGeoFence(location: CLLocationCoordinate2D, radius: CLLocationDistance, identifier: String) {
-        print("Setting up GeoFence at \(location) with radius \(radius)") // Debugging line
-        let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
-        region.notifyOnEntry = true
-        region.notifyOnExit = false
-        locationManager.startMonitoring(for: region)
-    }
-
-        
-    func getLastNote(for locationName: String) -> Note? {
-        return notes.filter { $0.locationName == locationName }.last
-    }
-
-    func getLastFiveNotes(for locationName: String) -> [Note] {
-        return Array(notes.filter { $0.locationName == locationName }.suffix(5))
-    }
-
-
-    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        if let circularRegion = region as? CLCircularRegion {
-            // Fetch last note and location name
-            let locationName = fetchLocationNameFor(location: circularRegion.center) ?? "Some Spot"
-            let lastNote = getLastNote(for: locationName) // Get the last note for this location
-            let lastFiveNotes = getLastFiveNotes(for: locationName) // Get the last 5 notes for this location
-
-            // We need to convert the note objects to string
-            let lastNoteText = lastNote?.text ?? ""
-            let lastFiveNotesText = lastFiveNotes.map { $0.text }
-
-            // Trigger the notification
-            sendNotification(locationName: locationName, lastNote: lastNoteText, lastFiveNotes: lastFiveNotesText)
-        }
-    }
-
-
-    func sendNotification(locationName: String, lastNote: String, lastFiveNotes: [String]) { // Changed lastFiveNotes type
-        print("Sending notification for location: \(locationName)") // Debugging line
-        let content = UNMutableNotificationContent()
-        content.title = "Welcome to \(locationName)"
-        content.body = "Last note: \(lastNote)"
-        content.userInfo = ["lastFiveNotes": lastFiveNotes] // lastFiveNotes is now an array
-        content.categoryIdentifier = "notesCategory"
-        
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-        
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("Error adding notification: \(error)")
-            } else {
-                print("Notification added successfully")
-            }
-        }
-    }
-
-    func requestNotificationAuthorization() {
-        print("Requesting notification authorization") // Debugging line
-        let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
-            if granted {
-                print("Notification access granted")
-            } else {
-                print("Notification access denied")
-                if let error = error {
-                    print("Error requesting authorization: \(error)")
-                }
-            }
-        }
-    }
-
-    func setupNotificationCategory() {
-        print("Setting up notification category") // Debugging line
-        let viewLastFiveNotesAction = UNNotificationAction(identifier: "viewLastFiveNotes", title: "View last 5 notes", options: [.foreground])
-        let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastFiveNotesAction], intentIdentifiers: [], options: [])
-        UNUserNotificationCenter.current().setNotificationCategories([category])
-    }
-
 
     
     @objc func dismissFullscreenImage(_ sender: UITapGestureRecognizer) {
@@ -743,61 +660,57 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
-    let distanceFilter: CLLocationDistance = 15
-    //SAVEIMAGE
-    func saveImageToFirestore(image: UIImage, location: CLLocationCoordinate2D, locationName: String) {
-        let safeFileName = self.safeFileName(for: locationName)
-        let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
+    //Location Manager
+    func setupLocationManager() {
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingLocation()
+
+    }
+   
+    var hasProcessedLocationUpdate = false
+
+    // Location Manager Delegate
+    var lastLocationUpdateTime: Date?
+
+    // Location Manager Delegate
+    var lastProcessedLocation: CLLocationCoordinate2D?
+
+    // Location Manager Delegate
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+
+        guard let newLocation = locations.last else { return }
         
-        // Delete the old image from Firebase Storage
-        storageRef.delete { [weak self] error in
-            if let error = error {
-                print("Error deleting the old image: \(error)")
-            } else {
-                print("Old image deleted successfully")
-            }
-            
-            // Upload the new image and get the download URL
-            self?.uploadImage(image: image, location: location, locationName: locationName) { result in
-                switch result {
-                case .success(let imageURL):
-                    print("Image uploaded and saved with URL: \(imageURL)")
-                    
-                    // Load and filter notes
-                    self?.loadAndFilterNotes(for: location, goalRadius: 15.0)
-                    
-                    // Update the imageURL for notes
-                    self?.notes.forEach { note in
-                        self?.updateImageURLForNote(note.id, newImageURL: imageURL)
-                    }
-                    
-                    // Save the new note using the saveNote function
-                    guard let activeCell = self?.activeNoteCell else {
-                        print("Failed to get active cell")
-                        return
-                    }
-                    activeCell.noteTextField.text = ""
-                    self?.selectedNote = nil
-                    self?.saveNote()
-                    
-                    // Update the locationName label on the main thread
-                    DispatchQueue.main.async {
-                        self?.locationNameLabel.text = locationName
-                    }
-                    
-                case .failure(let error):
-                    print("Error uploading image: \(error)")
-                }
+        // Check the distance from the last processed location
+        if let lastLocation = lastProcessedLocation {
+            let distance = newLocation.distance(from: CLLocation(latitude: lastLocation.latitude, longitude: lastLocation.longitude))
+            if distance < 15 { // Replace '10' with whatever threshold you see fit
+                // The new location is too close to the last processed location, so we skip this one.
+                return
             }
         }
+        
+        self.userLocation = newLocation.coordinate
+        self.currentLocation = newLocation.coordinate
+        print("User's location: \(newLocation)")
+        
+        // Call the updateLocationNameLabel function with the user's current location
+        updateLocationNameLabel(location: newLocation.coordinate)
+        self.displayImageForLocation(location: self.currentLocation!)
+        
+        if !hasProcessedLocationUpdate {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 15.0) // Provide the required parameters
+                self.hasProcessedLocationUpdate = true
+            }
+        }
+        
+        // Update the last processed location
+        lastProcessedLocation = newLocation.coordinate
     }
 
-    
-    
-    
-    
-    
-    
+
     //MARK: - IMPORTANT UPDATE L NAME FUNCTION
     
     
@@ -867,16 +780,21 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                     }
                                 }
                             }
-                            
-                            completion(updatedNotes)
-                        }
-                    }
-                }
-        } else {
-            print("User email not found")
-            completion([])
-        }
-    }
+                            // Update the location name label once Firestore is updated with new location name
+                                                   DispatchQueue.main.async {
+                                                       self.locationNameLabel.text = newLocationName
+                                                   }
+
+                                                   completion(updatedNotes)
+                                               }
+                                           }
+                                       }
+                               } else {
+                                   print("User email not found")
+                                   completion([])
+                               }
+                           }
+
 
     
     
@@ -908,6 +826,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
                                     if distance <= maxDistance {
                                         if let locationName = data["locationName"] as? String, !locationName.isEmpty {
+                                            // Update the location name label once image is set
                                             DispatchQueue.main.async {
                                                 self.locationNameLabel.text = "\(locationName)"
                                                 self.updateNotesCountLabel()
@@ -918,12 +837,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                                 break
                                             }
                                         }
-                                    }
-                                    // In case the note is empty and it is at the same location
-                                    if let noteText = data["note"] as? String, noteText.isEmpty, locationData.latitude == location.latitude, locationData.longitude == location.longitude {
-                                        DispatchQueue.main.async {
-                                            self.locationNameLabel.text = "\(data["locationName"] as? String ?? "")"
-                                            self.updateNotesCountLabel()
+
+                                        // In case the note is empty and it is at the same location
+                                        if let noteText = data["note"] as? String, noteText.isEmpty, locationData.latitude == location.latitude, locationData.longitude == location.longitude {
+                                            DispatchQueue.main.async {
+                                                self.locationNameLabel.text = "\(data["locationName"] as? String ?? "")"
+                                                self.updateNotesCountLabel()
+                                            }
                                         }
                                     }
                                 }
@@ -996,57 +916,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
-    //Upload Image to Fire Storage (Google Cloud) -> 5GB Max for Free Tier
-    func uploadImage(image: UIImage, location: CLLocationCoordinate2D, locationName: String, completion: @escaping (Result<URL, Error>) -> Void) {
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-            completion(.failure(NSError(domain: "ImageConversionError", code: -1, userInfo: nil)))
-            return
-        }
-        print("Image data for upload: \(imageData)")
-        
-        
-        let safeFileName = safeFileName(for: locationName)
-        let storageRef = Storage.storage().reference().child("location_images").child("\(safeFileName).jpg")
-        
-        let temporaryDirectory = NSTemporaryDirectory()
-        let localFilePath = temporaryDirectory.appending(safeFileName)
-        let localFileURL = URL(fileURLWithPath: localFilePath)
-        
-        do {
-            try imageData.write(to: localFileURL)
-        } catch {
-            completion(.failure(error))
-            return
-        }
-        
-        storageRef.putFile(from: localFileURL, metadata: nil) { metadata, error in
-               if let error = error {
-                   completion(.failure(error))
-                   return
-               }
-               
-               storageRef.downloadURL { url, error in
-                   if let error = error {
-                       completion(.failure(error))
-                       return
-                   }
-                   
-                   guard let url = url else {
-                       completion(.failure(NSError(domain: "DownloadURLError", code: -1, userInfo: nil)))
-                       return
-                   }
-                   
-                   // Success: tell the completion handler
-                   completion(.success(url))
-
-                   DispatchQueue.main.async {
-                       // reloadData is being called on main thread as UI update should be done on main thread.
-                       self.tableView.reloadData()
-                   }
-               }
-           }
-       }
+   
     
+    //MARK: - TAKE PICTURE
     // Image Picker Delegate - Selection and Saving
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         if let image = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
@@ -1125,8 +997,27 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         let cameraAction = UIAlertAction(title: "Take Photo", style: .default) { _ in
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                imagePickerController.sourceType = .camera
-                self.present(imagePickerController, animated: true, completion: nil)
+                AVCaptureDevice.requestAccess(for: .video) { granted in
+                    if granted {
+                        DispatchQueue.main.async {
+                            imagePickerController.sourceType = .camera
+                            self.present(imagePickerController, animated: true, completion: nil)
+                        }
+                    } else {
+                        // The user has previously denied access.
+                        // You might want to open the app's settings for them.
+                        DispatchQueue.main.async {
+                            let settingsAlert = UIAlertController(title: "Camera Access Denied", message: "The camera is essential for this app. Please go to Settings and enable camera access for this app.", preferredStyle: .alert)
+                            settingsAlert.addAction(UIAlertAction(title: "Go to Settings", style: .default, handler: { _ in
+                                if let url = URL(string: UIApplication.openSettingsURLString) {
+                                    UIApplication.shared.open(url)
+                                }
+                            }))
+                            settingsAlert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+                            self.present(settingsAlert, animated: true)
+                        }
+                    }
+                }
             }
         }
         let libraryAction = UIAlertAction(title: "Choose from Library", style: .default) { _ in
@@ -1159,87 +1050,112 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
-    
-    
-    
-    
-    
-    
-    
-    //Location Manager
-    func setupLocationManager() {
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestWhenInUseAuthorization()
-        locationManager.startUpdatingLocation()
-
-    }
-   
-    var hasProcessedLocationUpdate = false
-
-    // Location Manager Delegate
-    var lastLocationUpdateTime: Date?
-
-    // Location Manager Delegate
-    var lastProcessedLocation: CLLocationCoordinate2D?
-
-    // Location Manager Delegate
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-
-        guard let newLocation = locations.last else { return }
+    let distanceFilter: CLLocationDistance = 15
+    //SAVEIMAGE
+    func saveImageToFirestore(image: UIImage, location: CLLocationCoordinate2D, locationName: String) {
+        let safeFileName = self.safeFileName(for: locationName)
+        let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
         
-        // Check the distance from the last processed location
-        if let lastLocation = lastProcessedLocation {
-            let distance = newLocation.distance(from: CLLocation(latitude: lastLocation.latitude, longitude: lastLocation.longitude))
-            if distance < 15 { // Replace '10' with whatever threshold you see fit
-                // The new location is too close to the last processed location, so we skip this one.
-                return
+        // Delete the old image from Firebase Storage
+        storageRef.delete { [weak self] error in
+            if let error = error {
+                print("Error deleting the old image: \(error)")
+            } else {
+                print("Old image deleted successfully")
+            }
+            
+            // Upload the new image and get the download URL
+            self?.uploadImage(image: image, location: location, locationName: locationName) { result in
+                switch result {
+                case .success(let imageURL):
+                    print("Image uploaded and saved with URL: \(imageURL)")
+                    
+                    // Load and filter notes
+                    self?.loadAndFilterNotes(for: location, goalRadius: 15.0)
+                    
+                    // Update the imageURL for notes
+                    self?.notes.forEach { note in
+                        self?.updateImageURLForNote(note.id, newImageURL: imageURL)
+                    }
+                    
+                    // Save the new note using the saveNote function
+                    guard let activeCell = self?.activeNoteCell else {
+                        print("Failed to get active cell")
+                        return
+                    }
+                    activeCell.noteTextField.text = ""
+                    self?.selectedNote = nil
+                    self?.saveNote()
+                    
+                    // Update the locationName label on the main thread
+                    DispatchQueue.main.async {
+                        self?.locationNameLabel.text = locationName
+                    }
+                    
+                case .failure(let error):
+                    print("Error uploading image: \(error)")
+                }
             }
         }
+    }
+
+
+    //Upload Image to Fire Storage (Google Cloud) -> 5GB Max for Free Tier
+    func uploadImage(image: UIImage, location: CLLocationCoordinate2D, locationName: String, completion: @escaping (Result<URL, Error>) -> Void) {
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            completion(.failure(NSError(domain: "ImageConversionError", code: -1, userInfo: nil)))
+            return
+        }
+        print("Image data for upload: \(imageData)")
         
-        self.userLocation = newLocation.coordinate
-        self.currentLocation = newLocation.coordinate
-        print("User's location: \(newLocation)")
         
-        // Call the updateLocationNameLabel function with the user's current location
-        updateLocationNameLabel(location: newLocation.coordinate)
-        self.displayImageForLocation(location: self.currentLocation!)
+        let safeFileName = safeFileName(for: locationName)
+        let storageRef = Storage.storage().reference().child("location_images").child("\(safeFileName).jpg")
         
-        if !hasProcessedLocationUpdate {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 15.0) // Provide the required parameters
-                self.hasProcessedLocationUpdate = true
-            }
+        let temporaryDirectory = NSTemporaryDirectory()
+        let localFilePath = temporaryDirectory.appending(safeFileName)
+        let localFileURL = URL(fileURLWithPath: localFilePath)
+        
+        do {
+            try imageData.write(to: localFileURL)
+        } catch {
+            completion(.failure(error))
+            return
         }
         
-        // Update the last processed location
-        lastProcessedLocation = newLocation.coordinate
-    }
+        storageRef.putFile(from: localFileURL, metadata: nil) { metadata, error in
+               if let error = error {
+                   completion(.failure(error))
+                   return
+               }
+               
+               storageRef.downloadURL { url, error in
+                   if let error = error {
+                       completion(.failure(error))
+                       return
+                   }
+                   
+                   guard let url = url else {
+                       completion(.failure(NSError(domain: "DownloadURLError", code: -1, userInfo: nil)))
+                       return
+                   }
+                   
+                   // Success: tell the completion handler
+                   completion(.success(url))
 
-
-
-
+                   DispatchQueue.main.async {
+                       // reloadData is being called on main thread as UI update should be done on main thread.
+                       self.tableView.reloadData()
+                   }
+               }
+           }
+       }
     
     
     
     
-    //END LOCATION STUFF
-    private func setupRoundedImageView() {
-        // Apply corner radius
-        CurrentPlace?.layer.cornerRadius = 12
-        CurrentPlace?.clipsToBounds = true
-        
-        // Apply border
-        CurrentPlace?.layer.borderWidth = 3
-        CurrentPlace?.layer.borderColor = UIColor.black.cgColor
-        
-        // Apply background color
-        CurrentPlace?.backgroundColor = UIColor.white.withAlphaComponent(0.5)
-        
-        // Set the content mode to ensure the image is scaled correctly in the UIImageView.
-        CurrentPlace?.contentMode = .scaleAspectFill
-    }
-
+    
+    
     func resizeAndCrop(image: UIImage, targetSize: CGSize) -> UIImage {
         let size = image.size
         let widthRatio = targetSize.width / size.width
@@ -1337,48 +1253,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
 
-
-
-
-
-
-
-
-
-    func getAllNotes(completion: @escaping ([Note]) -> Void) {
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User email not found")
-            completion([])
-            return
-        }
-        
-        db.collection("notes")
-            .whereField("user", isEqualTo: userEmail)
-            .order(by: "timestamp", descending: false)
-            .getDocuments { querySnapshot, error in
-                if let e = error {
-                    print("There was an issue retrieving data from Firestore: \(e)")
-                    completion([])
-                } else {
-                    var notes: [Note] = []
-                    if let snapshotDocuments = querySnapshot?.documents {
-                        print("Found \(snapshotDocuments.count) notes")
-                        for doc in snapshotDocuments {
-                            let data = doc.data()
-                            if let noteText = data["note"] as? String,
-                               let locationData = data["location"] as? GeoPoint,
-                               let locationName = data["locationName"] as? String {
-                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-                                let emptyURL = URL(string: "")
-                                let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: emptyURL)
-                                notes.append(newNote)
-                            }
-                        }
-                    }
-                    completion(notes)
-                }
-            }
-    }
     
     
     func updateNoteInFirestore(noteID: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {

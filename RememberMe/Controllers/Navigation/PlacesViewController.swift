@@ -17,6 +17,7 @@ import FirebaseStorage
 import SDWebImage
 import UserNotifications
 
+
 struct LocationData {
     let name: String
     let location: CLLocation
@@ -32,6 +33,7 @@ func safeFileName(for locationName: String) -> String {
 
 
 class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate, UNUserNotificationCenterDelegate {
+    
 
     weak var delegate: PlacesViewControllerDelegate?
 
@@ -219,6 +221,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             }
     }
 
+
     func getLastFiveNotes(for locationName: String, completion: @escaping ([Note]) -> Void) {
         print("getLastFiveNotes called")
 
@@ -257,7 +260,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                             }
                         }
 
-                        let lastFiveNotes = Array(self?.notes.suffix(5) ?? [])
+                        let lastFiveNotes = Array(self?.notes.prefix(5) ?? [])
                         completion(lastFiveNotes)
                     }
                 }
@@ -267,7 +270,14 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
 
 
 
+
     func sendNotification(locationName: String, lastNote: String, lastFiveNotes: [String]) {
+        // Check if the location name is "Some Spot" or the last note is empty, and if so, return without sending a notification
+        if locationName == "Some Spot" || lastNote.isEmpty {
+            print("Location name is 'Some Spot' or the last note is empty. Skipping notification.")
+            return
+        }
+        
         print("Preparing to send notification for location: \(locationName)") // Debugging line
         let content = UNMutableNotificationContent()
         content.title = "\(locationName)"
@@ -292,6 +302,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
 
 
 
+
         func requestNotificationAuthorization() {
             print("Requesting notification authorization") // Debugging line
             let center = UNUserNotificationCenter.current()
@@ -306,10 +317,26 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 }
             }
         }
+    
+    func checkLocationAuthorization() {
+        switch CLLocationManager.authorizationStatus() {
+        case .authorizedWhenInUse, .authorizedAlways:
+            break // The app already has permission to use location services
+        case .notDetermined:
+            locationManager.requestWhenInUseAuthorization() // Request permission
+        case .restricted, .denied:
+            // The app doesn't have permission to use location services
+            print("Location services disabled or not granted.")
+            // You might want to show an alert to the user here, explaining that they need to enable location services to get the full functionality of your app
+        default:
+            break
+        }
+    }
+
 
         func setupNotificationCategory() {
             print("Setting up notification category") // Debugging line
-            let viewLastFiveNotesAction = UNNotificationAction(identifier: "viewLastFiveNotes", title: "View more n", options: [.foreground])
+            let viewLastFiveNotesAction = UNNotificationAction(identifier: "viewLastFiveNotes", title: "View more notes", options: [.foreground])
             let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastFiveNotesAction], intentIdentifiers: [], options: [])
             UNUserNotificationCenter.current().setNotificationCategories([category])
         }
@@ -505,11 +532,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             }
     }
 
-
-
-
-
-    
     
     func loadNextPage() {
         let startIndex = currentPage * pageSize
@@ -616,13 +638,5 @@ protocol PlacesViewControllerDelegate: AnyObject {
     func didSelectLocation(with locationName: String)
 }
 
-
-
-
-
-
-
-    
-    
 
 
