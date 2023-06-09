@@ -13,11 +13,11 @@ import FirebaseFirestore
 import FirebaseAuth
 import CoreData
 import CoreLocation
-import Photos
 import MobileCoreServices
 import FirebaseStorage
 import SDWebImage
 import UserNotifications
+
 
 
 
@@ -483,9 +483,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //MARK: - NOTIFICATIONS
     
+    var notifiedRegions = Set<String>()
+
+    
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
         print("Exited region: \(region.identifier)")
+
+        // Remove the region's identifier from the set of notified regions
+        notifiedRegions.remove(region.identifier)
     }
+
     
     func setupGeoFence(location: CLLocationCoordinate2D, radius: CLLocationDistance, identifier: String) {
         print("Setting up GeoFence at \(location) with radius \(radius)") // Debugging line
@@ -505,7 +512,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
 
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        if let circularRegion = region as? CLCircularRegion {
+        if !notifiedRegions.contains(region.identifier), let circularRegion = region as? CLCircularRegion {
             guard let locationName = fetchLocationNameFor(location: circularRegion.center) else {
                 print("Unable to fetch location name.")
                 return
@@ -517,8 +524,17 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
             // Trigger the notification
             sendNotification(locationName: locationName, lastThreeNotes: lastThreeNotesText)
+
+            // Add the region's identifier to the set of notified regions
+            notifiedRegions.insert(region.identifier)
+        }
+
+        // Introduce a delay before starting monitoring again
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) { // adjust the delay as needed
+            manager.startMonitoring(for: region)
         }
     }
+
 
 
 
@@ -544,10 +560,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
-
-
-
 
     func requestNotificationAuthorization() {
         print("Requesting notification authorization") // Debugging line
@@ -636,7 +648,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             if let err = err {
                                 print("Error updating imageURL for document ID \(documentID): \(err)")
                             } else {
-                                print("ImageURL successfully updated for document ID \(documentID)")
                             }
                         }
                     }
@@ -737,7 +748,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             if let err = err {
                 print("Error updating imageURL for document ID \(documentID): \(err)")
             } else {
-                print("ImageURL successfully updated for document ID \(documentID)")
             }
         }
     }
@@ -989,7 +999,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 if let error = error {
                     print("Error loading image from URL: \(error)")
                 } else {
-                    print("Successfully loaded image from URL: \(String(describing: imageURL))")
                 }
             }
         }
@@ -1163,9 +1172,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     
-    
-    
-    
+
     //Location Manager
     func setupLocationManager() {
         locationManager.delegate = self
@@ -1335,49 +1342,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         } else {
             print("Note text field is empty")
         }
-    }
-
-
-
-
-
-
-
-
-
-    func getAllNotes(completion: @escaping ([Note]) -> Void) {
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User email not found")
-            completion([])
-            return
-        }
-        
-        db.collection("notes")
-            .whereField("user", isEqualTo: userEmail)
-            .order(by: "timestamp", descending: false)
-            .getDocuments { querySnapshot, error in
-                if let e = error {
-                    print("There was an issue retrieving data from Firestore: \(e)")
-                    completion([])
-                } else {
-                    var notes: [Note] = []
-                    if let snapshotDocuments = querySnapshot?.documents {
-                        print("Found \(snapshotDocuments.count) notes")
-                        for doc in snapshotDocuments {
-                            let data = doc.data()
-                            if let noteText = data["note"] as? String,
-                               let locationData = data["location"] as? GeoPoint,
-                               let locationName = data["locationName"] as? String {
-                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-                                let emptyURL = URL(string: "")
-                                let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: emptyURL)
-                                notes.append(newNote)
-                            }
-                        }
-                    }
-                    completion(notes)
-                }
-            }
     }
     
     
