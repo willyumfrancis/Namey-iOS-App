@@ -333,14 +333,17 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     func createAttributedString(from noteText: String) -> NSAttributedString {
         let attributedString = NSMutableAttributedString(string: noteText)
         
-        if let range = noteText.range(of: " - ") {
-            let boldRange = NSRange(noteText.startIndex..<range.lowerBound, in: noteText)
+        if let dashRange = noteText.range(of: " - ") {
+            let boldRange = NSRange(noteText.startIndex..<dashRange.lowerBound, in: noteText)
+            attributedString.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 19), range: boldRange)
+        } else if let colonRange = noteText.range(of: ": ") {
+            let boldRange = NSRange(noteText.startIndex..<colonRange.lowerBound, in: noteText)
             attributedString.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 19), range: boldRange)
         }
         
         return attributedString
     }
-    
+
     
     func updateLocationNameLabel(location: CLLocationCoordinate2D) {
         let locationName = fetchLocationNameFor(location: location) ?? "Some Spot"
@@ -494,13 +497,15 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
 
     
-    func setupGeoFence(location: CLLocationCoordinate2D, radius: CLLocationDistance, identifier: String) {
+    func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
+        let radius: CLLocationDistance = 15
         print("Setting up GeoFence at \(location) with radius \(radius)") // Debugging line
         let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
         region.notifyOnEntry = true
         region.notifyOnExit = false
         locationManager.startMonitoring(for: region)
     }
+
         
     func getLastThreeNotes(for locationName: String) -> [Note] {
         return Array(notes.filter { $0.locationName == locationName }.suffix(3))
