@@ -61,7 +61,7 @@ class SettingsViewController: UIViewController {
     
     
     @objc private func imageTapped() {
-           rotationSpeed += 0.1
+           rotationSpeed += 0.03
            let rotationAnimation = CABasicAnimation(keyPath: "transform.rotation")
            rotationAnimation.toValue = NSNumber(value: Double.pi * 2.0 * rotationSpeed)
            rotationAnimation.duration = 1.0

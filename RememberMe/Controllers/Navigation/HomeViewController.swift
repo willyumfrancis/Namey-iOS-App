@@ -131,20 +131,26 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
 
-            
-            // Reset the selected location from the PlacesViewController
+        // Reset the selected location from the PlacesViewController
             averageSelectedLocation = nil
             averageSelectedLocationName = nil
-            
+
             guard let userLocation = locationManager.location?.coordinate else {
-                    print("User location not available yet")
-                    return
+                print("User location not available yet")
+                return
             }
 
-            loadAndFilterNotes(for: userLocation, goalRadius: 15.0)
-            displayImageForLocation(location: userLocation)
-            updateNotesCountLabel()
+            // Use updateLocation here too
+            updateLocation(location: userLocation)
         }
+    
+    func updateLocation(location: CLLocationCoordinate2D) {
+        loadAndFilterNotes(for: location, goalRadius: 15.0)
+        displayImageForLocation(location: location)
+        updateNotesCountLabel()
+        averageSelectedLocation = location
+    }
+
 
     
     //Save Name Button
@@ -1210,7 +1216,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         // Check the distance from the last processed location
         if let lastLocation = lastProcessedLocation {
             let distance = newLocation.distance(from: CLLocation(latitude: lastLocation.latitude, longitude: lastLocation.longitude))
-            if distance < 15 { // Replace '10' with whatever threshold you see fit
+            if distance < 15 { // Replace '15' with whatever threshold you see fit
                 // The new location is too close to the last processed location, so we skip this one.
                 return
             }
@@ -1224,16 +1230,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         updateLocationNameLabel(location: newLocation.coordinate)
         self.displayImageForLocation(location: self.currentLocation!)
         
-        if !hasProcessedLocationUpdate {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 15.0) // Provide the required parameters
-                self.hasProcessedLocationUpdate = true
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 15.0) // Provide the required parameters
         }
         
         // Update the last processed location
         lastProcessedLocation = newLocation.coordinate
     }
+
 
 
 
@@ -1769,6 +1773,9 @@ extension HomeViewController: UIScrollViewDelegate {
 
         }
     }
+
+
+
 
 
 
