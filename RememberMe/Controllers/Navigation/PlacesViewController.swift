@@ -11,7 +11,6 @@ import FirebaseFirestore
 import FirebaseAuth
 import CoreData
 import CoreLocation
-import Photos
 import MobileCoreServices
 import FirebaseStorage
 import SDWebImage
@@ -65,6 +64,10 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         tableView.dataSource = self
         tableView.delegate = self
         UNUserNotificationCenter.current().delegate = self
+        
+           UNUserNotificationCenter.current().delegate = self
+           requestNotificationAuthorization()
+           setupNotificationCategory()
 
         
         
@@ -118,116 +121,216 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             locationManager.startMonitoring(for: geofenceRegion)
         }
         
-        // Remove all existing geofences and set up new ones
-        func updateGeofences() {
-            for region in locationManager.monitoredRegions {
-                locationManager.stopMonitoring(for: region)
-            }
-            
-            for locationData in locations {
-                addGeofenceForLocation(locationData)
+    // Use the locations parameter to allow for flexibility
+       func updateGeofences(locations: [LocationData]) {
+           for region in locationManager.monitoredRegions {
+               locationManager.stopMonitoring(for: region)
+           }
+           
+           for locationData in locations {
+               addGeofenceForLocation(locationData)
+           }
+       }
+       
+        
+    
+
+func clusterLocations(locations: [LocationData], eps: Double, minSamples: Int) -> [LocationData] {
+    var visited = [Bool](repeating: false, count: locations.count)
+    var noise = [Bool](repeating: false, count: locations.count)
+    var clusters = [Int: [LocationData]]()
+    var clusterIndex = 0
+    
+    for (index, _) in locations.enumerated() {
+        if visited[index] {
+            continue
+        }
+        visited[index] = true
+        var neighbors = regionQuery(locations: locations, pointIndex: index, eps: eps)
+        if neighbors.count < minSamples {
+            noise[index] = true
+        } else {
+            let cluster = expandCluster(locations: locations, pointIndex: index, neighbors: &neighbors, clusterIndex: clusterIndex, eps: eps, minSamples: minSamples, visited: &visited, clusters: &clusters)
+            if !cluster.isEmpty {
+                clusters[clusterIndex] = cluster
+                clusterIndex += 1
             }
         }
-        
-
-
+    }
     
-        
-    //MARK: - LOCATION
+    // Choose a representative for each cluster
+    return clusters.values.map { locations in
+        // You can return any point from the cluster, here we choose the first one
+        return locations.first!
+    }
+}
 
-        
-        func setupGeoFence(location: CLLocationCoordinate2D, radius: CLLocationDistance, identifier: String) {
-            print("Setting up GeoFence at \(location) with radius \(radius)") // Debugging line
-            let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
-            region.notifyOnEntry = true
-            region.notifyOnExit = false
-            locationManager.startMonitoring(for: region)
-        }
-
-    
-
-        
-        
-    
-    func clusterLocations(locations: [LocationData], eps: Double, minSamples: Int) -> [LocationData] {
-        var visited = [Bool](repeating: false, count: locations.count)
-        var noise = [Bool](repeating: false, count: locations.count)
-        var clusters = [Int: [LocationData]]()
-        var clusterIndex = 0
-        
-        for (index, _) in locations.enumerated() {
-            if visited[index] {
-                continue
+func expandCluster(locations: [LocationData], pointIndex: Int, neighbors: inout [Int], clusterIndex: Int, eps: Double, minSamples: Int, visited: inout [Bool], clusters: inout [Int: [LocationData]]) -> [LocationData] {
+    var cluster = [locations[pointIndex]]
+    var i = 0
+    while i < neighbors.count {
+        let neighborIndex = neighbors[i]
+        if !visited[neighborIndex] {
+            visited[neighborIndex] = true
+            let neighborNeighbors = regionQuery(locations: locations, pointIndex: neighborIndex, eps: eps)
+            if neighborNeighbors.count >= minSamples {
+                neighbors.append(contentsOf: neighborNeighbors)
             }
-            visited[index] = true
-            var neighbors = regionQuery(locations: locations, pointIndex: index, eps: eps)
-            if neighbors.count < minSamples {
-                noise[index] = true
+        }
+        if clusters[clusterIndex]?.contains(where: {$0.name == locations[neighborIndex].name && $0.location.coordinate.latitude == locations[neighborIndex].location.coordinate.latitude && $0.location.coordinate.longitude == locations[neighborIndex].location.coordinate.longitude}) == nil {
+            cluster.append(locations[neighborIndex])
+        }
+        i += 1
+    }
+    
+    return cluster
+}
+
+
+
+func regionQuery(locations: [LocationData], pointIndex: Int, eps: Double) -> [Int] {
+    var neighbors = [Int]()
+    for (index, location) in locations.enumerated() {
+        let distance = location.location.distance(from: locations[pointIndex].location)
+        if distance <= eps {
+            neighbors.append(index)
+        }
+    }
+    return neighbors
+}
+
+
+// MARK: - CLLocationManagerDelegate
+func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    if let currentLocation = locations.last {
+        userLocation = currentLocation
+        locationManager.stopUpdatingLocation()
+        
+        loadLocationData()
+    }
+}
+
+func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+    print("Failed to get user location: \(error.localizedDescription)")
+}
+
+
+
+
+        
+    //MARK: - NOTIFICATIONS
+
+    var notifiedRegions = Set<String>()
+
+
+    func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
+        let radius: CLLocationDistance = 15
+        print("Setting up GeoFence at \(location) with radius \(radius)")
+        let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
+        region.notifyOnEntry = true
+        region.notifyOnExit = false
+        locationManager.startMonitoring(for: region)
+    }
+
+    func getLastThreeNotes(for locationName: String) -> [Note] {
+        return Array(notes.filter { $0.locationName == locationName }.suffix(3))
+    }
+
+    func getLastFiveNotes(for locationName: String) -> [Note] {
+        return Array(notes.filter { $0.locationName == locationName }.suffix(5))
+    }
+
+
+    func sendNotification(locationName: String, lastThreeNotes: [String]) {
+        print("Sending notification for location: \(locationName)")
+        let content = UNMutableNotificationContent()
+        content.title = "Near \(locationName)"
+        
+        let notesText = lastThreeNotes.joined(separator: ", ")
+        content.body = "\(notesText)"
+        content.categoryIdentifier = "notesCategory"
+        content.sound = UNNotificationSound.default
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Error adding notification: \(error)")
             } else {
-                let cluster = expandCluster(locations: locations, pointIndex: index, neighbors: &neighbors, clusterIndex: clusterIndex, eps: eps, minSamples: minSamples, visited: &visited, clusters: &clusters)
-                if !cluster.isEmpty {
-                    clusters[clusterIndex] = cluster
-                    clusterIndex += 1
+                print("Notification added successfully")
+            }
+        }
+    }
+
+    func requestNotificationAuthorization() {
+        print("Requesting notification authorization")
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
+            if granted {
+                print("Notification access granted")
+            } else {
+                print("Notification access denied")
+                if let error = error {
+                    print("Error requesting authorization: \(error)")
                 }
             }
         }
+    }
+
+    func setupNotificationCategory() {
+        print("Setting up notification category")
+        let viewLastFiveNotesAction = UNNotificationAction(identifier: "viewLastFiveNotes", title: "View all notes", options: [.foreground])
+        let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastFiveNotesAction], intentIdentifiers: [], options: [])
+        UNUserNotificationCenter.current().setNotificationCategories([category])
+    }
+
+    
+    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        print("Entered region: \(region.identifier)")
+
+        if !notifiedRegions.contains(region.identifier) {
+            print("Region not in notified regions set")
+
+            if let circularRegion = region as? CLCircularRegion {
+                print("Region is a circular region")
+
+                let locationName = region.identifier
+
+                let lastThreeNotes = getLastThreeNotes(for: locationName)
+
+                // Convert Note objects to strings
+                let lastThreeNotesText = lastThreeNotes.map { $0.text }
+
+                print("Last three notes: \(lastThreeNotesText)")
+
+                // Trigger the notification
+                sendNotification(locationName: locationName, lastThreeNotes: lastThreeNotesText)
+
+                // Add the region's identifier to the set of notified regions
+                notifiedRegions.insert(region.identifier)
+            } else {
+                print("Region is not a circular region")
+            }
+        } else {
+            print("Region is already in notified regions set")
+        }
+
+        // Introduce a delay before starting monitoring again
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+            print("Start monitoring for region again")
+            manager.startMonitoring(for: region)
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
+        print("Exited region: \(region.identifier)")
+
+        // Remove the region's identifier from the set of notified regions
+        notifiedRegions.remove(region.identifier)
+    }
         
-        // Choose a representative for each cluster
-        return clusters.values.map { locations in
-            // You can return any point from the cluster, here we choose the first one
-            return locations.first!
-        }
-    }
-
-    func expandCluster(locations: [LocationData], pointIndex: Int, neighbors: inout [Int], clusterIndex: Int, eps: Double, minSamples: Int, visited: inout [Bool], clusters: inout [Int: [LocationData]]) -> [LocationData] {
-        var cluster = [locations[pointIndex]]
-        var i = 0
-        while i < neighbors.count {
-            let neighborIndex = neighbors[i]
-            if !visited[neighborIndex] {
-                visited[neighborIndex] = true
-                let neighborNeighbors = regionQuery(locations: locations, pointIndex: neighborIndex, eps: eps)
-                if neighborNeighbors.count >= minSamples {
-                    neighbors.append(contentsOf: neighborNeighbors)
-                }
-            }
-            if clusters[clusterIndex]?.contains(where: {$0.name == locations[neighborIndex].name && $0.location.coordinate.latitude == locations[neighborIndex].location.coordinate.latitude && $0.location.coordinate.longitude == locations[neighborIndex].location.coordinate.longitude}) == nil {
-                cluster.append(locations[neighborIndex])
-            }
-            i += 1
-        }
-        
-        return cluster
-    }
-
-
-    
-    func regionQuery(locations: [LocationData], pointIndex: Int, eps: Double) -> [Int] {
-        var neighbors = [Int]()
-        for (index, location) in locations.enumerated() {
-            let distance = location.location.distance(from: locations[pointIndex].location)
-            if distance <= eps {
-                neighbors.append(index)
-            }
-        }
-        return neighbors
-    }
-
-    
-    // MARK: - CLLocationManagerDelegate
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if let currentLocation = locations.last {
-            userLocation = currentLocation
-            locationManager.stopUpdatingLocation()
-            
-            loadLocationData()
-        }
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Failed to get user location: \(error.localizedDescription)")
-    }
-    
+   
     
     // MARK: - LOCATION IMAGE LOAD
     func loadLocationData() {
@@ -269,8 +372,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                         self.sortLocationsByDistance()
                         self.loadNextPage()
                         // Update geofences
-                                self.updateGeofences()
-                        
+                        self.updateGeofences(locations: self.locations)
                         DispatchQueue.main.async {
                             print(self.locations)  // Debugging line
                             self.tableView.reloadData()
@@ -338,11 +440,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             }
     }
 
-
-
-
-
-    
     
     func loadNextPage() {
         let startIndex = currentPage * pageSize
@@ -375,9 +472,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         return cell
     }
 
-    
-    
-    
     
     func downloadAndDisplayImage(locationData: LocationData, completion: @escaping (URL) -> Void) {
         guard let userEmail = Auth.auth().currentUser?.email else {
@@ -434,13 +528,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         delegate?.didSelectLocation(with: selectedLocation.name)
     }
 
-
-
-
-
-
-
-    
 
 }
 
