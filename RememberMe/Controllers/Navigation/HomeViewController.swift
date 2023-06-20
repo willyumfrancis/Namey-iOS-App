@@ -504,7 +504,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     
     func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
-        let radius: CLLocationDistance = 15
+        let radius: CLLocationDistance = 25
         print("Setting up GeoFence at \(location) with radius \(radius)") // Debugging line
         let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
         region.notifyOnEntry = true
