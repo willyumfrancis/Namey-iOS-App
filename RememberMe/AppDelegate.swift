@@ -10,25 +10,46 @@ import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
 import CoreData
+import CoreLocation
+import UserNotifications
 
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
-  
+    
+    var lastLocationUpdate: Date?
 
-
+    let locationManager = CLLocationManager()
+    
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        
+        // Firebase configuration
         FirebaseApp.configure()
         
+        // Set up the location manager
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.requestAlwaysAuthorization()
+        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.startUpdatingLocation()
         
-        let db = Firestore.firestore()
-        print(db)
-        
-        
+        // Requesting notification authorization
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
+            if granted {
+                print("Notification access granted")
+            } else {
+                print("Notification access denied")
+                if let error = error {
+                    print("Error requesting authorization: \(error)")
+                }
+            }
+        }
         
         return true
     }
+
+
 
     // MARK: UISceneSession Lifecycle
 
@@ -89,5 +110,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
 
+}
+
+// MARK: - CLLocationManagerDelegate
+
+extension AppDelegate: CLLocationManagerDelegate {
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let currentLocation = locations.last {
+            if lastLocationUpdate == nil || Date().timeIntervalSince(lastLocationUpdate!) >= 600 {
+                print("Updated user location: \(currentLocation)")
+                
+                lastLocationUpdate = Date()
+
+                NotificationCenter.default.post(name: NSNotification.Name("UserLocationUpdated"), object: currentLocation)
+            }
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("Failed to get user location: \(error.localizedDescription)")
+    }
 }
 

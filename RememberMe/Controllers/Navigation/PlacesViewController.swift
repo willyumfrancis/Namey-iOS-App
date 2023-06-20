@@ -64,6 +64,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         tableView.dataSource = self
         tableView.delegate = self
         UNUserNotificationCenter.current().delegate = self
+        NotificationCenter.default.addObserver(self, selector: #selector(userLocationUpdated(_:)), name: NSNotification.Name("UserLocationUpdated"), object: nil)
+
         
            UNUserNotificationCenter.current().delegate = self
            requestNotificationAuthorization()
@@ -103,6 +105,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     // Add geofence for a given location
         func addGeofenceForLocation(_ locationData: LocationData) {
+            print("Adding geofence for location: \(locationData.name)")
+
             let geofenceRegionCenter = CLLocationCoordinate2D(
                 latitude: locationData.location.coordinate.latitude,
                 longitude: locationData.location.coordinate.longitude
@@ -111,7 +115,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             // Create a 500-meter radius geofence
             let geofenceRegion = CLCircularRegion(
                 center: geofenceRegionCenter,
-                radius: 50,
+                radius: 25,
                 identifier: safeFileName(for: locationData.name)
             )
             
@@ -131,6 +135,16 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                addGeofenceForLocation(locationData)
            }
        }
+    
+    @objc func userLocationUpdated(_ notification: Notification) {
+        if let location = notification.object as? CLLocation {
+            print("Updated user location: \(location)")
+
+            userLocation = location
+            
+            loadLocationData()
+        }
+    }
        
         
     
@@ -203,6 +217,8 @@ func regionQuery(locations: [LocationData], pointIndex: Int, eps: Double) -> [In
 // MARK: - CLLocationManagerDelegate
 func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
     if let currentLocation = locations.last {
+        print("Updated user location: \(currentLocation)")
+
         userLocation = currentLocation
         locationManager.stopUpdatingLocation()
         
@@ -224,7 +240,7 @@ func locationManager(_ manager: CLLocationManager, didFailWithError error: Error
 
 
     func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
-        let radius: CLLocationDistance = 15
+        let radius: CLLocationDistance = 25
         print("Setting up GeoFence at \(location) with radius \(radius)")
         let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
         region.notifyOnEntry = true
@@ -234,10 +250,6 @@ func locationManager(_ manager: CLLocationManager, didFailWithError error: Error
 
     func getLastThreeNotes(for locationName: String) -> [Note] {
         return Array(notes.filter { $0.locationName == locationName }.suffix(3))
-    }
-
-    func getLastFiveNotes(for locationName: String) -> [Note] {
-        return Array(notes.filter { $0.locationName == locationName }.suffix(5))
     }
 
 
@@ -284,6 +296,55 @@ func locationManager(_ manager: CLLocationManager, didFailWithError error: Error
         let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastFiveNotesAction], intentIdentifiers: [], options: [])
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
+    
+    func getLastThreeNotesFromFirestore(for locationName: String, completion: @escaping ([Note]) -> Void) {
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            return
+        }
+
+        db.collection("notes")
+            .whereField("user", isEqualTo: userEmail)
+            .whereField("locationName", isEqualTo: locationName)
+            .order(by: "timestamp", descending: true)
+            .limit(to: 3)
+            .getDocuments { querySnapshot, error in
+                if let e = error {
+                    print("There was an issue retrieving data from Firestore: \(e)")
+                } else {
+                    if let snapshotDocuments = querySnapshot?.documents {
+                        var fetchedNotes: [Note] = []
+                        for doc in snapshotDocuments {
+                            let data = doc.data()
+                            print("Fetched data: \(data)")  // Debugging line
+                            
+                            // Extract the values from the data dictionary
+                            if let id = data["id"] as? String,
+                               let text = data["text"] as? String,
+                               let lat = data["latitude"] as? Double,
+                               let lon = data["longitude"] as? Double,
+                               let locationName = data["locationName"] as? String,
+                               let imageURLString = data["imageURL"] as? String,
+                               let imageURL = URL(string: imageURLString) {
+                                
+                                // Create a CLLocationCoordinate2D instance for the location
+                                let location = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                                
+                                // Create a Note instance
+                                let note = Note(id: id, text: text, location: location, locationName: locationName, imageURL: imageURL)
+                                
+                                print("Created note: \(note)")  // Debugging line
+                                fetchedNotes.append(note)
+                            } else {
+                                print("Failed to create a note from data: \(data)")  // Debugging line
+                            }
+                        }
+                        completion(fetchedNotes)
+                    }
+                }
+            }
+    }
+
 
     
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
@@ -297,31 +358,32 @@ func locationManager(_ manager: CLLocationManager, didFailWithError error: Error
 
                 let locationName = region.identifier
 
-                let lastThreeNotes = getLastThreeNotes(for: locationName)
+                getLastThreeNotesFromFirestore(for: locationName) { lastThreeNotes in
 
-                // Convert Note objects to strings
-                let lastThreeNotesText = lastThreeNotes.map { $0.text }
+                    // Convert Note objects to strings
+                    let lastThreeNotesText = lastThreeNotes.map { $0.text }
 
-                print("Last three notes: \(lastThreeNotesText)")
+                    print("Last three notes: \(lastThreeNotesText)")
 
-                // Trigger the notification
-                sendNotification(locationName: locationName, lastThreeNotes: lastThreeNotesText)
+                    // Trigger the notification
+                    DispatchQueue.main.async {
+                        self.sendNotification(locationName: locationName, lastThreeNotes: lastThreeNotesText)
+                    }
 
-                // Add the region's identifier to the set of notified regions
-                notifiedRegions.insert(region.identifier)
+                    // Add the region's identifier to the set of notified regions
+                    self.notifiedRegions.insert(region.identifier)
+                }
             } else {
                 print("Region is not a circular region")
             }
         } else {
             print("Region is already in notified regions set")
         }
-
-        // Introduce a delay before starting monitoring again
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
-            print("Start monitoring for region again")
-            manager.startMonitoring(for: region)
-        }
     }
+
+
+
+
 
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
         print("Exited region: \(region.identifier)")
