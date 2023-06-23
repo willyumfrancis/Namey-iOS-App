@@ -1310,10 +1310,23 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         saveNote() // Perform the same action as the "Save Note" button
     }
     
-    // New function to save the note
+    func fetchLocationNameFor(location: CLLocationCoordinate2D, completion: @escaping (String?) -> Void) {
+        let geocoder = CLGeocoder()
+        geocoder.reverseGeocodeLocation(CLLocation(latitude: location.latitude, longitude: location.longitude)) { placemarks, error in
+            if let error = error {
+                print("Failed to get location name: \(error)")
+                completion(nil)
+            } else if let placemark = placemarks?.first {
+                completion(placemark.name)
+            } else {
+                completion(nil)
+            }
+        }
+    }
+
     func saveNote() {
         var locationToSave: CLLocationCoordinate2D
-        
+
         if let selectedLocation = selectedLocation {
             locationToSave = selectedLocation
         } else if let currentLocation = locationManager.location?.coordinate {
@@ -1327,38 +1340,69 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("Failed to get active cell")
             return
         }
-        
+
         if let noteText = activeCell.noteTextField.text, !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let noteId = activeCell.note?.id ?? UUID().uuidString
-            let locationNameToSave = currentLocationName ?? fetchLocationNameFor(location: locationToSave) ?? ""
-            let imageURLToSave = currentLocationImageURL?.absoluteString ?? ""
-
-            // Update the active cell's note location
-            activeCell.note?.location = locationToSave
             
-            // Save the updated note using the saveNoteToFirestore function
-            saveNoteToFirestore(noteId: noteId, noteText: noteText, location: locationToSave, locationName: locationNameToSave, imageURL: imageURLToSave) { [weak self] success in
-                if success {
-                    print("Note saved successfully")
-                    
-                    // Update the note in the notes array
-                    if let noteIndex = self?.notes.firstIndex(where: { $0.id == noteId }) {
-                        self?.notes[noteIndex].text = noteText
-                        // Reload the table view on the main thread
-                        DispatchQueue.main.async {
-                            self?.tableView.reloadData()
-                            self?.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
-                            self?.updateProgressBar()
+            fetchLocationNameFor(location: locationToSave) { locationName in
+                print("fetchLocationNameFor returned: \(String(describing: locationName))")
+
+                // Here we check if a location name already exists in the database
+                if let locationNameToSave = locationName, !locationNameToSave.isEmpty {
+                    self.saveNoteToFirestore(noteId: noteId, noteText: noteText, location: locationToSave, locationName: locationNameToSave, imageURL: self.currentLocationImageURL?.absoluteString ?? "") { success in
+                        if success {
+                            print("Note saved successfully.")
+                        } else {
+                            print("Error saving note.")
                         }
                     }
                 } else {
-                    print("Error saving note")
+                    // If it doesn't exist, prompt the user for a name
+                    self.promptForLocationName { input in
+                        if let input = input, !input.isEmpty {
+                            self.saveNoteToFirestore(noteId: noteId, noteText: noteText, location: locationToSave, locationName: input, imageURL: self.currentLocationImageURL?.absoluteString ?? "") { success in
+                                if success {
+                                    print("Note saved successfully.")
+                                } else {
+                                    print("Error saving note.")
+                                }
+                            }
+                        } else {
+                            print("No location name provided. Note will not be saved.")
+                        }
+                    }
                 }
             }
         } else {
             print("Note text field is empty")
         }
     }
+
+
+    
+    func promptForLocationName(completion: @escaping (String?) -> Void) {
+        DispatchQueue.main.async {
+            let alertController = UIAlertController(title: "Location Name", message: "Please enter a name for this location", preferredStyle: .alert)
+            alertController.addTextField()
+
+            let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
+                let name = alertController.textFields?.first?.text
+                completion(name)
+            }
+            alertController.addAction(saveAction)
+
+            let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { _ in
+                completion(nil)
+            }
+            alertController.addAction(cancelAction)
+
+            self.present(alertController, animated: true)
+        }
+    }
+
+
+
+
     
     
     func updateNoteInFirestore(noteID: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
