@@ -507,10 +507,39 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         locationManager.startMonitoring(for: region)
     }
 
-        
-    func getLastThreeNotes(for locationName: String) -> [Note] {
-        return Array(notes.filter { $0.locationName == locationName }.suffix(3))
+    
+    func getLastThreeNotes(completion: @escaping ([Note]?, Error?) -> Void) {
+        let db = Firestore.firestore()
+        db.collection("notes")
+          .order(by: "timestamp", descending: true)
+          .limit(to: 3)
+          .getDocuments() { (querySnapshot, err) in
+            if let err = err {
+                completion(nil, err)
+            } else {
+                var notes: [Note] = []
+                for document in querySnapshot!.documents {
+                    let data = document.data()
+                    let id = data["id"] as? String ?? ""
+                    let text = data["text"] as? String ?? ""
+                    let location = data["location"] as? GeoPoint
+                    let locationName = data["locationName"] as? String ?? ""
+                    let imageURL = data["imageURL"] as? String ?? ""
+                    print("Fetched note text: \(text)")  // Add this line to debug
+
+                    let note = Note(id: id,
+                                    text: text,
+                                    location: CLLocationCoordinate2D(latitude: location?.latitude ?? 0, longitude: location?.longitude ?? 0),
+                                    locationName: locationName,
+                                    imageURL: URL(string: imageURL))
+                    notes.append(note)
+                }
+                completion(notes, nil)
+            }
+        }
     }
+
+
 
     func getLastFiveNotes(for locationName: String) -> [Note] {
         return Array(notes.filter { $0.locationName == locationName }.suffix(5))
@@ -523,16 +552,23 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 print("Unable to fetch location name.")
                 return
             }
-            let lastThreeNotes = getLastThreeNotes(for: locationName)
 
-            // Convert Note objects to strings
-            let lastThreeNotesText = lastThreeNotes.map { $0.text }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { // 3 second delay before querying Firestore
+                self.getLastThreeNotes { (notes, error) in
+                    if let error = error {
+                        print("Error fetching notes: \(error)")
+                    } else if let notes = notes {
+                        // Convert Note objects to strings
+                        let lastThreeNotesText = notes.map { $0.text }
 
-            // Trigger the notification
-            sendNotification(locationName: locationName, lastThreeNotes: lastThreeNotesText)
+                        // Trigger the notification
+                        self.sendNotification(locationName: locationName, lastThreeNotes: lastThreeNotesText)
 
-            // Add the region's identifier to the set of notified regions
-            notifiedRegions.insert(region.identifier)
+                        // Add the region's identifier to the set of notified regions
+                        self.notifiedRegions.insert(region.identifier)
+                    }
+                }
+            }
         }
 
         // Introduce a delay before starting monitoring again
@@ -540,6 +576,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             manager.startMonitoring(for: region)
         }
     }
+
+
 
 
 
