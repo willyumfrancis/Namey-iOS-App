@@ -19,8 +19,6 @@ import SDWebImage
 import UserNotifications
 
 
-
-
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate {
     
     
@@ -65,7 +63,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
 
-
     
     var currentLocationName: String?
     var currentLocationImageURL: URL?
@@ -83,8 +80,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     var notesLoaded = false
     
     var userLocation: CLLocationCoordinate2D?
-
-    
     
     var notes: [Note] = []
     var authStateListenerHandle: AuthStateDidChangeListenerHandle?
