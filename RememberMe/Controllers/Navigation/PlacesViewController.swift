@@ -238,8 +238,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         
         db.collection("notes")
             .whereField("user", isEqualTo: userEmail)
-            .getDocuments { querySnapshot, error in
-                
+            .addSnapshotListener { (querySnapshot, error) in
                 if let e = error {
                     print("There was an issue retrieving data from Firestore: \(e)")
                 } else {
@@ -269,19 +268,19 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                         self.sortLocationsByDistance()
                         self.loadNextPage()
                         // Update geofences
-                                self.updateGeofences()
+                        self.updateGeofences()
                         
                         DispatchQueue.main.async {
                             print(self.locations)  // Debugging line
                             self.tableView.reloadData()
                         }
-                    }
- else {
+                    } else {
                         print("No snapshot documents found")
                     }
                 }
             }
     }
+
     
     func sortLocationsByDistance() {
            guard let userLocation = userLocation else { return }
