@@ -373,6 +373,43 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         
         return cell
     }
+    
+    //SWIPE TO DELETE FUNCTIONS
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            let locationToDelete = locations[indexPath.row]
+            deleteLocationAndNotes(locationData: locationToDelete, indexPath: indexPath)
+        }
+    }
+    func deleteLocationAndNotes(locationData: LocationData, indexPath: IndexPath) {
+        // Deleting notes associated with the location.
+        db.collection("notes")
+            .whereField("locationName", isEqualTo: locationData.name)
+            .getDocuments { (querySnapshot, error) in
+                if let error = error {
+                    print("Error getting documents: \(error)")
+                } else {
+                    for document in querySnapshot!.documents {
+                        document.reference.delete()
+                    }
+                }
+            }
+        // Deleting location from Firestore.
+        db.collection("locations").document(locationData.name).delete { error in
+            if let error = error {
+                print("Error removing document: \(error)")
+            } else {
+                print("Document successfully removed!")
+                
+                // Remove the location from local array
+                self.locations.remove(at: indexPath.row)
+                
+                // Finally delete the row from tableView
+                self.tableView.deleteRows(at: [indexPath], with: .fade)
+            }
+        }
+    }
+
 
     
     
@@ -432,7 +469,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         UserDefaults.standard.synchronize()
         delegate?.didSelectLocation(with: selectedLocation.name)
     }
-
 
 
 
