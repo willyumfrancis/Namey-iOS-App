@@ -401,14 +401,21 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             } else {
                 print("Document successfully removed!")
                 
-                // Remove the location from local array
-                self.locations.remove(at: indexPath.row)
-                
-                // Finally delete the row from tableView
-                self.tableView.deleteRows(at: [indexPath], with: .fade)
+                // Find the index of the location in the locations array
+                if let index = self.locations.firstIndex(where: { $0.name == locationData.name }) {
+                    // If the location is found, remove it from the array
+                    self.locations.remove(at: index)
+                    
+                    // Update the table view if the deleted location was found in the locations array
+                    self.tableView.deleteRows(at: [indexPath], with: .fade)
+                } else {
+                    // If the location was not found in the array, log an error
+                    print("Error: could not find location in locations array")
+                }
             }
         }
     }
+
 
 
     
