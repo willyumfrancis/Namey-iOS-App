@@ -540,12 +540,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
 
 
-
-    func getLastFiveNotes(for locationName: String) -> [Note] {
-        return Array(notes.filter { $0.locationName == locationName }.suffix(5))
-    }
-
-
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         if !notifiedRegions.contains(region.identifier), let circularRegion = region as? CLCircularRegion {
             guard let locationName = fetchLocationNameFor(location: circularRegion.center) else {

@@ -433,13 +433,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         UserDefaults.standard.synchronize()
         delegate?.didSelectLocation(with: selectedLocation.name)
     }
-
-
-
-
-
-
-
     
 
 }
