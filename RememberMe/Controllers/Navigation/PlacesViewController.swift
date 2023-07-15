@@ -61,16 +61,11 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         
         let locationCellNib = UINib(nibName: "LocationCell", bundle: nil)
         tableView.register(locationCellNib, forCellReuseIdentifier: "LocationCell")
-        
         tableView.dataSource = self
         tableView.delegate = self
         UNUserNotificationCenter.current().delegate = self
-
-        
-        
         loadLocationData()
       
-
         // Call this after the locations are loaded
         for locationData in locations {
             addGeofenceForLocation(locationData)
