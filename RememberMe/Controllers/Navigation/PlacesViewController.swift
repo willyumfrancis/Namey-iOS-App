@@ -15,23 +15,23 @@ import Photos
 import MobileCoreServices
 import FirebaseStorage
 import SDWebImage
-import UserNotifications
 
-struct LocationData {
+struct LocationData: Hashable {
     let name: String
     let location: CLLocation
-    let imageURL: URL?
+    let imageURL: URL?  // The URL might be nil if no image URL was fetched
 }
 
-
-func safeFileName(for locationName: String) -> String {
-    let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-    let components = locationName.components(separatedBy: allowedCharacters.inverted)
-    return components.joined(separator: "_")
-}
 
 
 class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate, UNUserNotificationCenterDelegate {
+    
+    
+    func safeFileName(for locationName: String) -> String {
+        let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+        let components = locationName.components(separatedBy: allowedCharacters.inverted)
+        return components.joined(separator: "_")
+    }
 
     weak var delegate: PlacesViewControllerDelegate?
 
@@ -66,10 +66,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         UNUserNotificationCenter.current().delegate = self
         loadLocationData()
       
-        // Call this after the locations are loaded
-        for locationData in locations {
-            addGeofenceForLocation(locationData)
-        }
+    
         
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -90,43 +87,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                }
            }
     }
-    
-    //MARK: - GeoFencing
-    
-    // Add geofence for a given location
-        func addGeofenceForLocation(_ locationData: LocationData) {
-            let geofenceRegionCenter = CLLocationCoordinate2D(
-                latitude: locationData.location.coordinate.latitude,
-                longitude: locationData.location.coordinate.longitude
-            )
-
-            // Create a 500-meter radius geofence
-            let geofenceRegion = CLCircularRegion(
-                center: geofenceRegionCenter,
-                radius: 50,
-                identifier: safeFileName(for: locationData.name)
-            )
-            
-            geofenceRegion.notifyOnEntry = true
-            geofenceRegion.notifyOnExit = true
-
-            locationManager.startMonitoring(for: geofenceRegion)
-        }
-        
-        // Remove all existing geofences and set up new ones
-        func updateGeofences() {
-            for region in locationManager.monitoredRegions {
-                locationManager.stopMonitoring(for: region)
-            }
-            
-            for locationData in locations {
-                addGeofenceForLocation(locationData)
-            }
-        }
-        
-
-
-    
         
     //MARK: - LOCATION
 
@@ -138,75 +98,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             region.notifyOnExit = false
             locationManager.startMonitoring(for: region)
         }
-
     
-
-        
-        
-    
-    func clusterLocations(locations: [LocationData], eps: Double, minSamples: Int) -> [LocationData] {
-        var visited = [Bool](repeating: false, count: locations.count)
-        var noise = [Bool](repeating: false, count: locations.count)
-        var clusters = [Int: [LocationData]]()
-        var clusterIndex = 0
-        
-        for (index, _) in locations.enumerated() {
-            if visited[index] {
-                continue
-            }
-            visited[index] = true
-            var neighbors = regionQuery(locations: locations, pointIndex: index, eps: eps)
-            if neighbors.count < minSamples {
-                noise[index] = true
-            } else {
-                let cluster = expandCluster(locations: locations, pointIndex: index, neighbors: &neighbors, clusterIndex: clusterIndex, eps: eps, minSamples: minSamples, visited: &visited, clusters: &clusters)
-                if !cluster.isEmpty {
-                    clusters[clusterIndex] = cluster
-                    clusterIndex += 1
-                }
-            }
-        }
-        
-        // Choose a representative for each cluster
-        return clusters.values.map { locations in
-            // You can return any point from the cluster, here we choose the first one
-            return locations.first!
-        }
-    }
-
-    func expandCluster(locations: [LocationData], pointIndex: Int, neighbors: inout [Int], clusterIndex: Int, eps: Double, minSamples: Int, visited: inout [Bool], clusters: inout [Int: [LocationData]]) -> [LocationData] {
-        var cluster = [locations[pointIndex]]
-        var i = 0
-        while i < neighbors.count {
-            let neighborIndex = neighbors[i]
-            if !visited[neighborIndex] {
-                visited[neighborIndex] = true
-                let neighborNeighbors = regionQuery(locations: locations, pointIndex: neighborIndex, eps: eps)
-                if neighborNeighbors.count >= minSamples {
-                    neighbors.append(contentsOf: neighborNeighbors)
-                }
-            }
-            if clusters[clusterIndex]?.contains(where: {$0.name == locations[neighborIndex].name && $0.location.coordinate.latitude == locations[neighborIndex].location.coordinate.latitude && $0.location.coordinate.longitude == locations[neighborIndex].location.coordinate.longitude}) == nil {
-                cluster.append(locations[neighborIndex])
-            }
-            i += 1
-        }
-        
-        return cluster
-    }
-
-
-    
-    func regionQuery(locations: [LocationData], pointIndex: Int, eps: Double) -> [Int] {
-        var neighbors = [Int]()
-        for (index, location) in locations.enumerated() {
-            let distance = location.location.distance(from: locations[pointIndex].location)
-            if distance <= eps {
-                neighbors.append(index)
-            }
-        }
-        return neighbors
-    }
 
     
     // MARK: - CLLocationManagerDelegate
@@ -226,6 +118,9 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     // MARK: - LOCATION IMAGE LOAD
     func loadLocationData() {
+        // Clear SDWebImage Cache
+        SDImageCache.shared.clearMemory()
+        
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
             return
@@ -242,28 +137,35 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                         for doc in snapshotDocuments {
                             let data = doc.data()
                             if let locationName = data["locationName"] as? String,
-                                let locationData = data["location"] as? GeoPoint,
-                                let imageURLString = data["imageURL"] as? String,
-                                let imageURL = URL(string: imageURLString) {
-                                    
+                               let locationData = data["location"] as? GeoPoint,
+                               let imageUrlString = data["imageURL"] as? String,  // Fetch the image URL from the database
+                               let imageUrl = URL(string: imageUrlString) {  // Convert the URL string to a URL instance
+
                                 let location = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
-                                let locationDataInstance = LocationData(name: locationName, location: location, imageURL: imageURL)
-                                fetchedLocations.append(locationDataInstance)
+                                let locationDataInstance = LocationData(name: locationName, location: location, imageURL: imageUrl)
+                    
+                                
+                                // Create a unique key for this location
+                                let locationKey = self.safeFileName(for: locationName)
+                                
+                                // Ensure this location is unique
+                                if !self.fetchedLocationKeys.contains(locationKey) {
+                                    print("Fetched LocationData: \(locationDataInstance)")
+                                    fetchedLocations.append(locationDataInstance)
+                                    self.fetchedLocationKeys.insert(locationKey)
+                                }
                             } else {
                                 print("Failed to parse location data for document ID: \(doc.documentID)")
                             }
                         }
                         
-                        self.locations = fetchedLocations.filter { locationData in
-                            return locationData.name != "" && locationData.imageURL != nil
+                        // Append new locations to the existing ones
+                        self.locations += fetchedLocations.filter { locationData in
+                            return locationData.name != ""
                         }
                         
-                        let minSamples = 1
-                        self.locations = self.clusterLocations(locations: self.locations, eps: 30.0, minSamples: minSamples)
                         self.sortLocationsByDistance()
                         self.loadNextPage()
-                        // Update geofences
-                        self.updateGeofences()
                         
                         DispatchQueue.main.async {
                             print(self.locations)  // Debugging line
@@ -276,7 +178,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             }
     }
 
-    
+
     func sortLocationsByDistance() {
            guard let userLocation = userLocation else { return }
            locations.sort { locationData1, locationData2 in
@@ -331,20 +233,16 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 }
             }
     }
-
-
-
-
-
-    
-    
     func loadNextPage() {
         let startIndex = currentPage * pageSize
         let endIndex = min((currentPage + 1) * pageSize, locations.count)
-        
+            
         if startIndex < endIndex {
             currentPage += 1
-            tableView.reloadData()
+            print("New Page of Locations: \(Array(locations[startIndex..<endIndex]))")
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
+            }
         }
     }
     
@@ -355,21 +253,60 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath) as! LocationCell
-        
+
+        // Cancel the current image load
+        cell.imageView!.sd_cancelCurrentImageLoad()
+
+        // Clear the existing image
+        cell.imageView!.image = nil
+
         let locationData = locations[indexPath.row]
-        
-        // Check if the data is complete
-        if let imageURL = locationData.imageURL {
-            cell.locationImageView.sd_setImage(with: imageURL, placeholderImage: UIImage(named: "placeholder"))
-            cell.locationNameLabel.text = locationData.name
-        } else {
-            cell.isHidden = true // If data is not complete, hide the cell
-        }
+
+        // Configure the cell with the location data
+        cell.configure(with: locationData)
         
         return cell
     }
+
+
+
     
-    //SWIPE TO DELETE FUNCTIONS
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let selectedLocation = locations[indexPath.row]
+
+        // Calculate the average of the selected location's notes' coordinates
+        var totalLatitude = 0.0
+        var totalLongitude = 0.0
+        var notesCount = 0
+
+        for note in notes {
+            if note.locationName == selectedLocation.name {
+                totalLatitude += note.location.latitude
+                totalLongitude += note.location.longitude
+                notesCount += 1
+            }
+        }
+
+        if notesCount > 0 {
+            let averageLatitude = totalLatitude / Double(notesCount)
+            let averageLongitude = totalLongitude / Double(notesCount)
+            let averageLocation = CLLocationCoordinate2D(latitude: averageLatitude, longitude: averageLongitude)
+
+            let locationData = NSKeyedArchiver.archivedData(withRootObject: averageLocation)
+            UserDefaults.standard.set(locationData, forKey: "averageSelectedLocation")
+            UserDefaults.standard.set(selectedLocation.name, forKey: "averageSelectedLocationName")
+        } else {
+            UserDefaults.standard.removeObject(forKey: "averageSelectedLocation")
+            UserDefaults.standard.removeObject(forKey: "averageSelectedLocationName")
+        }
+
+        UserDefaults.standard.synchronize()
+        delegate?.didSelectLocation(with: selectedLocation.name)
+    }
+    
+    
+//MARK: - SWIPE TO DELETE
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             let locationToDelete = locations[indexPath.row]
@@ -410,89 +347,14 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             }
         }
     }
-
-
-
     
-    
-    
-    
-    func downloadAndDisplayImage(locationData: LocationData, completion: @escaping (URL) -> Void) {
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User email not found")
-            return
-        }
-        
-        let safeFileName = safeFileName(for: locationData.name)
-        let storage = Storage.storage()
-        
-        let storageRef = storage.reference().child("location_images/\(safeFileName).jpg")
-        storageRef.downloadURL { (url, error) in
-            if let e = error {
-                print("Error getting the download URL for the image: \(e)")
-            } else {
-                if let url = url {
-                    completion(url)
-                }
-            }
-        }
-    }
-    
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        let selectedLocation = locations[indexPath.row]
-
-        // Calculate the average of the selected location's notes' coordinates
-        var totalLatitude = 0.0
-        var totalLongitude = 0.0
-        var notesCount = 0
-
-        for note in notes {
-            if note.locationName == selectedLocation.name {
-                totalLatitude += note.location.latitude
-                totalLongitude += note.location.longitude
-                notesCount += 1
-            }
-        }
-
-        if notesCount > 0 {
-            let averageLatitude = totalLatitude / Double(notesCount)
-            let averageLongitude = totalLongitude / Double(notesCount)
-            let averageLocation = CLLocationCoordinate2D(latitude: averageLatitude, longitude: averageLongitude)
-
-            let locationData = NSKeyedArchiver.archivedData(withRootObject: averageLocation)
-            UserDefaults.standard.set(locationData, forKey: "averageSelectedLocation")
-            UserDefaults.standard.set(selectedLocation.name, forKey: "averageSelectedLocationName")
-        } else {
-            UserDefaults.standard.removeObject(forKey: "averageSelectedLocation")
-            UserDefaults.standard.removeObject(forKey: "averageSelectedLocationName")
-        }
-
-        UserDefaults.standard.synchronize()
-        delegate?.didSelectLocation(with: selectedLocation.name)
-    }
-
-
-
-
-
-
-    
-
 }
+
+
 
 //MARK: - Extensions + Protocols
 protocol PlacesViewControllerDelegate: AnyObject {
     func didSelectLocation(with locationName: String)
 }
-
-
-
-
-
-
-
-    
-    
 
 

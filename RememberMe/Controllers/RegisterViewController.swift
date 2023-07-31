@@ -15,6 +15,7 @@ class RegisterViewController: UIViewController, CLLocationManagerDelegate {
     @IBOutlet weak var EmailTextField: UITextField!
     @IBOutlet weak var PasswordTextField: UITextField!
     
+    @IBOutlet weak var RegisterButton: UIButton!
     let locationManager = CLLocationManager()
     
     @IBAction func RegisterButton(_ sender: Any) {
@@ -39,6 +40,11 @@ class RegisterViewController: UIViewController, CLLocationManagerDelegate {
        
        override func viewDidLoad() {
            super.viewDidLoad()
+           
+           RegisterButton.layer.cornerRadius = 12
+           RegisterButton.backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
+           RegisterButton.layer.borderWidth = 3
+           RegisterButton.layer.borderColor = UIColor.black.cgColor
            
            // Request location authorization
            locationManager.delegate = self

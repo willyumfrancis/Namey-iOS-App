@@ -365,6 +365,7 @@
                     <navigationItem key="navigationItem" id="9X7-1e-0nG"/>
                     <connections>
                         <outlet property="EmailTextField" destination="O3g-zk-oDJ" id="QN8-GS-LdB"/>
+                        <outlet property="LogInButton" destination="oSH-Ou-Ze8" id="xJm-P9-sIZ"/>
                         <outlet property="PasswordTextField" destination="Fr7-hV-koP" id="IVO-Wt-8eb"/>
                         <segue destination="BoO-Yj-oim" kind="show" identifier="LogInSegue" id="aac-TS-kSO"/>
                     </connections>
@@ -512,7 +513,7 @@
         <scene sceneID="7Lu-QK-jML">
             <objects>
                 <viewController id="ujR-y2-ycv" customClass="RegisterViewController" customModule="Namey" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="zs2-E2-Aq7">
+                    <view key="view" contentMode="scaleToFill" restorationIdentifier="register" id="zs2-E2-Aq7">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
@@ -575,6 +576,7 @@
                     <connections>
                         <outlet property="EmailTextField" destination="r4Q-4G-YeZ" id="xjj-4e-hbq"/>
                         <outlet property="PasswordTextField" destination="Dh8-Bu-Paq" id="D8r-G3-ErW"/>
+                        <outlet property="RegisterButton" destination="h6z-po-AeB" id="FvZ-Q4-96h"/>
                         <segue destination="BoO-Yj-oim" kind="show" identifier="RegisterSegue" id="YHk-bY-8mi"/>
                     </connections>
                 </viewController>
@@ -605,7 +607,7 @@
         </scene>
     </scenes>
     <inferredMetricsTieBreakers>
-        <segue reference="4Xd-G2-y6G"/>
+        <segue reference="aac-TS-kSO"/>
     </inferredMetricsTieBreakers>
     <resources>
         <image name="arrow.clockwise.circle.fill" catalog="system" width="128" height="123"/>

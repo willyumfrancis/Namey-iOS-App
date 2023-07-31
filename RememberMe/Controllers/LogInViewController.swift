@@ -18,6 +18,7 @@ class LogInViewController: UIViewController, CLLocationManagerDelegate {
     
     let locationManager = CLLocationManager()
 
+    @IBOutlet weak var LogInButton: UIButton!
     
     @IBAction func LogInButton(_ sender: Any) {
         
@@ -44,6 +45,12 @@ class LogInViewController: UIViewController, CLLocationManagerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         locationManager.delegate = self
+        
+        LogInButton.layer.cornerRadius = 12
+        LogInButton.backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
+        LogInButton.layer.borderWidth = 3
+        LogInButton.layer.borderColor = UIColor.black.cgColor
+        
         
         // Do any additional setup after loading the view.
     }
