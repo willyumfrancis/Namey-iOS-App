@@ -37,16 +37,27 @@ class LocationCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
 
+        // Cancel any ongoing image load
+        locationImageView.sd_cancelCurrentImageLoad()
+        
         // Clear the image to ensure no old data is shown in the recycled cell
         locationImageView.image = nil
     }
+
     
     func configure(with locationData: LocationData) {
         locationNameLabel.text = locationData.name
 
         // Set image with the given URL
-        locationImageView.sd_setImage(with: locationData.imageURL, placeholderImage: UIImage(named: "placeholder"))
+        if let imageURL = locationData.imageURL {
+            print("Loading image for location \(locationData.name) from URL: \(imageURL)")
+            locationImageView.sd_setImage(with: imageURL, placeholderImage: UIImage(named: "placeholder"))
+        } else {
+            print("No image URL for location \(locationData.name)")
+            locationImageView.image = UIImage(named: "placeholder")
+        }
     }
+
 
 
 

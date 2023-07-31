@@ -24,6 +24,8 @@ struct LocationData: Hashable {
 
 
 
+
+
 class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate, UNUserNotificationCenterDelegate {
     
     
@@ -201,19 +203,23 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 } else {
                     if let snapshotDocuments = querySnapshot?.documents {
                         var fetchedNotes: [Note] = []
+                        var locationImageURLs: [String: URL] = [:]  // Dictionary to store image URL for each location name
                         for doc in snapshotDocuments {
                             let data = doc.data()
                             print("Fetched data: \(data)")  // Debugging line
                             
                             // Extract the values from the data dictionary
                             if let id = data["id"] as? String,
-                               let text = data["text"] as? String,
-                               let lat = data["latitude"] as? Double,
-                               let lon = data["longitude"] as? Double,
-                               let locationName = data["locationName"] as? String,
-                               let imageURLString = data["imageURL"] as? String,
-                               let imageURL = URL(string: imageURLString) {
+                                let text = data["text"] as? String,
+                                let lat = data["latitude"] as? Double,
+                                let lon = data["longitude"] as? Double,
+                                let locationName = data["locationName"] as? String,
+                                let imageURLString = data["imageURL"] as? String,
+                                let imageURL = URL(string: imageURLString) {
                                 
+                                // Store the image URL for the location name
+                                locationImageURLs[locationName] = imageURL
+
                                 // Create a CLLocationCoordinate2D instance for the location
                                 let location = CLLocationCoordinate2D(latitude: lat, longitude: lon)
                                 
@@ -228,11 +234,21 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                         }
                         self.notes = fetchedNotes
                         print("Loaded notes: \(self.notes)")  // Debugging line
+                        
+                        // Update locations with the correct image URLs
+                        for index in 0..<self.locations.count {
+                            if let imageURL = locationImageURLs[self.locations[index].name] {
+                                self.locations[index] = LocationData(name: self.locations[index].name, location: self.locations[index].location, imageURL: imageURL)
+                            }
+                        }
+                        
                         completion(fetchedNotes)
                     }
                 }
             }
     }
+
+    
     func loadNextPage() {
         let startIndex = currentPage * pageSize
         let endIndex = min((currentPage + 1) * pageSize, locations.count)
@@ -349,7 +365,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     }
     
 }
-
 
 
 //MARK: - Extensions + Protocols

@@ -521,9 +521,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         return Array(notes.filter { $0.locationName == locationName }.suffix(3))
     }
 
-    func getLastFiveNotes(for locationName: String) -> [Note] {
-        return Array(notes.filter { $0.locationName == locationName }.suffix(5))
-    }
 
 
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
@@ -544,11 +541,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             notifiedRegions.insert(region.identifier)
         }
 
+        // Stop monitoring the region
+        manager.stopMonitoring(for: region)
+
         // Introduce a delay before starting monitoring again
         DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) { // adjust the delay as needed
+            // Start monitoring the region again
             manager.startMonitoring(for: region)
         }
     }
+
 
 
 
