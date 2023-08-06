@@ -352,19 +352,34 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath) as! LocationCell
-        
         let locationData = locations[indexPath.row]
         
-        // Check if the data is complete
-        if let imageURL = locationData.imageURL {
-            cell.locationImageView.sd_setImage(with: imageURL, placeholderImage: UIImage(named: "placeholder"))
-            cell.locationNameLabel.text = locationData.name
-        } else {
-            cell.isHidden = true // If data is not complete, hide the cell
+        cell.locationNameLabel.text = locationData.name
+        
+        downloadAndDisplayImage(locationData: locationData) { url in
+            DispatchQueue.main.async {
+                cell.locationImageView.image = nil
+                
+                URLSession.shared.dataTask(with: url) { (data, _, error) in
+                    if let e = error {
+                        print("Error downloading image data: \(e)")
+                        return
+                    }
+                    guard let data = data else {
+                        print("No image data found")
+                        return
+                    }
+                    DispatchQueue.main.async {
+                        let image = UIImage(data: data)
+                        cell.locationImageView.image = image
+                    }
+                }.resume()
+            }
         }
         
         return cell
     }
+
     
     //SWIPE TO DELETE FUNCTIONS
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
@@ -408,12 +423,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         }
     }
 
-
-
-    
-    
-    
-    
     func downloadAndDisplayImage(locationData: LocationData, completion: @escaping (URL) -> Void) {
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
@@ -470,26 +479,10 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     }
 
 
-
-
-
-
-    
-
 }
 
 //MARK: - Extensions + Protocols
 protocol PlacesViewControllerDelegate: AnyObject {
     func didSelectLocation(with locationName: String)
 }
-
-
-
-
-
-
-
-    
-    
-
 
