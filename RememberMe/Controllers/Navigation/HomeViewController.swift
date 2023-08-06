@@ -153,7 +153,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     func updateLocation(location: CLLocationCoordinate2D) {
         loadAndFilterNotes(for: location, goalRadius: 15.0)
-        displayImageForLocation(location: location)
+        displayImage(location: location)
         updateNotesCountLabel()
         averageSelectedLocation = location
     }
@@ -927,102 +927,77 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //MARK: - DISPLAY IMAGE FUNCTIONS
     
     
-    
-    func displayImageForLocation(location: CLLocationCoordinate2D) {
-        let maxDistance: CLLocationDistance = 15
-        let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
-
-        // Clear the image view
-        self.CurrentPlace.image = nil
-
-        if let userEmail = Auth.auth().currentUser?.email {
-            db.collection("notes")
-                .whereField("user", isEqualTo: userEmail)
-                .getDocuments { querySnapshot, error in
-                    if let e = error {
-                        print("There was an issue retrieving data from Firestore: \(e)")
-                    } else {
-                        if let snapshotDocuments = querySnapshot?.documents {
-                            for doc in snapshotDocuments {
-                                let data = doc.data()
-                                if let locationData = data["location"] as? GeoPoint {
-                                    let noteLocation = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
-                                    let distance = noteLocation.distance(from: userCurrentLocation)
-
-                                    if distance <= maxDistance {
-                                        if let locationName = data["locationName"] as? String, !locationName.isEmpty {
-                                            DispatchQueue.main.async {
-                                                self.locationNameLabel.text = "\(locationName)"
-                                                self.updateNotesCountLabel()
-                                            }
-                                            self.downloadAndDisplayImage(locationName: locationName)
-                                            // If an image has been set, break the loop
-                                            if self.CurrentPlace.image != nil {
-                                                break
-                                            }
-                                        }
-                                    }
-                                    // In case the note is empty and it is at the same location
-                                    if let noteText = data["note"] as? String, noteText.isEmpty, locationData.latitude == location.latitude, locationData.longitude == location.longitude {
-                                        DispatchQueue.main.async {
-                                            self.locationNameLabel.text = "\(data["locationName"] as? String ?? "")"
-                                            self.updateNotesCountLabel()
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // If no image has been set, set the default image
-                        if self.CurrentPlace.image == nil {
-                            DispatchQueue.main.async {
-                                self.CurrentPlace.image = UIImage(named: "default_image")
-                            }
-                        }
-                    }
-                }
-        } else {
-            print("User email not found")
-        }
-    }
-
-
-
-
-    
-    func displayImageForLocationName(locationName: String) {
+    func displayImage(location: CLLocationCoordinate2D? = nil, locationName: String? = nil) {
         // Clear the image view
         self.CurrentPlace.image = nil
         
-        if let userEmail = Auth.auth().currentUser?.email {
-            db.collection("notes")
-                .whereField("user", isEqualTo: userEmail)
-                .whereField("locationName", isEqualTo: locationName)
-                .getDocuments { querySnapshot, error in
-                    if let e = error {
-                        print("There was an issue retrieving data from Firestore: \(e)")
-                    } else {
-                        if let snapshotDocuments = querySnapshot?.documents {
-                            for doc in snapshotDocuments {
-                                let data = doc.data()
-                                if let locationName = data["locationName"] as? String, !locationName.isEmpty {
-                                    self.locationNameLabel.text = "\(locationName)"
-                                    self.updateNotesCountLabel() // Add this line
-                                    self.downloadAndDisplayImage(locationName: locationName)
-                                }
-                            }
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            return
+        }
+        
+        var query: Query!
+        
+        if let location = location {
+            query = db.collection("notes").whereField("user", isEqualTo: userEmail)
+        } else if let locationName = locationName {
+            query = db.collection("notes").whereField("user", isEqualTo: userEmail).whereField("locationName", isEqualTo: locationName)
+        } else {
+            print("No location or location name provided")
+            return
+        }
+        
+        query.getDocuments { querySnapshot, error in
+            if let e = error {
+                print("There was an issue retrieving data from Firestore: \(e)")
+            } else if let snapshotDocuments = querySnapshot?.documents {
+                for doc in snapshotDocuments {
+                    let data = doc.data()
+                    if let location = location, let locationData = data["location"] as? GeoPoint {
+                        let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+                        let noteLocation = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
+                        let maxDistance: CLLocationDistance = 15
+                        let distance = noteLocation.distance(from: userCurrentLocation)
+                        if distance <= maxDistance {
+                            self.handleNoteData(data: data)
                         }
+                    } else if locationName != nil {
+                        self.handleNoteData(data: data)
                     }
                 }
-        } else {
-            print("User email not found")
+            }
+            self.setDefaultImageIfNil()
+        }
+    }
+    
+    func setDefaultImageIfNil() {
+        if self.CurrentPlace.image == nil {
+            DispatchQueue.main.async {
+                self.CurrentPlace.image = UIImage(named: "default_image")
+            }
+        }
+    }
+    
+    func updateUI(withLocationName locationName: String) {
+        DispatchQueue.main.async {
+            self.locationNameLabel.text = "\(locationName)"
+            self.updateNotesCountLabel()
         }
     }
 
 
 
+    func handleNoteData(data: [String: Any]) {
+        if let locationName = data["locationName"] as? String, !locationName.isEmpty {
+            self.updateUI(withLocationName: locationName)
+            self.downloadAndDisplayImage(locationName: locationName)
+            // If an image has been set, break the loop
+            if self.CurrentPlace.image != nil {
+                return
+            }
+        }
+    }
 
-    
     
     func downloadAndDisplayImage(locationName: String) {
         let safeFileName = safeFileName(for: locationName)
@@ -1251,7 +1226,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         // Call the updateLocationNameLabel function with the user's current location
         updateLocationNameLabel(location: newLocation.coordinate)
-        self.displayImageForLocation(location: self.currentLocation!)
+        self.displayImage(location: self.currentLocation!)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 15.0) // Provide the required parameters
@@ -1650,7 +1625,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         self.currentLocation = note.location
 
         // Call the functions to update the image view, location name label, and notes count label
-        displayImageForLocation(location: note.location)
+        displayImage(location: note.location)
         updateLocationNameLabel(location: note.location)
         updateNotesCountLabel()
 
@@ -1832,19 +1807,14 @@ extension HomeViewController: UIScrollViewDelegate {
 }
 
 
-
     extension HomeViewController: PlacesViewControllerDelegate {
         func didSelectLocation(with locationName: String) {
             tabBarController?.selectedIndex = 0
             LoadPlacesNotes(for: locationName)
-            displayImageForLocationName(locationName: locationName)
+            displayImage(locationName: locationName)
 
         }
     }
-
-
-
-
 
 
 extension HomeViewController: UNUserNotificationCenterDelegate {

@@ -91,6 +91,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
            }
     }
     
+    
     //MARK: - GeoFencing
     
     // Add geofence for a given location
@@ -331,10 +332,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 }
             }
     }
-
-
-
-
 
     
     

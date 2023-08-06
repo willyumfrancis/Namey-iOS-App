@@ -13,7 +13,6 @@ class LocationCell: UITableViewCell {
     @IBOutlet weak var locationNameLabel: UILabel!
     
     
-    
      override func awakeFromNib() {
         super.awakeFromNib()
         // Initialization code
@@ -32,6 +31,12 @@ class LocationCell: UITableViewCell {
                locationImageView.layer.cornerRadius = 10
                locationImageView.clipsToBounds = true
          
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        locationImageView.image = nil
+        isHidden = false
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {
