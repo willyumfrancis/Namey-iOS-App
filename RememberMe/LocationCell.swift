@@ -12,53 +12,33 @@ class LocationCell: UITableViewCell {
     @IBOutlet weak var locationImageView: UIImageView!
     @IBOutlet weak var locationNameLabel: UILabel!
     
- 
-    override func awakeFromNib() {
+    
+    
+     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        // Image view configuration
-        locationImageView.contentMode = .scaleAspectFill
-        locationImageView.layer.borderWidth = 3.0
-        locationImageView.layer.borderColor = UIColor.black.cgColor
-        locationImageView.layer.cornerRadius = 10
-        locationImageView.clipsToBounds = true
-
-        // Cell configuration
-        self.layer.borderWidth = 1.5  // Add a border width
-        self.layer.borderColor = UIColor.black.cgColor  // Set border color
-        self.layer.cornerRadius = 0  // Add rounded corners
-        self.clipsToBounds = true  // This is important to ensure corners are visible
+        // Initialization code
+        locationImageView.contentMode = .scaleAspectFit
+         
+         // Initialization code
+                self.layer.borderWidth = 1.5  // Add a border width
+                self.layer.borderColor = UIColor.black.cgColor  // Set border color
+                self.layer.cornerRadius = 0  // Add rounded corners
+                self.clipsToBounds = true  // This is important to ensure corners are visible
+            
+         
+               locationImageView.contentMode = .scaleAspectFill // Scales the image to fit within the view’s bounds while maintaining the image’s aspect ratio
+               locationImageView.layer.borderWidth = 3.0
+               locationImageView.layer.borderColor = UIColor.black.cgColor
+               locationImageView.layer.cornerRadius = 10
+               locationImageView.clipsToBounds = true
+         
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
+
+        // Configure the view for the selected state
     }
-
-    override func prepareForReuse() {
-        super.prepareForReuse()
-
-        // Cancel any ongoing image load
-        locationImageView.sd_cancelCurrentImageLoad()
-        
-        // Clear the image to ensure no old data is shown in the recycled cell
-        locationImageView.image = nil
-    }
-
     
-    func configure(with locationData: LocationData) {
-        locationNameLabel.text = locationData.name
-
-        // Set image with the given URL
-        if let imageURL = locationData.imageURL {
-            print("Loading image for location \(locationData.name) from URL: \(imageURL)")
-            locationImageView.sd_setImage(with: imageURL, placeholderImage: UIImage(named: "placeholder"))
-        } else {
-            print("No image URL for location \(locationData.name)")
-            locationImageView.image = UIImage(named: "placeholder")
-        }
-    }
-
-
-
-
 }
+

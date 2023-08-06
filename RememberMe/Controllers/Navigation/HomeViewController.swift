@@ -1835,20 +1835,6 @@ extension HomeViewController: UIScrollViewDelegate {
 
 
 
-    extension HomeViewController: PlacesViewControllerDelegate {
-        func didSelectLocation(with locationName: String) {
-            tabBarController?.selectedIndex = 0
-            LoadPlacesNotes(for: locationName)
-            displayImageForLocationName(locationName: locationName)
-
-        }
-    }
-
-
-
-
-
-
 extension HomeViewController: UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
         if response.actionIdentifier == "viewLastFiveNotes" {
