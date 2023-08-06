@@ -353,32 +353,36 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath) as! LocationCell
         let locationData = locations[indexPath.row]
-        
+
         cell.locationNameLabel.text = locationData.name
-        
+
+        // Reset the imageView to a placeholder (or nil) while the download is in progress
+        cell.locationImageView.image = nil // Or use a placeholder image if you have one
+
         downloadAndDisplayImage(locationData: locationData) { url in
-            DispatchQueue.main.async {
-                cell.locationImageView.image = nil
+            URLSession.shared.dataTask(with: url) { (data, _, error) in
+                if let e = error {
+                    print("Error downloading image data: \(e)")
+                    return
+                }
+                guard let data = data else {
+                    print("No image data found")
+                    return
+                }
                 
-                URLSession.shared.dataTask(with: url) { (data, _, error) in
-                    if let e = error {
-                        print("Error downloading image data: \(e)")
-                        return
-                    }
-                    guard let data = data else {
-                        print("No image data found")
-                        return
-                    }
-                    DispatchQueue.main.async {
+                DispatchQueue.main.async {
+                    // Check if the cell is still displaying the same locationData
+                    if cell.locationNameLabel.text == locationData.name {
                         let image = UIImage(data: data)
                         cell.locationImageView.image = image
                     }
-                }.resume()
-            }
+                }
+            }.resume()
         }
-        
+
         return cell
     }
+
 
     
     //SWIPE TO DELETE FUNCTIONS

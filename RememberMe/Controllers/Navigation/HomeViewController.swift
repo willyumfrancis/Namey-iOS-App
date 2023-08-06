@@ -521,9 +521,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         return Array(notes.filter { $0.locationName == locationName }.suffix(3))
     }
 
-    func getLastFiveNotes(for locationName: String) -> [Note] {
-        return Array(notes.filter { $0.locationName == locationName }.suffix(5))
-    }
 
 
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
@@ -549,9 +546,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             manager.startMonitoring(for: region)
         }
     }
-
-
-
 
 
     func sendNotification(locationName: String, lastThreeNotes: [String]) {
@@ -966,9 +960,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                     }
                 }
             }
-            self.setDefaultImageIfNil()
+            
+            // Add a delay before setting the default image
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                self.setDefaultImageIfNil()
+            }
         }
     }
+
     
     func setDefaultImageIfNil() {
         if self.CurrentPlace.image == nil {
@@ -1011,14 +1010,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             
             guard let url = url else { return }
             
-            self.CurrentPlace.sd_setImage(with: url, placeholderImage: UIImage(named: "placeholder")) { (image, error, cacheType, imageURL) in
+            self.CurrentPlace.sd_setImage(with: url) { (image, error, cacheType, imageURL) in
                 if let error = error {
                     print("Error loading image from URL: \(error)")
-                } else {
                 }
             }
         }
     }
+
     
     
     //Upload Image to Fire Storage (Google Cloud) -> 5GB Max for Free Tier
