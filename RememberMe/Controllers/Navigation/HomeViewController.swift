@@ -508,7 +508,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     
     func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
-        let radius: CLLocationDistance = 25
+        let radius: CLLocationDistance = 100 // Increase the radius
         print("Setting up GeoFence at \(location) with radius \(radius)") // Debugging line
         let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
         region.notifyOnEntry = true
@@ -539,11 +539,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
             // Add the region's identifier to the set of notified regions
             notifiedRegions.insert(region.identifier)
-        }
-
-        // Introduce a delay before starting monitoring again
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) { // adjust the delay as needed
-            manager.startMonitoring(for: region)
         }
     }
 
@@ -1185,8 +1180,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     
-    
-    
 
     //Location Manager
     func setupLocationManager() {
@@ -1303,9 +1296,15 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     
     // textFieldShouldReturn method
-    func noteCellTextFieldShouldReturn(_ textField: UITextField) {
-        saveNote() // Perform the same action as the "Save Note" button
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        if let cell = textField.superview?.superview as? NoteCell {
+            activeNoteCell = cell
+            saveNote() // Calls the saveNote function to perform the save action
+        }
+        return true
     }
+
     
     // New function to save the note
     func saveNote() {
@@ -1719,12 +1718,6 @@ extension HomeViewController: UITableViewDataSource {
                        completion: nil)
         
         return cell
-    }
-
-    
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        return true
     }
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
