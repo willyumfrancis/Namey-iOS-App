@@ -715,6 +715,7 @@ PODS:
     - nanopb/encode (= 2.30909.0)
   - nanopb/decode (2.30909.0)
   - nanopb/encode (2.30909.0)
+  - OpenAI (1.0.0)
   - PromisesObjC (2.2.0)
   - SDWebImage (5.15.5):
     - SDWebImage/Core (= 5.15.5)
@@ -724,6 +725,7 @@ DEPENDENCIES:
   - FirebaseAuth
   - FirebaseFirestore
   - FirebaseStorage
+  - OpenAI
   - SDWebImage
 
 SPEC REPOS:
@@ -745,6 +747,7 @@ SPEC REPOS:
     - leveldb-library
     - Libuv-gRPC
     - nanopb
+    - OpenAI
     - PromisesObjC
     - SDWebImage
 
@@ -766,9 +769,10 @@ SPEC CHECKSUMS:
   leveldb-library: f03246171cce0484482ec291f88b6d563699ee06
   Libuv-gRPC: 55e51798e14ef436ad9bc45d12d43b77b49df378
   nanopb: b552cce312b6c8484180ef47159bc0f65a1f0431
+  OpenAI: e1a146371f01cf0c4cefdde9751b60c9f3662563
   PromisesObjC: 09985d6d70fbe7878040aa746d78236e6946d2ef
   SDWebImage: fd7e1a22f00303e058058278639bf6196ee431fe
 
-PODFILE CHECKSUM: eb8ab48e8f6001cd2af81f46b8166980f4ef9562
+PODFILE CHECKSUM: 801f7cf3d76592aa2947281aa2d09a449e6f54b0
 
 COCOAPODS: 1.12.1

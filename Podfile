@@ -10,6 +10,9 @@ pod 'FirebaseAuth'
 	pod 'FirebaseFirestore'
 pod 'FirebaseStorage'
 pod 'SDWebImage'
+pod 'OpenAI'
+
+
 
 
 

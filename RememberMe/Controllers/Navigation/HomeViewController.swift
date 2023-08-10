@@ -17,6 +17,7 @@ import MobileCoreServices
 import FirebaseStorage
 import SDWebImage
 import UserNotifications
+import AVFoundation
 
 
 
@@ -38,6 +39,87 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //FireBase Cloud Storage
     let db = Firestore.firestore()
+    
+    //MARK: - Whisper API
+    func showAlert(withTranscription text: String) {
+        let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:", preferredStyle: .alert)
+
+        alertController.addTextField { (textField) in
+            textField.text = text
+            textField.isEditable = false // Optional, to make the text field read-only
+        }
+
+        let okAction = UIAlertAction(title: "OK", style: .default)
+        alertController.addAction(okAction)
+
+        self.present(alertController, animated: true, completion: nil)
+    }
+    
+    var audioRecorder: AVAudioRecorder!
+
+    func startRecording() {
+      let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.m4a")
+      let settings = [
+          AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+          AVSampleRateKey: 12000,
+          AVNumberOfChannelsKey: 1,
+          AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+      ]
+
+      do {
+          audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
+          audioRecorder.record()
+      } catch {
+          // Handle the error here
+      }
+    }
+    
+    func transcribeAudioAndCreateNote() {
+        // Convert the audio file to the format required by Whisper API
+        guard let audioData = try? Data(contentsOf: audioFilename) else {
+            // Handle error when loading audio data
+            return
+        }
+
+        OpenAI.Whisper.complete(audioData: audioData) { result in
+            switch result {
+            case .success(let completion):
+                let transcription = completion.choices[0].text
+                DispatchQueue.main.async {
+                    self.createNewNoteWithTranscription(transcription)
+                }
+            case .failure(let error):
+                // Handle error here
+                print("Whisper API error: \(error)")
+            }
+        }
+    }
+
+    func createNewNoteWithTranscription(_ transcription: String) {
+        if let currentLocation = self.currentLocation {
+            let emptyURL = URL(string: "")
+            let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: "", imageURL: emptyURL)
+            notes.append(newNote)
+            selectedNote = newNote
+            
+            DispatchQueue.main.async {
+                self.tableView.beginUpdates()
+                self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                self.tableView.endUpdates()
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                    guard let self = self else { return }
+                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                        newCell.noteTextField.becomeFirstResponder()
+                    }
+                }
+            }
+        }
+    }
+    
+
+
     
     
     //MARK: - VARIABLES & CONSTANTS
@@ -159,7 +241,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
 
 
-    
+    //MARK: - SAVE AND NEW NOTE CREATION
     //Save Name Button
     @IBAction func SaveNote(_ sender: UIButton) {
         saveNote()
@@ -193,9 +275,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     //MARK: - Appearance
-    
-    
-    
+  
     func updateProgressBar() {
         updateNotesCountLabel()
         let currentPeople = notes.count
@@ -1808,17 +1888,4 @@ extension HomeViewController: UIScrollViewDelegate {
         }
     }
 
-
-extension HomeViewController: UNUserNotificationCenterDelegate {
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
-        if response.actionIdentifier == "viewLastFiveNotes" {
-            if let lastFiveNotes = response.notification.request.content.userInfo["lastFiveNotes"] as? String {
-                // Handle displaying the last 5 notes, e.g., present a view controller
-                // For example, here we'll just print them
-                print(lastFiveNotes)
-            }
-        }
-        completionHandler()
-    }
-}
 

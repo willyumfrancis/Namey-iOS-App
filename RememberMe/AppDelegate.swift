@@ -10,6 +10,8 @@ import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
 import CoreData
+import OpenAI
+
 
 
 @main
@@ -28,6 +30,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         
         return true
+    }
+    
+    private func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+      OpenAI.apiKey = "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"
+      return true
     }
 
     // MARK: UISceneSession Lifecycle
