@@ -46,84 +46,79 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     
     @IBAction func whisper(_ sender: UIButton) {
-        if isRecording {
-                   stopRecordingAndTranscribeAudio() // Stop recording and transcribe when button is pressed again
-               } else {
-                   startRecording() // Start recording when button is first pressed
-                   sender.setTitle("Stop Recording", for: .normal) // Update button title to indicate recording state
+        print("Whisper button pressed. Current recording state: \(isRecording)")
+           if isRecording {
+               // Adding a delay before stopping the recording to ensure that it has time to capture enough audio
+               DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                   self.stopRecordingAndTranscribeAudio() // Stop recording and transcribe when button is pressed again
+                   sender.setTitle("Start Recording", for: .normal) // Update button title to indicate recording state
                }
-               isRecording.toggle() // Toggle recording state
+           } else {
+               startRecording() // Start recording when button is first pressed
+               sender.setTitle("Stop Recording", for: .normal) // Update button title to indicate recording state
            }
-    
-    func stopRecordingAndTranscribeAudio() {
-           // Stop the recording
-           audioRecorder.stop()
-
-           // Get the audio file URL
-           let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.m4a")
-
-           // Use the APIManager to transcribe the audio
-           APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
-               switch result {
-               case .success(let transcription):
-                   DispatchQueue.main.async {
-                       self.showAlert(withTranscription: transcription) // Show the transcription in an alert dialog
-                   }
-               case .failure(let error):
-                   // Handle the error here, such as by showing an alert to the user
-                   print("Error transcribing audio: \(error)")
-               }
-           }
+           isRecording.toggle() // Toggle recording state
        }
     
-    func showAlert(withTranscription text: String) {
+    func stopRecordingAndTranscribeAudio() {
+        print("Stopping recording.")
+        audioRecorder.stop()
+
+        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
+        print("Audio file URL: \(audioFilename)")
+
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: audioFilename.path) {
+            print("File exists")
+        } else {
+            print("File does not exist")
+        }
+
+        APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
+            switch result {
+            case .success(let transcription):
+                DispatchQueue.main.async {
+                    self.showAlert(withTranscription: transcription)
+                }
+            case .failure(let error):
+                print("Error transcribing audio: \(error)")
+            }
+        }
+    }
+
+
+
+       func showAlert(withTranscription text: String) {
            let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:\n\n\(text)", preferredStyle: .alert)
            let okAction = UIAlertAction(title: "OK", style: .default)
            alertController.addAction(okAction)
            self.present(alertController, animated: true, completion: nil)
        }
 
-
-    
     var audioRecorder: AVAudioRecorder!
 
     func startRecording() {
-      let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.m4a")
-      let settings = [
-          AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-          AVSampleRateKey: 12000,
-          AVNumberOfChannelsKey: 1,
-          AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-      ]
+        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
+        print("Starting recording. Audio filename: \(audioFilename)")
 
-      do {
-          audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
-          audioRecorder.record()
-      } catch {
-          // Handle the error here
-      }
-    }
-    
-    func transcribeAudioAndCreateNote() {
-        // Stop the recording
-        audioRecorder.stop()
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: 44100,
+            AVNumberOfChannelsKey: 1,
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsFloatKey: false
+        ]
 
-        // Get the audio file URL
-        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.m4a")
-
-        // Use the APIManager to transcribe the audio
-        APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
-            switch result {
-            case .success(let transcription):
-                DispatchQueue.main.async {
-                    self.createNewNoteWithTranscription(transcription)
-                }
-            case .failure(let error):
-                // Handle the error here, such as by showing an alert to the user
-                print("Error transcribing audio: \(error)")
-            }
+        do {
+            audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
+            audioRecorder.record()
+        } catch let error {
+            print("Error starting recording: \(error)")
         }
     }
+
+
 
 
     func createNewNoteWithTranscription(_ transcription: String) {
