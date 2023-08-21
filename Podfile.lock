@@ -596,6 +596,7 @@ PODS:
     - abseil/base/base_internal
     - abseil/base/config
     - abseil/meta/type_traits
+  - Alamofire (5.7.1)
   - BoringSSL-GRPC (0.0.24):
     - BoringSSL-GRPC/Implementation (= 0.0.24)
     - BoringSSL-GRPC/Interface (= 0.0.24)
@@ -720,17 +721,21 @@ PODS:
   - SDWebImage (5.15.5):
     - SDWebImage/Core (= 5.15.5)
   - SDWebImage/Core (5.15.5)
+  - SwiftKeychainWrapper (4.0.1)
 
 DEPENDENCIES:
+  - Alamofire
   - FirebaseAuth
   - FirebaseFirestore
   - FirebaseStorage
   - OpenAI
   - SDWebImage
+  - SwiftKeychainWrapper
 
 SPEC REPOS:
   trunk:
     - abseil
+    - Alamofire
     - BoringSSL-GRPC
     - FirebaseAppCheckInterop
     - FirebaseAuth
@@ -750,9 +755,11 @@ SPEC REPOS:
     - OpenAI
     - PromisesObjC
     - SDWebImage
+    - SwiftKeychainWrapper
 
 SPEC CHECKSUMS:
   abseil: ebe5b5529fb05d93a8bdb7951607be08b7fa71bc
+  Alamofire: 0123a34370cb170936ae79a8df46cc62b2edeb88
   BoringSSL-GRPC: 3175b25143e648463a56daeaaa499c6cb86dad33
   FirebaseAppCheckInterop: 8e907eea79958960a8bd2058e067f31e03a7914b
   FirebaseAuth: dd64c01631df724b09f33e584625775c52f7d71f
@@ -772,7 +779,8 @@ SPEC CHECKSUMS:
   OpenAI: e1a146371f01cf0c4cefdde9751b60c9f3662563
   PromisesObjC: 09985d6d70fbe7878040aa746d78236e6946d2ef
   SDWebImage: fd7e1a22f00303e058058278639bf6196ee431fe
+  SwiftKeychainWrapper: 807ba1d63c33a7d0613288512399cd1eda1e470c
 
-PODFILE CHECKSUM: 801f7cf3d76592aa2947281aa2d09a449e6f54b0
+PODFILE CHECKSUM: 4f8725fae98876104db4d1536202222dfb6dd25f
 
 COCOAPODS: 1.12.1

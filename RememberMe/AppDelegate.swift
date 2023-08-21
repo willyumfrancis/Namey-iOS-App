@@ -23,19 +23,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Override point for customization after application launch.
         FirebaseApp.configure()
         
-        
         let db = Firestore.firestore()
         print(db)
         
         
-        
         return true
     }
-    
-    private func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-      OpenAI.apiKey = "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"
-      return true
-    }
+
 
     // MARK: UISceneSession Lifecycle
 
@@ -45,12 +39,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }
 
-    func application(_ application: UIApplication, didDiscardSceneSessions sceneSessions: Set<UISceneSession>) {
-        // Called when the user discards a scene session.
-        // If any sessions were discarded while the application was not running, this will be called shortly after application:didFinishLaunchingWithOptions.
-        // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
-    }
-
+   
     // MARK: - Core Data stack
 
     lazy var persistentContainer: NSPersistentContainer = {

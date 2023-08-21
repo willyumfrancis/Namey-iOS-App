@@ -11,6 +11,9 @@ pod 'FirebaseAuth'
 pod 'FirebaseStorage'
 pod 'SDWebImage'
 pod 'OpenAI'
+pod 'SwiftKeychainWrapper'
+pod 'Alamofire'
+
 
 
 

@@ -4,6 +4,8 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need access to your microphone ti transcribe audio to text for a hands-free experience.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>We need access to your camera to let you take and upload photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

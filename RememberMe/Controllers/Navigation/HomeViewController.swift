@@ -22,7 +22,7 @@ import AVFoundation
 
 
 
-class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate {
+class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
     
     
     //MARK: - OUTLETS
@@ -41,19 +41,49 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     let db = Firestore.firestore()
     
     //MARK: - Whisper API
+    
+    var isRecording = false // Add this property to keep track of recording state
+
+    
+    @IBAction func whisper(_ sender: UIButton) {
+        if isRecording {
+                   stopRecordingAndTranscribeAudio() // Stop recording and transcribe when button is pressed again
+               } else {
+                   startRecording() // Start recording when button is first pressed
+                   sender.setTitle("Stop Recording", for: .normal) // Update button title to indicate recording state
+               }
+               isRecording.toggle() // Toggle recording state
+           }
+    
+    func stopRecordingAndTranscribeAudio() {
+           // Stop the recording
+           audioRecorder.stop()
+
+           // Get the audio file URL
+           let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.m4a")
+
+           // Use the APIManager to transcribe the audio
+           APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
+               switch result {
+               case .success(let transcription):
+                   DispatchQueue.main.async {
+                       self.showAlert(withTranscription: transcription) // Show the transcription in an alert dialog
+                   }
+               case .failure(let error):
+                   // Handle the error here, such as by showing an alert to the user
+                   print("Error transcribing audio: \(error)")
+               }
+           }
+       }
+    
     func showAlert(withTranscription text: String) {
-        let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:", preferredStyle: .alert)
+           let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:\n\n\(text)", preferredStyle: .alert)
+           let okAction = UIAlertAction(title: "OK", style: .default)
+           alertController.addAction(okAction)
+           self.present(alertController, animated: true, completion: nil)
+       }
 
-        alertController.addTextField { (textField) in
-            textField.text = text
-            textField.isEditable = false // Optional, to make the text field read-only
-        }
 
-        let okAction = UIAlertAction(title: "OK", style: .default)
-        alertController.addAction(okAction)
-
-        self.present(alertController, animated: true, completion: nil)
-    }
     
     var audioRecorder: AVAudioRecorder!
 
@@ -75,25 +105,26 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     func transcribeAudioAndCreateNote() {
-        // Convert the audio file to the format required by Whisper API
-        guard let audioData = try? Data(contentsOf: audioFilename) else {
-            // Handle error when loading audio data
-            return
-        }
+        // Stop the recording
+        audioRecorder.stop()
 
-        OpenAI.Whisper.complete(audioData: audioData) { result in
+        // Get the audio file URL
+        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.m4a")
+
+        // Use the APIManager to transcribe the audio
+        APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
             switch result {
-            case .success(let completion):
-                let transcription = completion.choices[0].text
+            case .success(let transcription):
                 DispatchQueue.main.async {
                     self.createNewNoteWithTranscription(transcription)
                 }
             case .failure(let error):
-                // Handle error here
-                print("Whisper API error: \(error)")
+                // Handle the error here, such as by showing an alert to the user
+                print("Error transcribing audio: \(error)")
             }
         }
     }
+
 
     func createNewNoteWithTranscription(_ transcription: String) {
         if let currentLocation = self.currentLocation {
