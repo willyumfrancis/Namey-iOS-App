@@ -529,25 +529,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     
-    
-    @objc func updateLocationWhenAppIsActive() {
-        locationManager.startUpdatingLocation()
-        
-        if let userLocation = locationManager.location {
-            let locationName = fetchLocationNameFor(location: userLocation.coordinate)
-            if let locationName = locationName {
-                // Use the location name
-                print("Location name: \(locationName)")
-            } else {
-                // Use the placeholder text
-                print("Some Spot")
-            }
-        } else {
-            print("Unable to get user's current location")
-        }
-    }
-    
-    
     @objc func goalButtonTapped() {
         let alertController = UIAlertController(title: "Set Goal", message: "\n\n\n\n\n", preferredStyle: .alert)
         
@@ -1292,9 +1273,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.requestWhenInUseAuthorization()
-        locationManager.startUpdatingLocation()
-
+        // Remove the following line to stop automatic location updates
+        // locationManager.startUpdatingLocation()
     }
+
    
     var hasProcessedLocationUpdate = false
 
