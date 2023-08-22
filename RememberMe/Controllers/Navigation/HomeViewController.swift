@@ -278,26 +278,26 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //Create New Name
     @IBAction func NewNote(_ sender: UIButton) {
         if let currentLocation = self.currentLocation {
-            let emptyURL = URL(string: "")
-            let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: "", imageURL: emptyURL)
-            notes.append(newNote)
-            selectedNote = newNote
-            
-            DispatchQueue.main.async {
-                self.tableView.beginUpdates()
-                self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                self.tableView.endUpdates()
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                    guard let self = self else { return }
-                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                        newCell.noteTextField.becomeFirstResponder()
-                    }
-                }
-            }
-        }
-    }
+               let emptyURL = URL(string: "")
+               let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: "", imageURL: emptyURL) // Use currentLocation directly
+               notes.append(newNote)
+               selectedNote = newNote
+
+               DispatchQueue.main.async {
+                   self.tableView.beginUpdates()
+                   self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                   self.tableView.endUpdates()
+                   
+                   DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                       guard let self = self else { return }
+                       if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                          let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                           newCell.noteTextField.becomeFirstResponder()
+                       }
+                   }
+               }
+           }
+       }
     
     
     //MARK: - Appearance
@@ -1273,9 +1273,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.requestWhenInUseAuthorization()
-        // Remove the following line to stop automatic location updates
-        // locationManager.startUpdatingLocation()
+        locationManager.startUpdatingLocation()
     }
+
+    
 
    
     var hasProcessedLocationUpdate = false
@@ -1286,34 +1287,36 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     // Location Manager Delegate
     var lastProcessedLocation: CLLocationCoordinate2D?
 
+    // Define a property to keep track of whether the location has been fetched
+    var hasFetchedLocation = false
+
     // Location Manager Delegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        // If the location has already been fetched, return early
+        if hasFetchedLocation {
+            return
+        }
 
         guard let newLocation = locations.last else { return }
-        
-        // Check the distance from the last processed location
-        if let lastLocation = lastProcessedLocation {
-            let distance = newLocation.distance(from: CLLocation(latitude: lastLocation.latitude, longitude: lastLocation.longitude))
-            if distance < 15 { // Replace '15' with whatever threshold you see fit
-                // The new location is too close to the last processed location, so we skip this one.
-                return
-            }
-        }
-        
+
         self.userLocation = newLocation.coordinate
         self.currentLocation = newLocation.coordinate
         print("User's location: \(newLocation)")
-        
+
         // Call the updateLocationNameLabel function with the user's current location
         updateLocationNameLabel(location: newLocation.coordinate)
         self.displayImage(location: self.currentLocation!)
-        
+
+        // Load and filter notes for the current location
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 15.0) // Provide the required parameters
         }
-        
-        // Update the last processed location
-        lastProcessedLocation = newLocation.coordinate
+
+        // Set the property to true to indicate that the location has been fetched
+        hasFetchedLocation = true
+
+        // Stop updating the location to conserve battery and resources
+        locationManager.stopUpdatingLocation()
     }
 
 
