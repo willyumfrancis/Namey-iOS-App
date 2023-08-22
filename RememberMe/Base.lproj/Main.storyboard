@@ -66,7 +66,7 @@
                             </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="fNi-de-tja"/>
-                        <color key="backgroundColor" red="1" green="0.90980392160000001" blue="0.83137254900000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" red="0.81176470588235294" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                         <constraints>
                             <constraint firstItem="xW7-Aa-rRe" firstAttribute="top" secondItem="0HC-II-HLh" secondAttribute="bottom" constant="51" id="2vh-bO-29a"/>
                             <constraint firstItem="UgI-Zm-x2k" firstAttribute="leading" secondItem="fNi-de-tja" secondAttribute="leading" constant="136" id="IbO-J4-qkg"/>
@@ -191,16 +191,6 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="FBC-Mq-Sfs">
-                                <rect key="frame" x="131" y="702.33333333333337" width="46" height="35"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" image="mic.fill" catalog="system">
-                                    <color key="baseForegroundColor" systemColor="labelColor"/>
-                                </buttonConfiguration>
-                                <connections>
-                                    <action selector="whisper:" destination="BYZ-38-t0r" eventType="touchUpInside" id="fjB-p1-6Fm"/>
-                                </connections>
-                            </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -216,13 +206,11 @@
                             <constraint firstItem="r8s-nI-bUC" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="52" id="GJd-D6-MRo"/>
                             <constraint firstItem="r8s-nI-bUC" firstAttribute="top" secondItem="qT4-kL-fdE" secondAttribute="bottom" constant="20" id="GZm-aS-WTf"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="qT4-kL-fdE" secondAttribute="trailing" constant="54" id="Gv9-0u-Xhf"/>
-                            <constraint firstItem="FBC-Mq-Sfs" firstAttribute="top" secondItem="oX5-B4-FmA" secondAttribute="top" id="H23-32-a2H"/>
                             <constraint firstItem="oX5-B4-FmA" firstAttribute="baseline" secondItem="lmQ-DZ-jTj" secondAttribute="baseline" id="LU5-Xh-Gge"/>
                             <constraint firstItem="E2I-xx-41M" firstAttribute="top" secondItem="pBH-KN-QLt" secondAttribute="bottom" constant="2" id="Slp-SJ-SnC"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="lmQ-DZ-jTj" secondAttribute="trailing" constant="58" id="T9U-gR-Xm0"/>
                             <constraint firstItem="r8s-nI-bUC" firstAttribute="centerX" secondItem="E2I-xx-41M" secondAttribute="centerX" id="ULc-OK-j8N"/>
                             <constraint firstItem="qT4-kL-fdE" firstAttribute="top" secondItem="S3I-vi-liH" secondAttribute="bottom" constant="62" id="URB-Mv-8mk"/>
-                            <constraint firstItem="FBC-Mq-Sfs" firstAttribute="top" secondItem="lmQ-DZ-jTj" secondAttribute="top" id="UqP-iV-xbq"/>
                             <constraint firstItem="E2I-xx-41M" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="58" id="XmX-eh-2Ct"/>
                             <constraint firstItem="E2I-xx-41M" firstAttribute="top" secondItem="nL5-cf-paW" secondAttribute="bottom" constant="-1.3333333333333144" id="ZcM-Lt-yYC"/>
                             <constraint firstAttribute="trailingMargin" secondItem="S3I-vi-liH" secondAttribute="trailing" constant="36.333333333333314" id="a1a-UE-mlH"/>
@@ -231,12 +219,10 @@
                             <constraint firstItem="pBH-KN-QLt" firstAttribute="centerY" secondItem="nL5-cf-paW" secondAttribute="centerY" id="fJs-J5-ccx"/>
                             <constraint firstItem="r8s-nI-bUC" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="gPz-Rb-tF0"/>
                             <constraint firstItem="2Qx-UH-TeP" firstAttribute="leading" secondItem="pBH-KN-QLt" secondAttribute="trailing" constant="79" id="gpb-7y-hT9"/>
-                            <constraint firstItem="FBC-Mq-Sfs" firstAttribute="centerY" secondItem="oX5-B4-FmA" secondAttribute="centerY" id="kQe-sZ-qbp"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="2Qx-UH-TeP" secondAttribute="trailing" constant="52.333333333333314" id="oZt-D6-iwQ"/>
                             <constraint firstItem="nL5-cf-paW" firstAttribute="top" secondItem="r8s-nI-bUC" secondAttribute="bottom" constant="10" id="rwO-Xy-6GA"/>
                             <constraint firstItem="JH5-Iz-f7Q" firstAttribute="leading" secondItem="qT4-kL-fdE" secondAttribute="leading" id="sdN-cH-BvY"/>
                             <constraint firstItem="nL5-cf-paW" firstAttribute="baseline" secondItem="2Qx-UH-TeP" secondAttribute="baseline" id="uWt-L5-9JM"/>
-                            <constraint firstItem="FBC-Mq-Sfs" firstAttribute="leading" secondItem="oX5-B4-FmA" secondAttribute="trailing" constant="14.666666666666657" id="v4v-2C-7ya"/>
                             <constraint firstItem="qT4-kL-fdE" firstAttribute="leading" secondItem="oX5-B4-FmA" secondAttribute="leading" constant="-7" id="ymw-zk-St9"/>
                         </constraints>
                     </view>
@@ -369,7 +355,7 @@
                             </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="DoQ-QR-kf7"/>
-                        <color key="backgroundColor" red="1" green="0.90853528910000003" blue="0.82987820130000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" red="0.81176470590000005" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                         <constraints>
                             <constraint firstItem="DoQ-QR-kf7" firstAttribute="bottom" secondItem="lpo-dt-eIF" secondAttribute="bottom" constant="297" id="8dp-5g-E3b"/>
                             <constraint firstItem="lpo-dt-eIF" firstAttribute="centerX" secondItem="U0F-iU-TzX" secondAttribute="centerX" id="99f-Zg-osW"/>
@@ -577,7 +563,7 @@
                             </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="E7a-q1-tMD"/>
-                        <color key="backgroundColor" red="1" green="0.90980392160000001" blue="0.83137254900000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" red="0.81176470590000005" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                         <constraints>
                             <constraint firstItem="yrj-hr-eNC" firstAttribute="leading" secondItem="E7a-q1-tMD" secondAttribute="leading" constant="37" id="8Ug-dd-sC1"/>
                             <constraint firstItem="yrj-hr-eNC" firstAttribute="top" secondItem="E7a-q1-tMD" secondAttribute="top" constant="37" id="IJd-i3-MCb"/>
@@ -619,7 +605,7 @@
         </scene>
     </scenes>
     <inferredMetricsTieBreakers>
-        <segue reference="4Xd-G2-y6G"/>
+        <segue reference="aac-TS-kSO"/>
     </inferredMetricsTieBreakers>
     <resources>
         <image name="arrow.clockwise.circle.fill" catalog="system" width="128" height="123"/>
@@ -628,7 +614,6 @@
         <image name="house.fill" catalog="system" width="128" height="104"/>
         <image name="jellydev" width="2161" height="3260"/>
         <image name="location.circle" catalog="system" width="128" height="123"/>
-        <image name="mic.fill" catalog="system" width="110" height="128"/>
         <image name="person.text.rectangle.fill" catalog="system" width="128" height="93"/>
         <image name="photo" catalog="system" width="128" height="93"/>
         <image name="star.circle" catalog="system" width="128" height="123"/>
