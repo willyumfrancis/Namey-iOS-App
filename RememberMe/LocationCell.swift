@@ -8,6 +8,9 @@
 import UIKit
 
 class LocationCell: UITableViewCell {
+    
+    var uniqueIdentifier: String?
+
 
     @IBOutlet weak var locationImageView: UIImageView!
     @IBOutlet weak var locationNameLabel: UILabel!

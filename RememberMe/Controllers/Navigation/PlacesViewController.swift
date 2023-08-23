@@ -66,10 +66,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         UNUserNotificationCenter.current().delegate = self
         loadLocationData()
       
-        // Call this after the locations are loaded
-        for locationData in locations {
-            addGeofenceForLocation(locationData)
-        }
+    
         
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -89,111 +86,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                    }
                }
            }
-    }
-    
-    
-    //MARK: - GeoFencing
-    
-    // Add geofence for a given location
-        func addGeofenceForLocation(_ locationData: LocationData) {
-            let geofenceRegionCenter = CLLocationCoordinate2D(
-                latitude: locationData.location.coordinate.latitude,
-                longitude: locationData.location.coordinate.longitude
-            )
-
-            // Create a 500-meter radius geofence
-            let geofenceRegion = CLCircularRegion(
-                center: geofenceRegionCenter,
-                radius: 50,
-                identifier: safeFileName(for: locationData.name)
-            )
-            
-            geofenceRegion.notifyOnEntry = true
-            geofenceRegion.notifyOnExit = true
-
-            locationManager.startMonitoring(for: geofenceRegion)
-        }
-        
-        // Remove all existing geofences and set up new ones
-        func updateGeofences() {
-            for region in locationManager.monitoredRegions {
-                locationManager.stopMonitoring(for: region)
-            }
-            
-            for locationData in locations {
-                addGeofenceForLocation(locationData)
-            }
-        }
-        
-
-
-    
-        
-    //MARK: - LOCATION
-
-        
-        func setupGeoFence(location: CLLocationCoordinate2D, radius: CLLocationDistance, identifier: String) {
-            print("Setting up GeoFence at \(location) with radius \(radius)") // Debugging line
-            let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
-            region.notifyOnEntry = true
-            region.notifyOnExit = false
-            locationManager.startMonitoring(for: region)
-        }
-
-    
-
-        
-        
-    
-    func clusterLocations(locations: [LocationData], eps: Double, minSamples: Int) -> [LocationData] {
-        var visited = [Bool](repeating: false, count: locations.count)
-        var noise = [Bool](repeating: false, count: locations.count)
-        var clusters = [Int: [LocationData]]()
-        var clusterIndex = 0
-        
-        for (index, _) in locations.enumerated() {
-            if visited[index] {
-                continue
-            }
-            visited[index] = true
-            var neighbors = regionQuery(locations: locations, pointIndex: index, eps: eps)
-            if neighbors.count < minSamples {
-                noise[index] = true
-            } else {
-                let cluster = expandCluster(locations: locations, pointIndex: index, neighbors: &neighbors, clusterIndex: clusterIndex, eps: eps, minSamples: minSamples, visited: &visited, clusters: &clusters)
-                if !cluster.isEmpty {
-                    clusters[clusterIndex] = cluster
-                    clusterIndex += 1
-                }
-            }
-        }
-        
-        // Choose a representative for each cluster
-        return clusters.values.map { locations in
-            // You can return any point from the cluster, here we choose the first one
-            return locations.first!
-        }
-    }
-
-    func expandCluster(locations: [LocationData], pointIndex: Int, neighbors: inout [Int], clusterIndex: Int, eps: Double, minSamples: Int, visited: inout [Bool], clusters: inout [Int: [LocationData]]) -> [LocationData] {
-        var cluster = [locations[pointIndex]]
-        var i = 0
-        while i < neighbors.count {
-            let neighborIndex = neighbors[i]
-            if !visited[neighborIndex] {
-                visited[neighborIndex] = true
-                let neighborNeighbors = regionQuery(locations: locations, pointIndex: neighborIndex, eps: eps)
-                if neighborNeighbors.count >= minSamples {
-                    neighbors.append(contentsOf: neighborNeighbors)
-                }
-            }
-            if clusters[clusterIndex]?.contains(where: {$0.name == locations[neighborIndex].name && $0.location.coordinate.latitude == locations[neighborIndex].location.coordinate.latitude && $0.location.coordinate.longitude == locations[neighborIndex].location.coordinate.longitude}) == nil {
-                cluster.append(locations[neighborIndex])
-            }
-            i += 1
-        }
-        
-        return cluster
     }
 
 
@@ -231,7 +123,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             print("User email not found")
             return
         }
-        
+
         db.collection("notes")
             .whereField("user", isEqualTo: userEmail)
             .addSnapshotListener { (querySnapshot, error) in
@@ -239,33 +131,32 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                     print("There was an issue retrieving data from Firestore: \(e)")
                 } else {
                     if let snapshotDocuments = querySnapshot?.documents {
-                        var fetchedLocations: [LocationData] = []
+                        var fetchedLocationsDict: [String: LocationData] = [:] // Use a dictionary to store unique locations
                         for doc in snapshotDocuments {
                             let data = doc.data()
                             if let locationName = data["locationName"] as? String,
-                                let locationData = data["location"] as? GeoPoint,
-                                let imageURLString = data["imageURL"] as? String,
-                                let imageURL = URL(string: imageURLString) {
-                                    
+                               let locationData = data["location"] as? GeoPoint,
+                               let imageURLString = data["imageURL"] as? String,
+                               let imageURL = URL(string: imageURLString) {
+
+                                print("Location Name: \(locationName), Image URL: \(imageURLString)") // Debugging line
+
                                 let location = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
                                 let locationDataInstance = LocationData(name: locationName, location: location, imageURL: imageURL)
-                                fetchedLocations.append(locationDataInstance)
+                                
+                                fetchedLocationsDict[locationName] = locationDataInstance // Use the name as a key to eliminate duplicates
                             } else {
                                 print("Failed to parse location data for document ID: \(doc.documentID)")
                             }
                         }
-                        
-                        self.locations = fetchedLocations.filter { locationData in
+
+                        self.locations = Array(fetchedLocationsDict.values).filter { locationData in
                             return locationData.name != "" && locationData.imageURL != nil
                         }
-                        
-                        let minSamples = 1
-                        self.locations = self.clusterLocations(locations: self.locations, eps: 30.0, minSamples: minSamples)
+
                         self.sortLocationsByDistance()
                         self.loadNextPage()
-                        // Update geofences
-                        self.updateGeofences()
-                        
+
                         DispatchQueue.main.async {
                             print(self.locations)  // Debugging line
                             self.tableView.reloadData()
@@ -276,6 +167,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 }
             }
     }
+
+
 
     
     func sortLocationsByDistance() {
@@ -353,35 +246,47 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath) as! LocationCell
         let locationData = locations[indexPath.row]
-
-        cell.locationNameLabel.text = locationData.name
-
-        // Reset the imageView to a placeholder (or nil) while the download is in progress
-        cell.locationImageView.image = nil // Or use a placeholder image if you have one
-
-        downloadAndDisplayImage(locationData: locationData) { url in
-            URLSession.shared.dataTask(with: url) { (data, _, error) in
-                if let e = error {
-                    print("Error downloading image data: \(e)")
-                    return
-                }
-                guard let data = data else {
-                    print("No image data found")
-                    return
-                }
-                
-                DispatchQueue.main.async {
-                    // Check if the cell is still displaying the same locationData
-                    if cell.locationNameLabel.text == locationData.name {
-                        let image = UIImage(data: data)
-                        cell.locationImageView.image = image
+        
+        if let imageUrl = locationData.imageURL { // Check if imageURL is not nil
+            let uniqueIdentifier = imageUrl.absoluteString
+            cell.uniqueIdentifier = uniqueIdentifier // Set the unique identifier
+            
+            // ... rest of your code ...
+            
+            downloadAndDisplayImage(locationData: locationData) { url in
+                URLSession.shared.dataTask(with: url) { (data, _, error) in
+                    if let e = error {
+                        print("Error downloading image data: \(e)")
+                        return
                     }
-                }
-            }.resume()
+                    guard let data = data else {
+                        print("No image data found")
+                        return
+                    }
+                    
+                    DispatchQueue.main.async {
+                        // Check if the cell is still displaying the same locationData
+                        if cell.uniqueIdentifier == uniqueIdentifier { // Compare the unique identifiers
+                            let image = UIImage(data: data)
+                            cell.locationImageView.image = image
+                            print("Image set for location: \(locationData.name)") // Debugging line
+                        } else {
+                            print("Cell reused before image set. Skipping.") // Debugging line
+                        }
+                    }
+                }.resume()
+            }
+        } else {
+            // Handle the case where imageURL is nil, perhaps by setting a default image
+            cell.locationImageView.image = nil // Or a placeholder image
+            print("Image URL is nil for location: \(locationData.name)") // Debugging line
         }
-
+        
+        cell.locationNameLabel.text = locationData.name
+        
         return cell
     }
+
 
 
     

@@ -809,28 +809,23 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
-    func updateImageURLForAllNotes(with imageURL: URL) {
+    func updateImageURLForAllNotes(with imageURL: URL, location: CLLocationCoordinate2D) {
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
             return
         }
-        
+        print("Updating imageURL for location: \(location.latitude), \(location.longitude)")
+
+
         db.collection("notes")
             .whereField("user", isEqualTo: userEmail)
+            .whereField("location.latitude", isEqualTo: location.latitude)
+            .whereField("location.longitude", isEqualTo: location.longitude)
             .getDocuments { [weak self] querySnapshot, error in
-                if let e = error {
-                    print("There was an issue retrieving data from Firestore: \(e)")
-                } else {
-                    if let snapshotDocuments = querySnapshot?.documents {
-                        for doc in snapshotDocuments {
-                            self?.updateImageURLForNote(doc.documentID, newImageURL: imageURL)
-                        }
-                    } else {
-                        print("No snapshot documents found")
-                    }
-                }
+                // Rest of the code as before
             }
     }
+
     
     func updateImageURLForNote(_ documentID: String, newImageURL: URL) {
         // Update the imageURL for the note with the given document ID
@@ -867,7 +862,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                     print("Image uploaded and saved with URL: \(imageURL)")
 
                     // Update the imageURL for notes
-                    self?.updateNotesWithImageURL(imageURL: imageURL, location: location)
+                    self?.updateNotesWithImageURL(imageURL: imageURL, selectedLocation: location)
 
                     // Load and filter notes
                     self?.loadAndFilterNotes(for: location, goalRadius: 15.0)
@@ -892,9 +887,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-    func updateNotesWithImageURL(imageURL: URL?, location: CLLocationCoordinate2D) {
+    func updateNotesWithImageURL(imageURL: URL?, selectedLocation: CLLocationCoordinate2D) {
         for i in 0..<notes.count {
-            if notes[i].location.latitude == location.latitude && notes[i].location.longitude == location.longitude {
+            if notes[i].location.latitude == selectedLocation.latitude && notes[i].location.longitude == selectedLocation.longitude {
+                print("Updating note at selected location")
                 notes[i].imageURL = imageURL
                 if let imageURLString = imageURL?.absoluteString {
                     updateNoteInFirestore(noteID: notes[i].id, noteText: notes[i].text, location: notes[i].location, locationName: notes[i].locationName, imageURL: imageURLString) { success in
@@ -908,6 +904,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
+
 
 
 
