@@ -23,7 +23,12 @@ struct LocationData {
     let imageURL: URL?
 }
 
+// Utility function for sanitizing strings (newly added)
+func sanitizeString(_ string: String) -> String {
+    return string.lowercased().replacingOccurrences(of: " ", with: "_")
+}
 
+// Existing safeFileName function (unchanged)
 func safeFileName(for locationName: String) -> String {
     let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
     let components = locationName.components(separatedBy: allowedCharacters.inverted)
@@ -33,18 +38,16 @@ func safeFileName(for locationName: String) -> String {
 
 class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate, UNUserNotificationCenterDelegate {
 
-    weak var delegate: PlacesViewControllerDelegate?
-
-    var locations: [LocationData] = []
-    var fetchedLocationKeys: Set<String> = []
-    let locationManager = CLLocationManager()
-    var userLocation: CLLocation?
-    var currentPage: Int = 0
-    let pageSize: Int = 5
-
-
     
-    var notes: [Note] = []
+      weak var delegate: PlacesViewControllerDelegate?
+
+      var locations: [LocationData] = []
+      var fetchedLocationKeys: Set<String> = []
+      let locationManager = CLLocationManager()
+      var userLocation: CLLocation?
+      var currentPage: Int = 0
+      let pageSize: Int = 5
+      var notes: [Note] = []
     
     @IBOutlet weak var tableView: UITableView!
     
@@ -57,36 +60,35 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     }
     
     override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        let locationCellNib = UINib(nibName: "LocationCell", bundle: nil)
-        tableView.register(locationCellNib, forCellReuseIdentifier: "LocationCell")
-        tableView.dataSource = self
-        tableView.delegate = self
-        UNUserNotificationCenter.current().delegate = self
-        loadLocationData()
-      
-    
-        
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestWhenInUseAuthorization()
-        locationManager.startUpdatingLocation()
-        
-        
-        print("Locations loaded")
-        
-        loadNotes() { _ in
-            // do nothing here
+            super.viewDidLoad()
+            
+            let locationCellNib = UINib(nibName: "LocationCell", bundle: nil)
+            tableView.register(locationCellNib, forCellReuseIdentifier: "LocationCell")
+            tableView.dataSource = self
+            tableView.delegate = self
+            UNUserNotificationCenter.current().delegate = self
+            loadLocationData()
+            
+            locationManager.delegate = self
+            locationManager.desiredAccuracy = kCLLocationAccuracyBest
+            locationManager.requestWhenInUseAuthorization()
+            locationManager.startUpdatingLocation()
+            
+            print("Locations loaded")
+            
+            loadNotes() { _ in
+                // do nothing here
+            }
+            
+            if let tabBarController = self.tabBarController, let viewControllers = tabBarController.viewControllers {
+                for viewController in viewControllers {
+                    if let homeViewController = viewController as? HomeViewController {
+                        self.delegate = homeViewController
+                    }
+                }
+            }
         }
-        if let tabBarController = self.tabBarController, let viewControllers = tabBarController.viewControllers {
-               for viewController in viewControllers {
-                   if let homeViewController = viewController as? HomeViewController {
-                       self.delegate = homeViewController
-                   }
-               }
-           }
-    }
+
 
 
     
@@ -131,19 +133,26 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                     print("There was an issue retrieving data from Firestore: \(e)")
                 } else {
                     if let snapshotDocuments = querySnapshot?.documents {
+                        print("Number of snapshot documents: \(snapshotDocuments.count)") // Debugging line
                         var fetchedLocationsDict: [String: LocationData] = [:] // Use a dictionary to store unique locations
+                        
                         for doc in snapshotDocuments {
                             let data = doc.data()
                             if let locationName = data["locationName"] as? String,
-                               let locationData = data["location"] as? GeoPoint,
-                               let imageURLString = data["imageURL"] as? String,
-                               let imageURL = URL(string: imageURLString) {
+                               let locationData = data["location"] as? GeoPoint {
 
-                                print("Location Name: \(locationName), Image URL: \(imageURLString)") // Debugging line
+                                print("Location Name: \(locationName)") // Debugging line
 
                                 let location = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
+                                var imageURL: URL? = nil
+
+                                if let imageURLString = data["imageURL"] as? String {
+                                    imageURL = URL(string: imageURLString)
+                                }
+
                                 let locationDataInstance = LocationData(name: locationName, location: location, imageURL: imageURL)
                                 
+                                print("Adding location \(locationName) to fetchedLocationsDict") // Debugging line
                                 fetchedLocationsDict[locationName] = locationDataInstance // Use the name as a key to eliminate duplicates
                             } else {
                                 print("Failed to parse location data for document ID: \(doc.documentID)")
@@ -151,14 +160,16 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                         }
 
                         self.locations = Array(fetchedLocationsDict.values).filter { locationData in
-                            return locationData.name != "" && locationData.imageURL != nil
+                            return locationData.name != ""
                         }
 
+                        print("Filtered \(self.locations.count) unique locations from fetchedLocationsDict") // Debugging line
+                        
                         self.sortLocationsByDistance()
                         self.loadNextPage()
 
                         DispatchQueue.main.async {
-                            print(self.locations)  // Debugging line
+                            print("Reloaded table with \(self.locations.count) unique locations") // Debugging line
                             self.tableView.reloadData()
                         }
                     } else {
@@ -167,6 +178,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 }
             }
     }
+
+
 
 
 
@@ -239,57 +252,39 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return min(locations.count, currentPage * pageSize)
-    }
-    
-    
+         return locations.count
+     }
+     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath) as! LocationCell
         let locationData = locations[indexPath.row]
-        
-        if let imageUrl = locationData.imageURL { // Check if imageURL is not nil
-            let uniqueIdentifier = imageUrl.absoluteString
-            cell.uniqueIdentifier = uniqueIdentifier // Set the unique identifier
-            
-            // ... rest of your code ...
-            
-            downloadAndDisplayImage(locationData: locationData) { url in
-                URLSession.shared.dataTask(with: url) { (data, _, error) in
-                    if let e = error {
-                        print("Error downloading image data: \(e)")
-                        return
-                    }
-                    guard let data = data else {
-                        print("No image data found")
-                        return
-                    }
-                    
-                    DispatchQueue.main.async {
-                        // Check if the cell is still displaying the same locationData
-                        if cell.uniqueIdentifier == uniqueIdentifier { // Compare the unique identifiers
-                            let image = UIImage(data: data)
-                            cell.locationImageView.image = image
-                            print("Image set for location: \(locationData.name)") // Debugging line
-                        } else {
-                            print("Cell reused before image set. Skipping.") // Debugging line
-                        }
-                    }
-                }.resume()
-            }
-        } else {
-            // Handle the case where imageURL is nil, perhaps by setting a default image
-            cell.locationImageView.image = nil // Or a placeholder image
-            print("Image URL is nil for location: \(locationData.name)") // Debugging line
-        }
-        
         cell.locationNameLabel.text = locationData.name
+        
+        // Download and display image logic
+        let safeFileName = safeFileName(for: locationData.name)
+        let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
+        storageRef.downloadURL { (url, error) in
+            if let error = error {
+                print("Error getting download URL: \(error)")
+                return
+            }
+            
+            guard let url = url else {
+                print("URL is nil")
+                return
+            }
+            cell.locationImageView?.sd_setImage(with: url) { (image, error, cacheType, imageURL) in
+                if let error = error {
+                    print("Error loading image from URL: \(error)")
+                }
+                // Update table view layout after image is loaded
+                cell.setNeedsLayout()
+            }
+        }
         
         return cell
     }
-
-
-
-    
+     
     //SWIPE TO DELETE FUNCTIONS
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {

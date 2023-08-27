@@ -40,109 +40,96 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //FireBase Cloud Storage
     let db = Firestore.firestore()
     
-    //MARK: - Whisper API
-    
-    var isRecording = false // Add this property to keep track of recording state
-
-    
-    @IBAction func whisper(_ sender: UIButton) {
-        print("Whisper button pressed. Current recording state: \(isRecording)")
-           if isRecording {
-               // Adding a delay before stopping the recording to ensure that it has time to capture enough audio
-               DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                   self.stopRecordingAndTranscribeAudio() // Stop recording and transcribe when button is pressed again
-                   sender.setTitle("Start Recording", for: .normal) // Update button title to indicate recording state
-               }
-           } else {
-               startRecording() // Start recording when button is first pressed
-               sender.setTitle("Stop Recording", for: .normal) // Update button title to indicate recording state
-           }
-           isRecording.toggle() // Toggle recording state
-       }
-    
-    func stopRecordingAndTranscribeAudio() {
-        print("Stopping recording.")
-        audioRecorder.stop()
-
-        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
-        print("Audio file URL: \(audioFilename)")
-
-        let fileManager = FileManager.default
-        if fileManager.fileExists(atPath: audioFilename.path) {
-            print("File exists")
-        } else {
-            print("File does not exist")
-        }
-
-        APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
-            switch result {
-            case .success(let transcription):
-                DispatchQueue.main.async {
-                    self.showAlert(withTranscription: transcription)
-                }
-            case .failure(let error):
-                print("Error transcribing audio: \(error)")
-            }
-        }
-    }
-
-
-
-       func showAlert(withTranscription text: String) {
-           let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:\n\n\(text)", preferredStyle: .alert)
-           let okAction = UIAlertAction(title: "OK", style: .default)
-           alertController.addAction(okAction)
-           self.present(alertController, animated: true, completion: nil)
-       }
-
-    var audioRecorder: AVAudioRecorder!
-
-    func startRecording() {
-        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
-        print("Starting recording. Audio filename: \(audioFilename)")
-
-        let settings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: 44100,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 16,
-            AVLinearPCMIsBigEndianKey: false,
-            AVLinearPCMIsFloatKey: false
-        ]
-
-        do {
-            audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
-            audioRecorder.record()
-        } catch let error {
-            print("Error starting recording: \(error)")
-        }
-    }
-
-
-
-
-    func createNewNoteWithTranscription(_ transcription: String) {
-        if let currentLocation = self.currentLocation {
-            let emptyURL = URL(string: "")
-            let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: "", imageURL: emptyURL)
-            notes.append(newNote)
-            selectedNote = newNote
-            
-            DispatchQueue.main.async {
-                self.tableView.beginUpdates()
-                self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                self.tableView.endUpdates()
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                    guard let self = self else { return }
-                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                        newCell.noteTextField.becomeFirstResponder()
-                    }
-                }
-            }
-        }
-    }
+//    //MARK: - Whisper API
+//
+//    var isRecording = false // Add this property to keep track of recording state
+//
+//
+////
+//
+////    func stopRecordingAndTranscribeAudio() {
+////        print("Stopping recording.")
+////        audioRecorder.stop()
+////
+////        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
+////        print("Audio file URL: \(audioFilename)")
+////
+////        let fileManager = FileManager.default
+////        if fileManager.fileExists(atPath: audioFilename.path) {
+////            print("File exists")
+////        } else {
+////            print("File does not exist")
+////        }
+////
+////        APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
+////            switch result {
+////            case .success(let transcription):
+////                DispatchQueue.main.async {
+////                    self.showAlert(withTranscription: transcription)
+////                }
+////            case .failure(let error):
+////                print("Error transcribing audio: \(error)")
+////            }
+////        }
+////    }
+//
+//
+//
+//       func showAlert(withTranscription text: String) {
+//           let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:\n\n\(text)", preferredStyle: .alert)
+//           let okAction = UIAlertAction(title: "OK", style: .default)
+//           alertController.addAction(okAction)
+//           self.present(alertController, animated: true, completion: nil)
+//       }
+//
+//    var audioRecorder: AVAudioRecorder!
+//
+//    func startRecording() {
+//        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
+//        print("Starting recording. Audio filename: \(audioFilename)")
+//
+//        let settings: [String: Any] = [
+//            AVFormatIDKey: kAudioFormatLinearPCM,
+//            AVSampleRateKey: 44100,
+//            AVNumberOfChannelsKey: 1,
+//            AVLinearPCMBitDepthKey: 16,
+//            AVLinearPCMIsBigEndianKey: false,
+//            AVLinearPCMIsFloatKey: false
+//        ]
+//
+//        do {
+//            audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
+//            audioRecorder.record()
+//        } catch let error {
+//            print("Error starting recording: \(error)")
+//        }
+//    }
+//
+//
+//
+//
+//    func createNewNoteWithTranscription(_ transcription: String) {
+//        if let currentLocation = self.currentLocation {
+//            let emptyURL = URL(string: "")
+//            let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: "", imageURL: emptyURL)
+//            notes.append(newNote)
+//            selectedNote = newNote
+//
+//            DispatchQueue.main.async {
+//                self.tableView.beginUpdates()
+//                self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+//                self.tableView.endUpdates()
+//
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+//                    guard let self = self else { return }
+//                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
+//                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+//                        newCell.noteTextField.becomeFirstResponder()
+//                    }
+//                }
+//            }
+//        }
+//    }
     
 
 
@@ -150,9 +137,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //MARK: - VARIABLES & CONSTANTS
     
+    var selectedLocation: CLLocationCoordinate2D?
     var notesFromAverageLocation: [Note] = []
-
-    
     var averageSelectedLocation: CLLocationCoordinate2D? {
         didSet {
             if let location = averageSelectedLocation {
@@ -797,12 +783,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let distance = noteLocation.distance(from: userCurrentLocation)
         return distance <= updateRadius
     }
-    
-    
-    
-    
-    
-    
+
     //SAFEFILENAME
     func safeFileName(for locationName: String) -> String {
         return locationName.replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: "'", with: "")
@@ -1089,6 +1070,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             
             guard let url = url else { return }
             
+            
             self.CurrentPlace.sd_setImage(with: url) { (image, error, cacheType, imageURL) in
                 if let error = error {
                     print("Error loading image from URL: \(error)")
@@ -1097,9 +1079,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
 
-    
-    
-    //Upload Image to Fire Storage (Google Cloud) -> 5GB Max for Free Tier
+    //Upload Image to Fire Storage
     func uploadImage(image: UIImage, location: CLLocationCoordinate2D, locationName: String, completion: @escaping (Result<URL, Error>) -> Void) {
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
             completion(.failure(NSError(domain: "ImageConversionError", code: -1, userInfo: nil)))
@@ -1380,9 +1360,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //MARK: - NOTES
     
-    var selectedLocation: CLLocationCoordinate2D?
-
-    
     // textFieldShouldReturn method
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
@@ -1415,23 +1392,24 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         if let noteText = activeCell.noteTextField.text, !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let noteId = activeCell.note?.id ?? UUID().uuidString
 
-            // Call getLocationName here, the rest of the saveNote logic will be inside its completion handler
             getLocationName(from: locationToSave) { locationName in
-                let locationNameToSave = self.currentLocationName ?? locationName ?? ""
+                // Safely unwrap the optional currentLocationName before using it
+                let locationNameToSave: String
+                if let currentLocationName = self.currentLocationName, !currentLocationName.isEmpty {
+                    locationNameToSave = currentLocationName
+                } else {
+                    locationNameToSave = locationName ?? "Unnamed Location"
+                }
+
                 let imageURLToSave = self.currentLocationImageURL?.absoluteString ?? ""
 
-                // Update the active cell's note location
                 activeCell.note?.location = locationToSave
 
-                // Save the updated note using the saveNoteToFirestore function
                 self.saveNoteToFirestore(noteId: noteId, noteText: noteText, location: locationToSave, locationName: locationNameToSave, imageURL: imageURLToSave) { [weak self] success in
                     if success {
                         print("Note saved successfully")
-
-                        // Update the note in the notes array
                         if let noteIndex = self?.notes.firstIndex(where: { $0.id == noteId }) {
                             self?.notes[noteIndex].text = noteText
-                            // Reload the table view on the main thread
                             DispatchQueue.main.async {
                                 self?.tableView.reloadData()
                                 self?.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
@@ -1448,6 +1426,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("Note text field is empty")
         }
     }
+
 
     func getLocationName(from location: CLLocationCoordinate2D, completion: @escaping (String?) -> Void) {
         let geocoder = CLGeocoder()
