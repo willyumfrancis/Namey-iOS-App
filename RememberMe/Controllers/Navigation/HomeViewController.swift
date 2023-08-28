@@ -139,13 +139,17 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     var selectedLocation: CLLocationCoordinate2D?
     var notesFromAverageLocation: [Note] = []
+    var isLocationNameManuallySet = false  // Add this variable to keep track of user's manual input
+
     var averageSelectedLocation: CLLocationCoordinate2D? {
         didSet {
-            if let location = averageSelectedLocation {
-                currentLocationName = fetchLocationNameFor(location: location)
-            } else {
-                if let location = locationManager.location?.coordinate {
+            if !isLocationNameManuallySet {  // Only update if the name was not manually set
+                if let location = averageSelectedLocation {
                     currentLocationName = fetchLocationNameFor(location: location)
+                } else {
+                    if let location = locationManager.location?.coordinate {
+                        currentLocationName = fetchLocationNameFor(location: location)
+                    }
                 }
             }
         }
@@ -153,11 +157,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     var averageSelectedLocationName: String? {
         didSet {
-            if let locationName = averageSelectedLocationName {
-                currentLocationName = locationName
+            if !isLocationNameManuallySet {  // Only update if the name was not manually set
+                if let locationName = averageSelectedLocationName {
+                    currentLocationName = locationName
+                }
             }
         }
     }
+
 
 
     
@@ -263,27 +270,30 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     //Create New Name
     @IBAction func NewNote(_ sender: UIButton) {
-        if let currentLocation = self.currentLocation {
-               let emptyURL = URL(string: "")
-               let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: "", imageURL: emptyURL) // Use currentLocation directly
-               notes.append(newNote)
-               selectedNote = newNote
+            if let currentLocation = self.currentLocation {
+                let emptyURL = URL(string: "")
+                let userDefinedLocationName = currentLocationName ?? ""  // Fetch user-defined location name
+                let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: userDefinedLocationName, imageURL: emptyURL)  // Use currentLocation and userDefinedLocationName
+                notes.append(newNote)
+                selectedNote = newNote
 
-               DispatchQueue.main.async {
-                   self.tableView.beginUpdates()
-                   self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                   self.tableView.endUpdates()
-                   
-                   DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                       guard let self = self else { return }
-                       if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                          let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                           newCell.noteTextField.becomeFirstResponder()
-                       }
-                   }
-               }
-           }
-       }
+                DispatchQueue.main.async {
+                    self.tableView.beginUpdates()
+                    self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                    self.tableView.endUpdates()
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                        guard let self = self else { return }
+                        if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                           let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                            newCell.noteTextField.becomeFirstResponder()
+                        }
+                    }
+                }
+            }
+        }
+
+    
     
     
     //MARK: - Appearance
@@ -1145,6 +1155,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 
                 self.saveImageToFirestore(image: image, location: userLocation, locationName: locationName)
                 DispatchQueue.main.async {
+                    self.currentLocationName = locationName
                     self.locationNameLabel.text = locationName
                 }
                 
@@ -1393,14 +1404,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             let noteId = activeCell.note?.id ?? UUID().uuidString
 
             getLocationName(from: locationToSave) { locationName in
-                // Safely unwrap the optional currentLocationName before using it
                 let locationNameToSave: String
-                if let currentLocationName = self.currentLocationName, !currentLocationName.isEmpty {
-                    locationNameToSave = currentLocationName
+                // Prioritize the name user chose
+                if let userChosenName = self.currentLocationName, !userChosenName.isEmpty {
+                    locationNameToSave = userChosenName
                 } else {
+                    // Fall back to the auto-generated name
                     locationNameToSave = locationName ?? "Unnamed Location"
                 }
-
                 let imageURLToSave = self.currentLocationImageURL?.absoluteString ?? ""
 
                 activeCell.note?.location = locationToSave
