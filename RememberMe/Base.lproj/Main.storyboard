@@ -159,8 +159,8 @@
                                     <action selector="uploadImageButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="zR3-xR-yj1"/>
                                 </connections>
                             </button>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Go meet some people!" textAlignment="natural" lineBreakMode="clip" baselineAdjustment="alignBaselines" minimumScaleFactor="0.5" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ja3-s1-LKd">
-                                <rect key="frame" x="51.000000000000014" y="132.33333333333334" width="163.33333333333337" height="19"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="Go meet some people!" textAlignment="natural" lineBreakMode="clip" baselineAdjustment="alignBaselines" minimumScaleFactor="0.5" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ja3-s1-LKd">
+                                <rect key="frame" x="53" y="135.33333333333337" width="163.33333333333337" height="19"/>
                                 <fontDescription key="fontDescription" name="Roboto-Bold" family="Roboto" pointSize="16"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -199,7 +199,7 @@
                             <constraint firstItem="JH5-Iz-f7Q" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="topMargin" constant="17" id="55Y-9p-87r"/>
                             <constraint firstItem="2Qx-UH-TeP" firstAttribute="baseline" secondItem="nL5-cf-paW" secondAttribute="firstBaseline" id="5Eb-44-WQR"/>
                             <constraint firstItem="qT4-kL-fdE" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="51" id="8Sr-F4-bpK"/>
-                            <constraint firstItem="Ja3-s1-LKd" firstAttribute="leading" secondItem="r8s-nI-bUC" secondAttribute="leading" constant="-1" id="By9-n4-ucA"/>
+                            <constraint firstItem="Ja3-s1-LKd" firstAttribute="leading" secondItem="r8s-nI-bUC" secondAttribute="leading" constant="1" id="By9-n4-ucA"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="oX5-B4-FmA" secondAttribute="bottom" constant="31.666666666666629" id="EeO-XF-jtB"/>
                             <constraint firstItem="r8s-nI-bUC" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="52" id="GJd-D6-MRo"/>
                             <constraint firstItem="r8s-nI-bUC" firstAttribute="top" secondItem="qT4-kL-fdE" secondAttribute="bottom" constant="20" id="GZm-aS-WTf"/>
@@ -212,7 +212,7 @@
                             <constraint firstItem="E2I-xx-41M" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="58" id="XmX-eh-2Ct"/>
                             <constraint firstItem="E2I-xx-41M" firstAttribute="top" secondItem="nL5-cf-paW" secondAttribute="bottom" constant="-1.3333333333333144" id="ZcM-Lt-yYC"/>
                             <constraint firstAttribute="trailingMargin" secondItem="S3I-vi-liH" secondAttribute="trailing" constant="36.333333333333314" id="a1a-UE-mlH"/>
-                            <constraint firstItem="qT4-kL-fdE" firstAttribute="top" secondItem="Ja3-s1-LKd" secondAttribute="bottom" constant="21.666666666666686" id="b29-A5-6Bf"/>
+                            <constraint firstItem="qT4-kL-fdE" firstAttribute="top" secondItem="Ja3-s1-LKd" secondAttribute="bottom" constant="18.666666666666629" id="b29-A5-6Bf"/>
                             <constraint firstItem="pBH-KN-QLt" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="59" id="dFA-YX-axQ"/>
                             <constraint firstItem="pBH-KN-QLt" firstAttribute="centerY" secondItem="nL5-cf-paW" secondAttribute="centerY" id="fJs-J5-ccx"/>
                             <constraint firstItem="r8s-nI-bUC" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="gPz-Rb-tF0"/>

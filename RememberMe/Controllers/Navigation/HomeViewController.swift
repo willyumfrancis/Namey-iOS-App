@@ -343,7 +343,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let height: CGFloat = 22
 
         // Apply corner radius
-        Progressbar?.layer.cornerRadius = height / 2
+        Progressbar?.layer.cornerRadius = height / 7
         Progressbar?.clipsToBounds = true
 
         // Customize the progress tint and track color
