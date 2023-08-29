@@ -31,7 +31,7 @@ func sanitizeString(_ string: String) -> String {
 // Existing safeFileName function (unchanged)
 func safeFileName(for locationName: String) -> String {
     // Define the set of allowed characters
-    let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
+    let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ ")
     
     // Separate the original string into components based on the allowed characters
     let components = locationName.components(separatedBy: allowedCharacters.inverted)
@@ -44,6 +44,7 @@ func safeFileName(for locationName: String) -> String {
     
     return finalName
 }
+
 
 
 
