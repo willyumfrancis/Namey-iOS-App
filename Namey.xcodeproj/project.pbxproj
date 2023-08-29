@@ -14,6 +14,7 @@
 		7545750C29C00848004242C5 /* PlacesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750B29C00848004242C5 /* PlacesViewController.swift */; };
 		7545750F29C00868004242C5 /* NamesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750E29C00868004242C5 /* NamesViewController.swift */; };
 		7545751129C0086F004242C5 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545751029C0086F004242C5 /* SettingsViewController.swift */; };
+		754B6BE02A9DEDC200F8A3B0 /* eastersong.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 754B6BDF2A9DEDC200F8A3B0 /* eastersong.mp3 */; };
 		7579D8CF29F1F6A7003FEBA3 /* LocationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7579D8CD29F1F6A7003FEBA3 /* LocationCell.swift */; };
 		7579D8D029F1F6A7003FEBA3 /* LocationCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7579D8CE29F1F6A7003FEBA3 /* LocationCell.xib */; };
 		75A2588E29D21A1200A8D509 /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A2588D29D21A1200A8D509 /* Note.swift */; };
@@ -42,6 +43,7 @@
 		7545750B29C00848004242C5 /* PlacesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesViewController.swift; sourceTree = "<group>"; };
 		7545750E29C00868004242C5 /* NamesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NamesViewController.swift; sourceTree = "<group>"; };
 		7545751029C0086F004242C5 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
+		754B6BDF2A9DEDC200F8A3B0 /* eastersong.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = eastersong.mp3; sourceTree = "<group>"; };
 		7579D8CD29F1F6A7003FEBA3 /* LocationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationCell.swift; sourceTree = "<group>"; };
 		7579D8CE29F1F6A7003FEBA3 /* LocationCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LocationCell.xib; sourceTree = "<group>"; };
 		75A2588D29D21A1200A8D509 /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
@@ -114,6 +116,14 @@
 			path = Navigation;
 			sourceTree = "<group>";
 		};
+		754B6BDE2A9DED6100F8A3B0 /* music */ = {
+			isa = PBXGroup;
+			children = (
+				754B6BDF2A9DEDC200F8A3B0 /* eastersong.mp3 */,
+			);
+			path = music;
+			sourceTree = "<group>";
+		};
 		755AE47829C5095A00FA55B0 /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
@@ -144,6 +154,7 @@
 		75B69CD329BFEEE40049D4F5 /* RememberMe */ = {
 			isa = PBXGroup;
 			children = (
+				754B6BDE2A9DED6100F8A3B0 /* music */,
 				7516ED1A29D0C7D900801960 /* Models */,
 				7516ED1929D0C7B800801960 /* Views */,
 				75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */,
@@ -251,6 +262,7 @@
 				75A2589629D2380000A8D509 /* NoteCell.xib in Resources */,
 				75B69CE429BFEEE50049D4F5 /* LaunchScreen.storyboard in Resources */,
 				7502561829CE4A1C004FE87A /* GoogleService-Info.plist in Resources */,
+				754B6BE02A9DEDC200F8A3B0 /* eastersong.mp3 in Resources */,
 				75B69CE129BFEEE50049D4F5 /* Assets.xcassets in Resources */,
 				75B69CDC29BFEEE40049D4F5 /* Main.storyboard in Resources */,
 			);

@@ -16,6 +16,7 @@ class LogInViewController: UIViewController, CLLocationManagerDelegate {
     @IBOutlet weak var PasswordTextField: UITextField!
     @IBOutlet weak var EmailTextField: UITextField!
     
+    @IBOutlet weak var LogInButton: UIButton!
     let locationManager = CLLocationManager()
 
     
@@ -44,6 +45,8 @@ class LogInViewController: UIViewController, CLLocationManagerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         locationManager.delegate = self
+        // Code for rounding the corners of the login button
+               LogInButton.layer.cornerRadius = 12 // Adjust corner radiu
         
         // Do any additional setup after loading the view.
     }

@@ -15,6 +15,7 @@ class RegisterViewController: UIViewController, CLLocationManagerDelegate {
     @IBOutlet weak var EmailTextField: UITextField!
     @IBOutlet weak var PasswordTextField: UITextField!
     
+    @IBOutlet weak var Register: UIButton!
     let locationManager = CLLocationManager()
     
     @IBAction func RegisterButton(_ sender: Any) {
@@ -39,6 +40,9 @@ class RegisterViewController: UIViewController, CLLocationManagerDelegate {
        
        override func viewDidLoad() {
            super.viewDidLoad()
+           
+           // Code for rounding the corners of the login button
+                  Register.layer.cornerRadius = 12 // Adjust corner radiu
            
            // Request location authorization
            locationManager.delegate = self

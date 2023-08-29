@@ -9,10 +9,12 @@ import UIKit
 import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
+import AVFoundation
 
 class SettingsViewController: UIViewController {
     
     var rotationSpeed = 0.5
+    var audioPlayer: AVAudioPlayer?
 
     @IBOutlet weak var betaTap: UILabel!
     
@@ -38,6 +40,19 @@ class SettingsViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Initialize audio player with the new path
+                if let path = Bundle.main.path(forResource: "eastersong", ofType: "mp3") {
+                    let url = URL(fileURLWithPath: path)
+                    do {
+                        audioPlayer = try AVAudioPlayer(contentsOf: url)
+                        print("Audio player initialized.")
+                    } catch {
+                        print("Could not initialize audio player: \(error.localizedDescription)")
+                    }
+                } else {
+                    print("Could not find audio file.")
+                }
 
         // Add UITapGestureRecognizer to catImage
                let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
@@ -58,7 +73,12 @@ class SettingsViewController: UIViewController {
            }
         // Do any additional setup after loading the view.
     
-    
+//    override func viewWillDisappear(_ animated: Bool) {
+//            super.viewWillDisappear(animated)
+//            audioPlayer?.stop() // Stop the song when view will disappear
+//            print("Stopped the song.")
+//        }
+//    
     
     @objc private func imageTapped() {
            rotationSpeed += 0.03
@@ -68,7 +88,14 @@ class SettingsViewController: UIViewController {
            rotationAnimation.isCumulative = true
            rotationAnimation.repeatCount = Float.greatestFiniteMagnitude
            catImage.layer.add(rotationAnimation, forKey: "rotationAnimation")
-       }
+        // Play the song when cat is tapped
+               if audioPlayer?.play() == true {
+                   print("Started the song.")
+               } else {
+                   print("Failed to start the song.")
+               }
+           }
+       
     
     @objc private func labelTapped() {
            if catImage.transform.d != 0 { // checking if the image is visible
