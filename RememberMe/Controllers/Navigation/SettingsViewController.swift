@@ -11,14 +11,36 @@ import FirebaseFirestore
 import FirebaseAuth
 import AVFoundation
 
+class AppState {
+    static let shared = AppState()
+    
+    var rotationSpeed: Double = 0.5
+    var wasPlaying: Bool = false
+    
+    private init() {}
+}
+
+
+
 class SettingsViewController: UIViewController {
     
-    var rotationSpeed = 0.5
+    static var savedRotationSpeed: Double = 0.5 // Static property to save rotation speed
+      static var wasPlaying: Bool = false // Static property to save audio state
+      
+      var rotationSpeed: Double {
+          get { return SettingsViewController.savedRotationSpeed }
+          set { SettingsViewController.savedRotationSpeed = newValue }
+      }
+    
+      
+    
     var audioPlayer: AVAudioPlayer?
 
     @IBOutlet weak var betaTap: UILabel!
     
     @IBOutlet weak var catImage: UIImageView!
+    
+    @IBOutlet weak var audioControlButton: UIButton!
     
     @IBAction func LogOutButton(_ sender: UIBarButtonItem) {
         let firebaseAuth = Auth.auth()
@@ -33,9 +55,23 @@ class SettingsViewController: UIViewController {
            }
        }
     
+//    @IBAction func audioControlButton(_ sender: UIButton) {
+//        if audioPlayer?.isPlaying == true {
+//            audioPlayer?.pause()
+//            audioControlButton.setTitle("▶️", for: .normal) // Set to play symbol when paused
+//            print("Paused the song.")
+//        } else {
+//            audioPlayer?.play()
+//            audioControlButton.setTitle("⏸", for: .normal) // Set to pause symbol when playing
+//            print("Resumed the song.")
+//        }
+//    }
+    
     override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
             navigationController?.setNavigationBarHidden(true, animated: false)
+        audioControlButton.isHidden = true // Initially hide the button
+
         }
 
     override func viewDidLoad() {
@@ -73,12 +109,12 @@ class SettingsViewController: UIViewController {
            }
         // Do any additional setup after loading the view.
     
-//    override func viewWillDisappear(_ animated: Bool) {
-//            super.viewWillDisappear(animated)
-//            audioPlayer?.stop() // Stop the song when view will disappear
-//            print("Stopped the song.")
-//        }
-//    
+    override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            audioPlayer?.stop() // Stop the song when view will disappear
+            print("Stopped the song.")
+        }
+
     
     @objc private func imageTapped() {
            rotationSpeed += 0.03
@@ -90,6 +126,8 @@ class SettingsViewController: UIViewController {
            catImage.layer.add(rotationAnimation, forKey: "rotationAnimation")
         // Play the song when cat is tapped
                if audioPlayer?.play() == true {
+//                   audioControlButton.isHidden = false // Show the audio control button
+//                   audioControlButton.setTitle("⏸", for: .normal) // Set to pause symbol when playing
                    print("Started the song.")
                } else {
                    print("Failed to start the song.")

@@ -1049,7 +1049,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
             
             // Add a delay before setting the default image
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 self.setDefaultImageIfNil()
             }
         }
