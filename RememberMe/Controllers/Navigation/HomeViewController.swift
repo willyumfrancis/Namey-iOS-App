@@ -137,7 +137,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //MARK: - VARIABLES & CONSTANTS
     
-    var selectedLocation: CLLocationCoordinate2D?
+    var selectedLocationName: String?
+    var selectedLocation: CLLocationCoordinate2D? //Necessary?
     var notesFromAverageLocation: [Note] = []
     var isLocationNameManuallySet = false  // Add this variable to keep track of user's manual input
 
@@ -199,9 +200,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     @IBAction func uploadImageButton(_ sender: UIButton) {
         print("Upload Image button pressed")
+           print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
+           print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
+
            let alertController = UIAlertController(title: "Spot Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
            alertController.addTextField()
-           
+
            let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
                guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
                    print("Location name is empty.")
@@ -209,12 +213,15 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                }
                
                self.currentLocationName = locationName  // Update current location name
-               
-               // Use selectedLocation as source of truth, if available
-               if let selectedLocation = self.selectedLocation {
+
+               if let selectedLocation = self.selectedLocation, let selectedLocationName = self.selectedLocationName {
+                   // User had selected a location from PlacesViewController
+                   print("Using selected location")  // Debugging
                    self.updateLocationNameLabel(location: selectedLocation)
-                   self.presentImagePicker(locationName: locationName)
+                   self.presentImagePicker(locationName: selectedLocationName)
                } else if let currentLocation = self.locationManager.location?.coordinate {
+                   // No location was selected; use the current location
+                   print("Using current location")  // Debugging
                    self.updateLocationNameLabel(location: currentLocation)
                    self.presentImagePicker(locationName: locationName)
                }
@@ -223,12 +230,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
            }
            
            alertController.addAction(saveAction)
-           
+
            let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
            alertController.addAction(cancelAction)
            
            self.present(alertController, animated: true)
        }
+    
+
     
     //Goal (Star) Button
     @IBAction func goalButton(_ sender: UIButton) {
@@ -239,18 +248,21 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
 
-        // Reset the selected location from the PlacesViewController
-            averageSelectedLocation = nil
-            averageSelectedLocationName = nil
+        // Use the user's current location
+         guard let userLocation = locationManager.location?.coordinate else {
+             print("User location not available yet")
+             return
+         }
 
-            guard let userLocation = locationManager.location?.coordinate else {
-                print("User location not available yet")
-                return
-            }
+         // Set the user's current location as the selected location
+         selectedLocation = userLocation
 
-            // Use updateLocation here too
-            updateLocation(location: userLocation)
-        }
+         // Update the current location information
+         updateLocation(location: userLocation)
+
+         // Optionally, you could also refresh your UI to reflect this change
+         // ...
+     }
     
     func updateLocation(location: CLLocationCoordinate2D) {
         loadAndFilterNotes(for: location, goalRadius: 15.0)
@@ -844,7 +856,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     let distanceFilter: CLLocationDistance = 15
+    
     func saveImageToFirestore(image: UIImage, location: CLLocationCoordinate2D, locationName: String) {
+        let actualLocation = selectedLocation ?? location  // Use the selected location if it exists, otherwise use the given location.
+
         let safeFileName = self.safeFileName(for: locationName)
         let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
 
@@ -891,7 +906,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     func updateNotesWithImageURL(imageURL: URL?, selectedLocation: CLLocationCoordinate2D) {
         for i in 0..<notes.count {
             if notes[i].location.latitude == selectedLocation.latitude && notes[i].location.longitude == selectedLocation.longitude {
-                print("Updating note at selected location")
+                // Update existing note
                 notes[i].imageURL = imageURL
                 if let imageURLString = imageURL?.absoluteString {
                     updateNoteInFirestore(noteID: notes[i].id, noteText: notes[i].text, location: notes[i].location, locationName: notes[i].locationName, imageURL: imageURLString) { success in
@@ -902,16 +917,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                         }
                     }
                 }
+                return  // Exit the loop once the note is found and updated
             }
         }
+        // If code reaches here, no existing note was found to update
+        // You can decide whether to create a new note or not
     }
 
 
-
-
-
-    
-    
     
     
     
@@ -923,6 +936,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     func updateNotesLocationName(location: CLLocationCoordinate2D, newLocationName: String, completion: @escaping ([Note]) -> Void) {
         let maxDistance: CLLocationDistance = 15 // Adjust this value according to your requirements
         _ = GeoPoint(latitude: location.latitude, longitude: location.longitude)
+        
+        let actualLocation = selectedLocation ?? location  // Use the selected location if it exists, otherwise use the given location.
 
         if let userEmail = Auth.auth().currentUser?.email {
             db.collection("notes")
@@ -943,15 +958,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                     let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
                                     let distance = noteLocation.distance(from: userCurrentLocation)
                                     
+
                                     if distance <= maxDistance {
                                         locationExistsInNotes = true
                                         let noteId = doc.documentID
-                                        let noteText = data["note"] as? String ?? ""
-                                        let imageURL = data["imageURL"] as? String ?? ""
-
-                                        let updatedNote = Note(id: noteId, text: noteText, location: CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude), locationName: newLocationName, imageURL: URL(string: imageURL))
-                                        updatedNotes.append(updatedNote)
-                                        
                                         // Update Firestore document with the new location name
                                         self.db.collection("notes").document(noteId).updateData([
                                             "locationName": newLocationName
@@ -963,6 +973,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                             }
                                         }
                                     }
+
+                                    // ... (rest of the code remains the same)
+
                                 }
                             }
 
@@ -1157,23 +1170,34 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             CurrentPlace.image = image
             picker.dismiss(animated: true)
             
-            if let locationName = currentLocationName {
+            // Determine which location to use: selectedLocation or userLocation
+            var locationToUse: CLLocationCoordinate2D? = selectedLocation
+            if locationToUse == nil {
                 guard let userLocation = self.locationManager.location?.coordinate else {
                     print("User location not available yet")
                     return
                 }
-                
-                self.saveImageToFirestore(image: image, location: userLocation, locationName: locationName)
+                locationToUse = userLocation
+            }
+            
+            // Ensure locationToUse is not nil before proceeding
+            guard let location = locationToUse else {
+                print("Neither selected location nor user location is available.")
+                return
+            }
+            
+            if let locationName = currentLocationName {
+                // Save the image and update the notes
+                self.saveImageToFirestore(image: image, location: location, locationName: locationName)
                 DispatchQueue.main.async {
                     self.currentLocationName = locationName
                     self.locationNameLabel.text = locationName
                 }
                 
                 // Update notes with the new locationName
-                self.updateNotesLocationName(location: userLocation, newLocationName: locationName) { updatedNotes in
+                self.updateNotesLocationName(location: location, newLocationName: locationName) { updatedNotes in
                     // Perform any required operations with the updated notes here
                 }
-                
             } else {
                 // Show an alert to get the location name from the user
                 let alertController = UIAlertController(title: "Spot Name", message: "Please enter a name for this place:", preferredStyle: .alert)
@@ -1188,17 +1212,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                     self.currentLocationName = locationName
                     self.updateNotesCountLabel()
                     
-                    guard let userLocation = self.locationManager.location?.coordinate else {
-                        print("User location not available yet")
-                        return
-                    }
+                    // Save the image and update the notes
+                    self.saveImageToFirestore(image: image, location: location, locationName: locationName)
                     
-                    if let image = self.CurrentPlace.image {
-                        self.saveImageToFirestore(image: image, location: userLocation, locationName: locationName)
-                    } else {
-                        self.updateNotesLocationName(location: userLocation, newLocationName: locationName) { updatedNotes in
-                            // Perform any required operations with the updated notes here
-                        }
+                    // Update notes with the new locationName
+                    self.updateNotesLocationName(location: location, newLocationName: locationName) { updatedNotes in
+                        // Perform any required operations with the updated notes here
                     }
                 }
                 alertController.addAction(saveAction)
@@ -1214,6 +1233,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("No image selected.")
         }
     }
+
     
     
     
@@ -1242,15 +1262,21 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         // Add "Skip" action
         let skipAction = UIAlertAction(title: "Skip", style: .default) { _ in
-            guard let userLocation = self.locationManager.location?.coordinate else {
-                print("User location not available yet")
-                return
-            }
-            
-            self.updateNotesLocationName(location: userLocation, newLocationName: locationName) { updatedNotes in
-                // Perform any required operations with the updated notes here
+            if let selectedLocation = self.selectedLocation {
+                // Use the selected location if available
+                self.updateNotesLocationName(location: selectedLocation, newLocationName: locationName) { updatedNotes in
+                    // Perform any required operations with the updated notes here
+                }
+            } else if let userLocation = self.locationManager.location?.coordinate {
+                // Fallback to the user's current location
+                self.updateNotesLocationName(location: userLocation, newLocationName: locationName) { updatedNotes in
+                    // Perform any required operations with the updated notes here
+                }
+            } else {
+                print("Neither selected location nor user location is available.")
             }
         }
+
         
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
         
@@ -1273,9 +1299,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
     }
-
-    
-
    
     var hasProcessedLocationUpdate = false
 
@@ -1892,7 +1915,7 @@ extension HomeViewController: PlacesViewControllerDelegate {
         tabBarController?.selectedIndex = 0
         // Lookup the coordinate based on the location name from your data model
         if let locationCoordinate = lookupCoordinate(for: locationName) {
-            self.selectedLocation = locationCoordinate
+            self.selectedLocationName = locationName
         }
         
         LoadPlacesNotes(for: locationName)
