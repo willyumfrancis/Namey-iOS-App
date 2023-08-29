@@ -66,7 +66,8 @@
                             </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="fNi-de-tja"/>
-                        <color key="backgroundColor" red="0.81176470588235294" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                        <color key="backgroundColor" red="0.074509803921568626" green="0.98039215686274506" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                        <color key="tintColor" systemColor="labelColor"/>
                         <constraints>
                             <constraint firstItem="xW7-Aa-rRe" firstAttribute="top" secondItem="0HC-II-HLh" secondAttribute="bottom" constant="51" id="2vh-bO-29a"/>
                             <constraint firstItem="UgI-Zm-x2k" firstAttribute="leading" secondItem="fNi-de-tja" secondAttribute="leading" constant="136" id="IbO-J4-qkg"/>
@@ -162,7 +163,7 @@
                                 </connections>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Go meet some people!" textAlignment="natural" lineBreakMode="clip" baselineAdjustment="alignBaselines" minimumScaleFactor="0.5" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ja3-s1-LKd">
-                                <rect key="frame" x="51.000000000000014" y="132.33333333333334" width="161.33333333333337" height="19"/>
+                                <rect key="frame" x="51.000000000000014" y="132.33333333333334" width="163.33333333333337" height="19"/>
                                 <fontDescription key="fontDescription" name="Roboto-Bold" family="Roboto" pointSize="16"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -284,7 +285,7 @@
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" red="1" green="0.90980392156862744" blue="0.83137254901960778" alpha="0.0" colorSpace="calibratedRGB"/>
                         <color key="tintColor" systemColor="labelColor"/>
-                        <color key="barTintColor" red="0.47058823529411764" green="0.77254901960784317" blue="0.94509803921568625" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="barTintColor" red="0.074509803921568626" green="0.98039215686274506" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </tabBar>
                     <connections>
                         <segue destination="BYZ-38-t0r" kind="relationship" relationship="viewControllers" id="RmS-1k-ouZ"/>
@@ -342,6 +343,7 @@
                                         </connections>
                                     </button>
                                 </subviews>
+                                <color key="backgroundColor" red="0.054901960784313725" green="0.69803921568627447" blue="0.65490196078431373" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                 <constraints>
                                     <constraint firstItem="O3g-zk-oDJ" firstAttribute="top" secondItem="lpo-dt-eIF" secondAttribute="top" constant="108.00000000000001" id="1sA-dJ-Xnq"/>
                                     <constraint firstItem="O3g-zk-oDJ" firstAttribute="centerX" secondItem="lpo-dt-eIF" secondAttribute="centerX" id="CmV-1e-3IU"/>
@@ -355,7 +357,8 @@
                             </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="DoQ-QR-kf7"/>
-                        <color key="backgroundColor" red="0.81176470590000005" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                        <color key="backgroundColor" red="0.074509803921568626" green="0.98039215686274506" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                        <color key="tintColor" systemColor="labelColor"/>
                         <constraints>
                             <constraint firstItem="DoQ-QR-kf7" firstAttribute="bottom" secondItem="lpo-dt-eIF" secondAttribute="bottom" constant="297" id="8dp-5g-E3b"/>
                             <constraint firstItem="lpo-dt-eIF" firstAttribute="centerX" secondItem="U0F-iU-TzX" secondAttribute="centerX" id="99f-Zg-osW"/>
@@ -563,7 +566,8 @@
                             </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="E7a-q1-tMD"/>
-                        <color key="backgroundColor" red="0.81176470590000005" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                        <color key="backgroundColor" red="0.074509803921568626" green="0.98039215686274506" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                        <color key="tintColor" systemColor="labelColor"/>
                         <constraints>
                             <constraint firstItem="yrj-hr-eNC" firstAttribute="leading" secondItem="E7a-q1-tMD" secondAttribute="leading" constant="37" id="8Ug-dd-sC1"/>
                             <constraint firstItem="yrj-hr-eNC" firstAttribute="top" secondItem="E7a-q1-tMD" secondAttribute="top" constant="37" id="IJd-i3-MCb"/>

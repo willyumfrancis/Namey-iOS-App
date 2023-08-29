@@ -15,7 +15,7 @@ class MenuController: UITabBarController {
         
         
         // Customize the tabBar appearance
-        tabBar.backgroundColor = #colorLiteral(red: 0.4705882353, green: 0.7725490196, blue: 0.9450980392, alpha: 1)
+        tabBar.backgroundColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
         tabBar.layer.borderWidth = 2
         tabBar.layer.borderColor = UIColor.black.cgColor
         tabBar.clipsToBounds = true

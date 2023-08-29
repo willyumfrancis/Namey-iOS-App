@@ -328,10 +328,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         Progressbar.setProgress(progress, animated: true)
         
         if progress == 1.0 {
-            Progressbar.progressTintColor = #colorLiteral(red: 0.4705882353, green: 0.7725490196, blue: 0.9450980392, alpha: 1)
+            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
             
         } else {
-            Progressbar.progressTintColor = #colorLiteral(red: 0.4705882353, green: 0.7725490196, blue: 0.9450980392, alpha: 1)
+            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
             
         }
     }
@@ -347,7 +347,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         Progressbar?.clipsToBounds = true
 
         // Customize the progress tint and track color
-        let trackTintColor = #colorLiteral(red: 0.9450980392, green: 0.4705882353, blue: 0.4705882353, alpha: 1)  // red colors
+        let trackTintColor = #colorLiteral(red: 0.521568656, green: 0.1098039225, blue: 0.05098039284, alpha: 1)  // red colors
         Progressbar?.trackTintColor = trackTintColor
 
         if let progressBarHeight = Progressbar?.frame.height {
