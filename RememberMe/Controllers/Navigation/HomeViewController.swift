@@ -26,6 +26,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     //MARK: - OUTLETS
+    
     @IBOutlet weak var tableView: UITableView!
     //Current Place & Goal of People
     @IBOutlet weak var CurrentPlace: UIImageView!
@@ -200,42 +201,46 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     @IBAction func uploadImageButton(_ sender: UIButton) {
         print("Upload Image button pressed")
-           print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
-           print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
+        print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
+        print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
 
-           let alertController = UIAlertController(title: "Spot Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
-           alertController.addTextField()
+        let alertController = UIAlertController(title: "Spot Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
+        alertController.addTextField()
 
-           let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
-               guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
-                   print("Location name is empty.")
-                   return
-               }
-               
-               self.currentLocationName = locationName  // Update current location name
+        let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
+            guard let newLocationName = alertController.textFields?.first?.text, !newLocationName.isEmpty else {
+                print("Location name is empty.")
+                return
+            }
 
-               if let selectedLocation = self.selectedLocation, let selectedLocationName = self.selectedLocationName {
-                   // User had selected a location from PlacesViewController
-                   print("Using selected location")  // Debugging
-                   self.updateLocationNameLabel(location: selectedLocation)
-                   self.presentImagePicker(locationName: selectedLocationName)
-               } else if let currentLocation = self.locationManager.location?.coordinate {
-                   // No location was selected; use the current location
-                   print("Using current location")  // Debugging
-                   self.updateLocationNameLabel(location: currentLocation)
-                   self.presentImagePicker(locationName: locationName)
-               }
-               
-               self.updateNotesCountLabel()
-           }
-           
-           alertController.addAction(saveAction)
+            // Debugging
+            print("New Location Name: \(newLocationName)")
+            
+            self.currentLocationName = newLocationName  // Update current location name
 
-           let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-           alertController.addAction(cancelAction)
-           
-           self.present(alertController, animated: true)
-       }
+            if let selectedLocation = self.selectedLocation {
+                // User had selected a location from PlacesViewController
+                print("Using selected location")  // Debugging
+                self.updateLocationNameLabel(location: selectedLocation)
+                self.presentImagePicker(locationName: newLocationName)  // Use new location name
+            } else if let currentLocation = self.locationManager.location?.coordinate {
+                // No location was selected; use the current location
+                print("Using current location")  // Debugging
+                self.updateLocationNameLabel(location: currentLocation)
+                self.presentImagePicker(locationName: newLocationName)  // Use new location name
+            }
+
+            self.updateNotesCountLabel()
+        }
+
+        alertController.addAction(saveAction)
+
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        alertController.addAction(cancelAction)
+
+        self.present(alertController, animated: true)
+    }
+
     
 
     
@@ -828,16 +833,26 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             return
         }
         print("Updating imageURL for location: \(location.latitude), \(location.longitude)")
-
-
+        
         db.collection("notes")
             .whereField("user", isEqualTo: userEmail)
-            .whereField("location.latitude", isEqualTo: location.latitude)
-            .whereField("location.longitude", isEqualTo: location.longitude)
             .getDocuments { [weak self] querySnapshot, error in
-                // Rest of the code as before
+                if let error = error {
+                    print("Error getting documents: \(error)")
+                } else {
+                    for document in querySnapshot!.documents {
+                        let data = document.data()
+                        if let locationData = data["location"] as? [String: Double],
+                           locationData["latitude"] == location.latitude,
+                           locationData["longitude"] == location.longitude {
+                            // Update imageURL
+                            self?.updateImageURLForNote(document.documentID, newImageURL: imageURL)
+                        }
+                    }
+                }
             }
     }
+
 
     
     func updateImageURLForNote(_ documentID: String, newImageURL: URL) {
@@ -1065,7 +1080,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     func setDefaultImageIfNil() {
         if self.CurrentPlace.image == nil {
             DispatchQueue.main.async {
-                self.CurrentPlace.image = UIImage(named: "default_image")
+                self.CurrentPlace.image = UIImage(named: "jellydev")
             }
         }
     }
@@ -1103,6 +1118,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             
             guard let url = url else { return }
             
+            // Update currentLocationImageURL
+            self.currentLocationImageURL = url
             
             self.CurrentPlace.sd_setImage(with: url) { (image, error, cacheType, imageURL) in
                 if let error = error {
@@ -1111,6 +1128,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
+
 
     //Upload Image to Fire Storage
     func uploadImage(image: UIImage, location: CLLocationCoordinate2D, locationName: String, completion: @escaping (Result<URL, Error>) -> Void) {
@@ -1171,7 +1189,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             picker.dismiss(animated: true)
             
             // Determine which location to use: selectedLocation or userLocation
-            var locationToUse: CLLocationCoordinate2D? = selectedLocation
+            var locationToUse: CLLocationCoordinate2D? = selectedLocation  // Prefer using selectedLocation if available
             if locationToUse == nil {
                 guard let userLocation = self.locationManager.location?.coordinate else {
                     print("User location not available yet")
@@ -1186,9 +1204,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 return
             }
             
+            // Check if a location name has been selected or entered
             if let locationName = currentLocationName {
                 // Save the image and update the notes
                 self.saveImageToFirestore(image: image, location: location, locationName: locationName)
+                
+                // Update the UI and notes with the new locationName
                 DispatchQueue.main.async {
                     self.currentLocationName = locationName
                     self.locationNameLabel.text = locationName
@@ -1233,6 +1254,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("No image selected.")
         }
     }
+
 
     
     
@@ -1515,7 +1537,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let noteRef = db.collection("notes").document(noteID)
         
         let noteData: [String: Any] = [
-            "text": noteText,
+            "note": noteText,
             "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
             "locationName": locationName,
             "imageURL": imageURL,
@@ -1676,7 +1698,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                         }
 
                         DispatchQueue.main.async {
-                            print("Showing \(self?.notes.count ?? 0) notes based on location")
+//                            print("Showing \(self?.notes.count ?? 0) notes based on location")
                             self?.tableView.reloadData()
                             
                             self?.updateProgressBar()

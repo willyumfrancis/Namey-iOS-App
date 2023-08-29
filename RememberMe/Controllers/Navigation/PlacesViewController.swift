@@ -155,7 +155,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                             if let locationName = data["locationName"] as? String,
                                let locationData = data["location"] as? GeoPoint {
 
-                                print("Location Name: \(locationName)") // Debugging line
+//                                print("Location Name: \(locationName)") // Debugging line
 
                                 let location = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
                                 var imageURL: URL? = nil
@@ -166,7 +166,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
 
                                 let locationDataInstance = LocationData(name: locationName, location: location, imageURL: imageURL)
                                 
-                                print("Adding location \(locationName) to fetchedLocationsDict") // Debugging line
+//                                print("Adding location \(locationName) to fetchedLocationsDict") // Debugging line
                                 fetchedLocationsDict[locationName] = locationDataInstance // Use the name as a key to eliminate duplicates
                             } else {
                                 print("Failed to parse location data for document ID: \(doc.documentID)")
