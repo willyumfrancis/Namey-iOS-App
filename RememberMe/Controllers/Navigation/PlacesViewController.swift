@@ -60,6 +60,9 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
       let pageSize: Int = 5
       var notes: [Note] = []
     
+    let imageCache = NSCache<NSString, UIImage>()
+
+    
     @IBOutlet weak var tableView: UITableView!
     
     let db = Firestore.firestore()
@@ -265,36 +268,41 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
          return locations.count
      }
+    
+    let placeholderImage = UIImage(named: "jellydev")
      
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath) as! LocationCell
         let locationData = locations[indexPath.row]
         cell.locationNameLabel.text = locationData.name
-        
-        // Download and display image logic
-        let safeFileName = safeFileName(for: locationData.name)
-        let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
+
+        // Attempt to retrieve the image from the cache
+        let cacheKey = NSString(string: safeFileName(for: locationData.name))
+        if let cachedImage = imageCache.object(forKey: cacheKey) {
+            cell.locationImageView.image = cachedImage
+            return cell
+        }
+        cell.locationImageView.image = self.placeholderImage
+
+        // If not in cache, download it
+        let storageRef = Storage.storage().reference().child("location_images/\(safeFileName(for: locationData.name)).jpg")
         storageRef.downloadURL { (url, error) in
-            if let error = error {
-                print("Error getting download URL: \(error)")
-                return
-            }
-            
             guard let url = url else {
                 print("URL is nil")
                 return
             }
-            cell.locationImageView?.sd_setImage(with: url) { (image, error, cacheType, imageURL) in
-                if let error = error {
-                    print("Error loading image from URL: \(error)")
+
+            cell.locationImageView?.sd_setImage(with: url, placeholderImage: self.placeholderImage, options: .refreshCached) { (image, error, cacheType, imageURL) in
+                if let downloadedImage = image {
+                    // Cache the downloaded image
+                    self.imageCache.setObject(downloadedImage, forKey: cacheKey)
                 }
-                // Update table view layout after image is loaded
-                cell.setNeedsLayout()
             }
         }
-        
+
         return cell
     }
+
      
     //SWIPE TO DELETE FUNCTIONS
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
