@@ -199,36 +199,36 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     @IBAction func uploadImageButton(_ sender: UIButton) {
         print("Upload Image button pressed")
-
-        let alertController = UIAlertController(title: "Spot Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
-        alertController.addTextField()
-
-        let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
-            guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
-                print("Location name is empty.")
-                return
-            }
-
-            self.currentLocationName = locationName
-
-            // Update the location name label
-            if let selectedLocation = self.selectedLocation {
-                self.updateLocationNameLabel(location: selectedLocation)
-            } else if let currentLocation = self.locationManager.location?.coordinate {
-                self.updateLocationNameLabel(location: currentLocation)
-            }
-
-            self.updateNotesCountLabel()
-            self.presentImagePicker(locationName: locationName)
-        }
-        alertController.addAction(saveAction)
-
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-        alertController.addAction(cancelAction)
-
-        self.present(alertController, animated: true)
-    }
-
+           let alertController = UIAlertController(title: "Spot Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
+           alertController.addTextField()
+           
+           let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
+               guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
+                   print("Location name is empty.")
+                   return
+               }
+               
+               self.currentLocationName = locationName  // Update current location name
+               
+               // Use selectedLocation as source of truth, if available
+               if let selectedLocation = self.selectedLocation {
+                   self.updateLocationNameLabel(location: selectedLocation)
+                   self.presentImagePicker(locationName: locationName)
+               } else if let currentLocation = self.locationManager.location?.coordinate {
+                   self.updateLocationNameLabel(location: currentLocation)
+                   self.presentImagePicker(locationName: locationName)
+               }
+               
+               self.updateNotesCountLabel()
+           }
+           
+           alertController.addAction(saveAction)
+           
+           let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+           alertController.addAction(cancelAction)
+           
+           self.present(alertController, animated: true)
+       }
     
     //Goal (Star) Button
     @IBAction func goalButton(_ sender: UIButton) {
@@ -265,6 +265,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     @IBAction func SaveNote(_ sender: UIButton) {
         saveNote()
     }
+    
+    func lookupCoordinate(for locationName: String) -> CLLocationCoordinate2D? {
+        for note in self.notes {
+            if note.locationName == locationName {
+                return note.location
+            }
+        }
+        return nil
+    }
+
     
     
 
@@ -1877,13 +1887,17 @@ extension HomeViewController: UIScrollViewDelegate {
 }
 
 
-    extension HomeViewController: PlacesViewControllerDelegate {
-        func didSelectLocation(with locationName: String) {
-            tabBarController?.selectedIndex = 0
-            LoadPlacesNotes(for: locationName)
-            displayImage(locationName: locationName)
-
+extension HomeViewController: PlacesViewControllerDelegate {
+    func didSelectLocation(with locationName: String) {
+        tabBarController?.selectedIndex = 0
+        // Lookup the coordinate based on the location name from your data model
+        if let locationCoordinate = lookupCoordinate(for: locationName) {
+            self.selectedLocation = locationCoordinate
         }
+        
+        LoadPlacesNotes(for: locationName)
+        displayImage(locationName: locationName)
     }
+}
 
 

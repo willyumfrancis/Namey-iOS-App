@@ -30,10 +30,21 @@ func sanitizeString(_ string: String) -> String {
 
 // Existing safeFileName function (unchanged)
 func safeFileName(for locationName: String) -> String {
-    let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+    // Define the set of allowed characters
+    let allowedCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
+    
+    // Separate the original string into components based on the allowed characters
     let components = locationName.components(separatedBy: allowedCharacters.inverted)
-    return components.joined(separator: "_")
+    
+    // Join the components back together, replacing any disallowed characters with an empty string
+    let cleanedName = components.joined(separator: "")
+    
+    // Replace spaces with underscores
+    let finalName = cleanedName.replacingOccurrences(of: " ", with: "_")
+    
+    return finalName
 }
+
 
 
 class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate, UNUserNotificationCenterDelegate {
