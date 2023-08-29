@@ -729,48 +729,52 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
 
     
-    func updateImageURLForNote(_ documentID: String) {
-        // Get the noteRef for the given document ID
-        let noteRef = db.collection("notes").document(documentID)
+    func updateImageURLForNotesWithSameLocation(location: CLLocationCoordinate2D, newImageURL: URL) {
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            return
+        }
         
-        // Fetch the note data
-        noteRef.getDocument { (document, error) in
-            if let document = document, document.exists {
-                if let data = document.data(),
-                   let locationName = data["locationName"] as? String {
-                    // Use the logic for downloading the image to get the imageURL
-                    let safeFileName = self.safeFileName(for: locationName)
-                    let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
-                    
-                    storageRef.downloadURL { (url, error) in
-                        if let error = error {
-                            print("Error getting download URL: \(error)")
-                            return
-                        }
-                        
-                        guard let url = url else { return }
-                        
-                        // Update the imageURL for the note with the given document ID
-                        noteRef.updateData([
-                            "imageURL": url.absoluteString
-                        ]) { err in
-                            if let err = err {
-                                print("Error updating imageURL for document ID \(documentID): \(err)")
-                            } else {
+        db.collection("notes")
+            .whereField("user", isEqualTo: userEmail)
+            .getDocuments { querySnapshot, error in
+                if let e = error {
+                    print("There was an issue retrieving data from Firestore: \(e)")
+                } else {
+                    if let snapshotDocuments = querySnapshot?.documents {
+                        for doc in snapshotDocuments {
+                            let data = doc.data()
+                            
+                            guard let locationData = data["location"] as? GeoPoint else {
+                                print("Missing location data for document ID: \(doc.documentID)")
+                                continue
+                            }
+                            
+                            let noteLocation = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                            
+                            if noteLocation.latitude == location.latitude && noteLocation.longitude == location.longitude {
+                                // Update the imageURL for the note with the given document ID
+                                doc.reference.updateData([
+                                    "imageURL": newImageURL.absoluteString
+                                ]) { err in
+                                    if let err = err {
+                                        print("Error updating imageURL for document ID \(doc.documentID): \(err)")
+                                    } else {
+                                        print("Successfully updated imageURL for document ID \(doc.documentID)")
+                                    }
+                                }
                             }
                         }
+                    } else {
+                        print("No snapshot documents found")
                     }
-                } else {
-                    print("Error: Could not retrieve locationName or data is nil")
                 }
-            } else {
-                print("Error: Document does not exist or there was an error retrieving it")
             }
-        }
     }
+
     
     
-    func updateNotesWithImageURL(imageURL: URL?) {
+    func updateNotesImageURLGeoLocation(imageURL: URL?) {
             guard let userEmail = Auth.auth().currentUser?.email else {
                 print("User email not found")
                 return
@@ -858,7 +862,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     let distanceFilter: CLLocationDistance = 15
     
     func saveImageToFirestore(image: UIImage, location: CLLocationCoordinate2D, locationName: String) {
-        let actualLocation = selectedLocation ?? location  // Use the selected location if it exists, otherwise use the given location.
+        _ = selectedLocation ?? location  // Use the selected location if it exists, otherwise use the given location.
 
         let safeFileName = self.safeFileName(for: locationName)
         let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
@@ -1126,31 +1130,32 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
         
         storageRef.putFile(from: localFileURL, metadata: nil) { metadata, error in
-               if let error = error {
-                   completion(.failure(error))
-                   return
-               }
-               
-               storageRef.downloadURL { url, error in
-                   if let error = error {
-                       completion(.failure(error))
-                       return
-                   }
-                   
-                   guard let url = url else {
-                       completion(.failure(NSError(domain: "DownloadURLError", code: -1, userInfo: nil)))
-                       return
-                   }
-                   
-                   // Success: tell the completion handler
-                   completion(.success(url))
-
-                   DispatchQueue.main.async {
-                       // reloadData is being called on main thread as UI update should be done on main thread.
-                       self.tableView.reloadData()
-                   }
-               }
-           }
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            storageRef.downloadURL { url, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                guard let url = url else {
+                    completion(.failure(NSError(domain: "DownloadURLError", code: -1, userInfo: nil)))
+                    return
+                }
+                
+                // Success: tell the completion handler
+                completion(.success(url))
+                self.updateImageURLForNotesWithSameLocation(location: location, newImageURL: url)
+                
+                DispatchQueue.main.async {
+                    // reloadData is being called on main thread as UI update should be done on main thread.
+                    self.tableView.reloadData()
+                }
+            }
+        }
        }
     
     // Image Picker Delegate - Selection and Saving
@@ -1717,7 +1722,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             self?.currentLocationName = locationName
                             self?.fetchImageURLFor(locationName: locationName) { imageURL in
                                 self?.currentLocationImageURL = imageURL
-                                self?.updateNotesWithImageURL(imageURL: self?.currentLocationImageURL ?? nil)
+                                self?.updateNotesImageURLGeoLocation(imageURL: self?.currentLocationImageURL ?? nil)
                             }
                         }
                     }
