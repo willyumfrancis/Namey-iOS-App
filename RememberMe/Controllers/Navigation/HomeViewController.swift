@@ -203,7 +203,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
            print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
            print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
 
-           let alertController = UIAlertController(title: "Spot Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
+           let alertController = UIAlertController(title: "Location Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
            alertController.addTextField()
 
            let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
@@ -480,7 +480,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     
     func updateLocationNameLabel(location: CLLocationCoordinate2D) {
-        let locationName = fetchLocationNameFor(location: location) ?? "Some Spot"
+        let locationName = fetchLocationNameFor(location: location) ?? "New Place"
         locationNameLabel.text = "\(locationName)"
         print("Location name is \(locationName)")
         
