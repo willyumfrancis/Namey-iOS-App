@@ -33,17 +33,6 @@
                                     <segue destination="ujR-y2-ycv" kind="show" id="ffP-Rv-vHj"/>
                                 </connections>
                             </button>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="aU7-w8-BSZ">
-                                <rect key="frame" x="154" y="787" width="91" height="31"/>
-                                <fontDescription key="fontDescription" name="Optima-Italic" family="Optima" pointSize="16"/>
-                                <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
-                                <state key="normal" title="Skip for Now">
-                                    <color key="titleColor" red="0.074509803920000006" green="0.98039215690000003" blue="0.90196078430000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                </state>
-                                <connections>
-                                    <segue destination="BoO-Yj-oim" kind="show" identifier="HomeScreenSegue" id="4Xd-G2-y6G"/>
-                                </connections>
-                            </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Namie" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="0HC-II-HLh" colorLabel="IBBuiltInLabel-Red">
                                 <rect key="frame" x="92.333333333333329" y="248.99999999999997" width="208.33333333333337" height="85.666666666666657"/>
                                 <fontDescription key="fontDescription" name="Optima-Bold" family="Optima" pointSize="72"/>
@@ -73,8 +62,6 @@
                             <constraint firstItem="0HC-II-HLh" firstAttribute="centerX" secondItem="xW7-Aa-rRe" secondAttribute="centerX" id="iaN-mE-GRR"/>
                             <constraint firstItem="UgI-Zm-x2k" firstAttribute="top" secondItem="xW7-Aa-rRe" secondAttribute="bottom" constant="8" id="jZ4-xs-EhY"/>
                             <constraint firstItem="0HC-II-HLh" firstAttribute="top" secondItem="fNi-de-tja" secondAttribute="top" constant="146" id="nGj-WI-y4b"/>
-                            <constraint firstItem="fNi-de-tja" firstAttribute="bottom" secondItem="aU7-w8-BSZ" secondAttribute="bottom" id="v9H-nG-6al"/>
-                            <constraint firstItem="aU7-w8-BSZ" firstAttribute="leading" secondItem="fNi-de-tja" secondAttribute="leading" constant="154" id="yP4-Om-cIq"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="JfW-5W-IUG"/>
@@ -639,7 +626,7 @@
         </scene>
     </scenes>
     <inferredMetricsTieBreakers>
-        <segue reference="4Xd-G2-y6G"/>
+        <segue reference="aac-TS-kSO"/>
     </inferredMetricsTieBreakers>
     <resources>
         <image name="arrow.clockwise.circle.fill" catalog="system" width="128" height="123"/>
