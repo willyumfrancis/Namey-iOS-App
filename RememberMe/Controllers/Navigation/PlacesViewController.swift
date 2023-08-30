@@ -308,23 +308,28 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 print("URL is nil, will show placeholder image after 2 seconds.")
 
                 // Delay placeholder image by 2 seconds
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     // Check if the cell is still being used for the same data item before setting placeholder
-                    if cell.locationNameLabel.text == locationData.name {
-                        
-                        // Create a sub-image view for the placeholder image
-                        let placeholderImageView = UIImageView(image: strongSelf.placeholderImage)
-                        placeholderImageView.frame = cell.locationImageView.bounds
-                        placeholderImageView.contentMode = .scaleAspectFill
-                        placeholderImageView.clipsToBounds = true
-                        cell.locationImageView.addSubview(placeholderImageView)
-
-                        // Initially set scale to 0 (invisible)
-                        placeholderImageView.transform = CGAffineTransform(scaleX: 0, y: 0)
-                        
-                        // Unhide the image view and animate the scale back to original size
-                        UIView.animate(withDuration: 0.5, animations: {
-                            placeholderImageView.transform = CGAffineTransform.identity
+                       if cell.locationNameLabel.text == locationData.name {
+                           
+                           // Create a sub-image view for the placeholder image
+                           let placeholderImageView = UIImageView(image: self?.placeholderImage)
+                           
+                           // Move the placeholder image down by 20 pixels
+                           var newFrame = cell.locationImageView.bounds
+                           newFrame.origin.y += 20  // Adjust this value as needed
+                           placeholderImageView.frame = newFrame
+                           
+                           placeholderImageView.contentMode = .scaleAspectFit
+                           placeholderImageView.clipsToBounds = true
+                           cell.locationImageView.addSubview(placeholderImageView)
+                           
+                           // Initially set the scale to 0 (invisible)
+                           placeholderImageView.transform = CGAffineTransform(scaleX: 0, y: 0)
+                           
+                           // Unhide the image view and animate the scale back to original size
+                           UIView.animate(withDuration: 0.3, animations: {
+                               placeholderImageView.transform = CGAffineTransform.identity
                         })
                     }
                 }
