@@ -46,32 +46,64 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
 
 
-
+    @IBAction func toggleRecording(_ sender: UIButton) {
+        if isRecording {
+              stopRecordingAndTranscribeAudio()
+              sender.setTitle("Start Recording", for: .normal)
+          } else {
+              startRecording()
+              sender.setTitle("Stop Recording", for: .normal)
+          }
+          isRecording.toggle()
+      }
+    
     func stopRecordingAndTranscribeAudio() {
         print("Stopping recording.")
         audioRecorder.stop()
-
-        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
+        
+        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav")
         print("Audio file URL: \(audioFilename)")
-
+        
         let fileManager = FileManager.default
         if fileManager.fileExists(atPath: audioFilename.path) {
             print("File exists")
         } else {
             print("File does not exist")
         }
-
+        
         APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
-              switch result {
-              case .success(let transcription):
-                  DispatchQueue.main.async {
-                      self.createNewNoteWithTranscription(transcription)  // Function to save the transcription as a note
-                  }
-              case .failure(let error):
-                  print("Error transcribing audio: \(error)")
-              }
-          }
-      }
+            print("Inside transcribeAudio completion handler") // Debugging line
+
+            switch result {
+            case .success(let transcription):
+                print("Transcription successful: \(transcription)") // Debugging line
+
+                DispatchQueue.main.async {
+                    // Create a new note and add it to the notes array
+                    let newNote = Note(id: UUID().uuidString, text: transcription, location: self.currentLocation ?? CLLocationCoordinate2D(), locationName: "", imageURL: URL(string: ""))
+                    self.notes.append(newNote)
+                    
+                    // Update the UI to insert the new note into the table view
+                    self.tableView.beginUpdates()
+                    self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                    self.tableView.endUpdates()
+                    
+                    // Find the newly added cell and set it as the active cell
+                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                        self.activeNoteCell = newCell
+                        self.activeNoteCell?.note = newNote
+                        self.activeNoteCell?.noteTextField.text = transcription
+                        self.saveNote()  // Call the function to save the note
+                    }
+                }
+            case .failure(let error):
+                print("Error transcribing audio: \(error)") // Debugging line
+            }
+        }
+    }
+
+
 
 
 
