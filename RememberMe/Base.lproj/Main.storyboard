@@ -190,7 +190,7 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="bcf-Hp-n1G">
-                                <rect key="frame" x="225" y="425" width="45.666666666666742" height="35"/>
+                                <rect key="frame" x="225" y="425" width="45.666666666666686" height="35"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="45.666666666666629" id="79M-Dv-MoT"/>
                                 </constraints>
@@ -502,7 +502,7 @@
                                 <constraints>
                                     <constraint firstAttribute="height" constant="46" id="CkE-2e-3Jb"/>
                                 </constraints>
-                                <fontDescription key="fontDescription" name="Roboto-Bold" family="Roboto" pointSize="23"/>
+                                <fontDescription key="fontDescription" name="Optima-BoldItalic" family="Optima" pointSize="23"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>

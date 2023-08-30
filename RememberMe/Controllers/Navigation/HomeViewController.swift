@@ -79,8 +79,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
                 DispatchQueue.main.async {
                     // Create a new note and add it to the notes array
-                    let newNote = Note(id: UUID().uuidString, text: transcription, location: self.currentLocation ?? CLLocationCoordinate2D(), locationName: "", imageURL: URL(string: ""))
-                    self.notes.append(newNote)
+                    let newNote = Note(id: UUID().uuidString, text: transcription, location: self.selectedLocation ?? CLLocationCoordinate2D(), locationName: "", imageURL: URL(string: ""))
+                               self.notes.append(newNote)
                     
                     // Update the UI to insert the new note into the table view
                     self.tableView.beginUpdates()
@@ -275,22 +275,18 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
+            // Use the user's current location
+        guard let userLocation = locationManager.location?.coordinate else {
+               print("User location not available yet")
+               return
+            }
 
-        // Use the user's current location
-         guard let userLocation = locationManager.location?.coordinate else {
-             print("User location not available yet")
-             return
-         }
+            // Set the user's current location as the selected location
+            selectedLocation = userLocation
 
-         // Set the user's current location as the selected location
-         selectedLocation = userLocation
-
-         // Update the current location information
-         updateLocation(location: userLocation)
-
-         // Optionally, you could also refresh your UI to reflect this change
-         // ...
-     }
+            // Update the current location information
+            updateLocation(location: userLocation)
+        }
     
     func updateLocation(location: CLLocationCoordinate2D) {
         loadAndFilterNotes(for: location, goalRadius: 15.0)

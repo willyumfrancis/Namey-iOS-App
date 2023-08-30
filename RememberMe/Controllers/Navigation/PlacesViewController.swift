@@ -277,32 +277,77 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         let locationData = locations[indexPath.row]
         cell.locationNameLabel.text = locationData.name
 
-        // Attempt to retrieve the image from the cache
+        // Cancel any ongoing image download tasks when reusing the cell
+        cell.locationImageView.sd_cancelCurrentImageLoad()
+
+        // Remove any placeholder subviews from previous reuse
+        for subview in cell.locationImageView.subviews {
+            subview.removeFromSuperview()
+        }
+
+        // Use cached image if available
         let cacheKey = NSString(string: safeFileName(for: locationData.name))
         if let cachedImage = imageCache.object(forKey: cacheKey) {
             cell.locationImageView.image = cachedImage
             return cell
         }
-        cell.locationImageView.image = self.placeholderImage
 
-        // If not in cache, download it
+        // Download the image if it's not in cache
         let storageRef = Storage.storage().reference().child("location_images/\(safeFileName(for: locationData.name)).jpg")
-        storageRef.downloadURL { (url, error) in
-            guard let url = url else {
-                print("URL is nil")
-                return
-            }
+        storageRef.downloadURL { [weak self] (url, error) in
+            guard let strongSelf = self else { return }
 
-            cell.locationImageView?.sd_setImage(with: url, placeholderImage: self.placeholderImage, options: .refreshCached) { (image, error, cacheType, imageURL) in
-                if let downloadedImage = image {
-                    // Cache the downloaded image
-                    self.imageCache.setObject(downloadedImage, forKey: cacheKey)
+            if let url = url {
+                cell.locationImageView.sd_setImage(with: url, completed: { (image, error, cacheType, imageURL) in
+                    if let downloadedImage = image {
+                        // Cache the downloaded image
+                        strongSelf.imageCache.setObject(downloadedImage, forKey: cacheKey)
+                    }
+                })
+            } else {
+                print("URL is nil, will show placeholder image after 2 seconds.")
+
+                // Delay placeholder image by 2 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    // Check if the cell is still being used for the same data item before setting placeholder
+                    if cell.locationNameLabel.text == locationData.name {
+                        
+                        // Create a sub-image view for the placeholder image
+                        let placeholderImageView = UIImageView(image: strongSelf.placeholderImage)
+                        placeholderImageView.frame = cell.locationImageView.bounds
+                        placeholderImageView.contentMode = .scaleAspectFill
+                        placeholderImageView.clipsToBounds = true
+                        cell.locationImageView.addSubview(placeholderImageView)
+
+                        // Initially set scale to 0 (invisible)
+                        placeholderImageView.transform = CGAffineTransform(scaleX: 0, y: 0)
+                        
+                        // Unhide the image view and animate the scale back to original size
+                        UIView.animate(withDuration: 0.5, animations: {
+                            placeholderImageView.transform = CGAffineTransform.identity
+                        })
+                    }
                 }
             }
         }
 
         return cell
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
      
     //SWIPE TO DELETE FUNCTIONS
