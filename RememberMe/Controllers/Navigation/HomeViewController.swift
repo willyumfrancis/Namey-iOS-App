@@ -419,6 +419,21 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         averageSelectedLocationName = UserDefaults.standard.string(forKey: "averageSelectedLocationName")
     }
 
+    @objc func handleAppDidBecomeActive() {
+        print("App became active, updating location.")
+        
+        // Your code to update the location
+        guard let userLocation = locationManager.location?.coordinate else {
+            print("User location not available yet")
+            return
+        }
+
+        // Set the user's current location as the selected location
+        selectedLocation = userLocation
+
+        // Update the current location information
+        updateLocation(location: userLocation)
+    }
     
     
     // VIEWDIDLOAD BRO
@@ -427,6 +442,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         UNUserNotificationCenter.current().delegate = self
         requestNotificationAuthorization()
         checkNotificationSettings()
+        NotificationCenter.default.addObserver(self, selector: #selector(handleAppDidBecomeActive), name: NSNotification.Name("appDidBecomeActive"), object: nil)
+
         
         // Retrieve the stored goal number from UserDefaults
           let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
@@ -485,6 +502,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         navigationItem.rightBarButtonItem = goalButton
     }
     //ENDVIEWDIDLOAD
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     
     
     

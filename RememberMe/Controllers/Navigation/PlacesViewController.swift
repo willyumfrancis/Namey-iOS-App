@@ -308,7 +308,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 print("URL is nil, will show placeholder image after 2 seconds.")
 
                 // Delay placeholder image by 2 seconds
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     // Check if the cell is still being used for the same data item before setting placeholder
                     if cell.locationNameLabel.text == locationData.name {
                         // Create a sub-image view for the placeholder image
@@ -327,7 +327,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                         placeholderImageView.transform = CGAffineTransform(translationX: 0, y: placeholderImageView.frame.height)
 
                         // Animate the placeholder to slide up into its original position
-                        UIView.animate(withDuration: 0.3) {
+                        UIView.animate(withDuration: 1.5) {
                             placeholderImageView.transform = CGAffineTransform.identity
                         }
                     }
