@@ -4,7 +4,7 @@ class APIManager {
     static let shared = APIManager()
 
     func transcribeAudio(fileURL: URL, completion: @escaping (Result<String, Error>) -> Void) {
-        let serverURL = URL(string: "https://will-site-dc0779429fbc.herokuapp.com/transcribe")!
+        let serverURL = URL(string: "https://will-site-dc0779429fbc.herokuapp.com/transcribe_audio")!
         
         AF.upload(multipartFormData: { multipartFormData in
             multipartFormData.append(fileURL, withName: "audio")

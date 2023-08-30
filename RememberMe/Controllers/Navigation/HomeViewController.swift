@@ -19,9 +19,6 @@ import SDWebImage
 import UserNotifications
 import AVFoundation
 
-
-
-
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
     
     
@@ -48,14 +45,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     @IBAction func toggleRecording(_ sender: UIButton) {
         if isRecording {
-              stopRecordingAndTranscribeAudio()
-              sender.setTitle("Start Recording", for: .normal)
-          } else {
-              startRecording()
-              sender.setTitle("Stop Recording", for: .normal)
-          }
-          isRecording.toggle()
-      }
+               print("Stopping recording...")
+               stopRecordingAndTranscribeAudio()
+               sender.setImage(UIImage(systemName: "mic"), for: .normal)
+           } else {
+               print("Starting recording...")
+               startRecording()
+               sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
+           }
+           isRecording.toggle()
+       }
     
     func stopRecordingAndTranscribeAudio() {
         print("Stopping recording.")
