@@ -310,27 +310,26 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 // Delay placeholder image by 2 seconds
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     // Check if the cell is still being used for the same data item before setting placeholder
-                       if cell.locationNameLabel.text == locationData.name {
-                           
-                           // Create a sub-image view for the placeholder image
-                           let placeholderImageView = UIImageView(image: self?.placeholderImage)
-                           
-                           // Move the placeholder image down by 20 pixels
-                           var newFrame = cell.locationImageView.bounds
-                           newFrame.origin.y += 20  // Adjust this value as needed
-                           placeholderImageView.frame = newFrame
-                           
-                           placeholderImageView.contentMode = .scaleAspectFit
-                           placeholderImageView.clipsToBounds = true
-                           cell.locationImageView.addSubview(placeholderImageView)
-                           
-                           // Initially set the scale to 0 (invisible)
-                           placeholderImageView.transform = CGAffineTransform(scaleX: 0, y: 0)
-                           
-                           // Unhide the image view and animate the scale back to original size
-                           UIView.animate(withDuration: 0.3, animations: {
-                               placeholderImageView.transform = CGAffineTransform.identity
-                        })
+                    if cell.locationNameLabel.text == locationData.name {
+                        // Create a sub-image view for the placeholder image
+                        let placeholderImageView = UIImageView(image: strongSelf.placeholderImage)
+
+                        // Adjust the frame to be 20 pixels down
+                        var newFrame = cell.locationImageView.bounds
+                        newFrame.origin.y += 20
+                        placeholderImageView.frame = newFrame
+
+                        placeholderImageView.contentMode = .scaleAspectFit
+                        placeholderImageView.clipsToBounds = true
+                        cell.locationImageView.addSubview(placeholderImageView)
+
+                        // Initially move the placeholder image view down by its height
+                        placeholderImageView.transform = CGAffineTransform(translationX: 0, y: placeholderImageView.frame.height)
+
+                        // Animate the placeholder to slide up into its original position
+                        UIView.animate(withDuration: 0.3) {
+                            placeholderImageView.transform = CGAffineTransform.identity
+                        }
                     }
                 }
             }
@@ -338,6 +337,10 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
 
         return cell
     }
+
+
+
+
 
 
 
