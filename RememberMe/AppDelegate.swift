@@ -17,11 +17,30 @@ import OpenAI
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
   
+    //MARK: - Notification Stack
+
+    func requestNotificationAuthorization() {
+        print("Requesting notification authorization") // Debugging line
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
+            if granted {
+                print("Notification access granted")
+            } else {
+                print("Notification access denied")
+                if let error = error {
+                    print("Error requesting authorization: \(error)")
+                }
+            }
+        }
+    }
+
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         FirebaseApp.configure()
+        requestNotificationAuthorization()
+
         
         let db = Firestore.firestore()
         print(db)

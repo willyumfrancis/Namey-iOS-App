@@ -451,6 +451,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
               maxPeople = storedValue
           }
         
+        // Load notifiedRegions from UserDefaults
+               if let savedRegions = UserDefaults.standard.array(forKey: "notifiedRegions") as? [String] {
+                   notifiedRegions = Set(savedRegions)
+               }
+        
         // Setting up location manager
             locationManager.delegate = self
             locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -650,12 +655,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     var notifiedRegions = Set<String>()
 
     
-    func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-        print("Exited region: \(region.identifier)")
+    // When exiting a region, save to UserDefaults
+       func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
+           print("Exited region: \(region.identifier)")
 
-        // Remove the region's identifier from the set of notified regions
-        notifiedRegions.remove(region.identifier)
-    }
+           // Remove the region's identifier from the set of notified regions
+           notifiedRegions.remove(region.identifier)
+           UserDefaults.standard.set(Array(notifiedRegions), forKey: "notifiedRegions")
+       }
 
     
     func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
@@ -675,7 +682,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
 
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        if !notifiedRegions.contains(region.identifier), let circularRegion = region as? CLCircularRegion {
+         if !notifiedRegions.contains(region.identifier), let circularRegion = region as? CLCircularRegion {
             guard let locationName = fetchLocationNameFor(location: circularRegion.center) else {
                 print("Unable to fetch location name.")
                 return
@@ -688,8 +695,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             // Trigger the notification
             sendNotification(locationName: locationName, lastThreeNotes: lastThreeNotesText)
 
-            // Add the region's identifier to the set of notified regions
-            notifiedRegions.insert(region.identifier)
+             // Add the region's identifier to the set of notified regions
+                         notifiedRegions.insert(region.identifier)
+                         UserDefaults.standard.set(Array(notifiedRegions), forKey: "notifiedRegions")
+             
         }
     }
 
