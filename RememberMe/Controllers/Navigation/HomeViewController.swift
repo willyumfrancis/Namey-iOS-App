@@ -40,101 +40,98 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //FireBase Cloud Storage
     let db = Firestore.firestore()
     
-//    //MARK: - Whisper API
-//
-//    var isRecording = false // Add this property to keep track of recording state
-//
-//
-////
-//
-////    func stopRecordingAndTranscribeAudio() {
-////        print("Stopping recording.")
-////        audioRecorder.stop()
-////
-////        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
-////        print("Audio file URL: \(audioFilename)")
-////
-////        let fileManager = FileManager.default
-////        if fileManager.fileExists(atPath: audioFilename.path) {
-////            print("File exists")
-////        } else {
-////            print("File does not exist")
-////        }
-////
-////        APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
-////            switch result {
-////            case .success(let transcription):
-////                DispatchQueue.main.async {
-////                    self.showAlert(withTranscription: transcription)
-////                }
-////            case .failure(let error):
-////                print("Error transcribing audio: \(error)")
-////            }
-////        }
-////    }
-//
-//
-//
-//       func showAlert(withTranscription text: String) {
-//           let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:\n\n\(text)", preferredStyle: .alert)
-//           let okAction = UIAlertAction(title: "OK", style: .default)
-//           alertController.addAction(okAction)
-//           self.present(alertController, animated: true, completion: nil)
-//       }
-//
-//    var audioRecorder: AVAudioRecorder!
-//
-//    func startRecording() {
-//        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
-//        print("Starting recording. Audio filename: \(audioFilename)")
-//
-//        let settings: [String: Any] = [
-//            AVFormatIDKey: kAudioFormatLinearPCM,
-//            AVSampleRateKey: 44100,
-//            AVNumberOfChannelsKey: 1,
-//            AVLinearPCMBitDepthKey: 16,
-//            AVLinearPCMIsBigEndianKey: false,
-//            AVLinearPCMIsFloatKey: false
-//        ]
-//
-//        do {
-//            audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
-//            audioRecorder.record()
-//        } catch let error {
-//            print("Error starting recording: \(error)")
-//        }
-//    }
-//
-//
-//
-//
-//    func createNewNoteWithTranscription(_ transcription: String) {
-//        if let currentLocation = self.currentLocation {
-//            let emptyURL = URL(string: "")
-//            let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: "", imageURL: emptyURL)
-//            notes.append(newNote)
-//            selectedNote = newNote
-//
-//            DispatchQueue.main.async {
-//                self.tableView.beginUpdates()
-//                self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-//                self.tableView.endUpdates()
-//
-//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-//                    guard let self = self else { return }
-//                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
-//                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-//                        newCell.noteTextField.becomeFirstResponder()
-//                    }
-//                }
-//            }
-//        }
-//    }
-    
+    //MARK: - Whisper API
+
+    var isRecording = false // Add this property to keep track of recording state
 
 
+
+
+    func stopRecordingAndTranscribeAudio() {
+        print("Stopping recording.")
+        audioRecorder.stop()
+
+        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
+        print("Audio file URL: \(audioFilename)")
+
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: audioFilename.path) {
+            print("File exists")
+        } else {
+            print("File does not exist")
+        }
+
+        APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
+              switch result {
+              case .success(let transcription):
+                  DispatchQueue.main.async {
+                      self.createNewNoteWithTranscription(transcription)  // Function to save the transcription as a note
+                  }
+              case .failure(let error):
+                  print("Error transcribing audio: \(error)")
+              }
+          }
+      }
+
+
+
+       func showAlert(withTranscription text: String) {
+           let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:\n\n\(text)", preferredStyle: .alert)
+           let okAction = UIAlertAction(title: "OK", style: .default)
+           alertController.addAction(okAction)
+           self.present(alertController, animated: true, completion: nil)
+       }
+
+    var audioRecorder: AVAudioRecorder!
+
+    func startRecording() {
+        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
+        print("Starting recording. Audio filename: \(audioFilename)")
+
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: 44100,
+            AVNumberOfChannelsKey: 1,
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsFloatKey: false
+        ]
+
+        do {
+            audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
+            audioRecorder.record()
+        } catch let error {
+            print("Error starting recording: \(error)")
+        }
+    }
+
+
+
+
+    func createNewNoteWithTranscription(_ transcription: String) {
+        if let currentLocation = self.currentLocation {
+            let emptyURL = URL(string: "")
+            let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: "", imageURL: emptyURL)
+            notes.append(newNote)
+            selectedNote = newNote
+
+            DispatchQueue.main.async {
+                self.tableView.beginUpdates()
+                self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                self.tableView.endUpdates()
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                    guard let self = self else { return }
+                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                        newCell.noteTextField.becomeFirstResponder()
+                    }
+                }
+            }
+        }
+    }
     
-    
+
     //MARK: - VARIABLES & CONSTANTS
     
     var selectedLocationName: String?
@@ -656,6 +653,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let notesText = lastThreeNotes.joined(separator: ", ")
         content.body = "\(notesText)"
         content.categoryIdentifier = "notesCategory"
+        
+        //NEW SOUND HERE
         content.sound = UNNotificationSound.default
         
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
