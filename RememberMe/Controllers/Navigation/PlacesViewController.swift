@@ -291,6 +291,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             cell.locationImageView.image = cachedImage
             return cell
         }
+        
 
         // Download the image if it's not in cache
         let storageRef = Storage.storage().reference().child("location_images/\(safeFileName(for: locationData.name)).jpg")

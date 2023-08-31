@@ -84,18 +84,19 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
 
     
     func createAttributedString(from noteText: String) -> NSAttributedString {
-        let attributedString = NSMutableAttributedString(string: noteText)
-        
-        if let range = noteText.range(of: "-") {
-            let boldRange = NSRange(noteText.startIndex..<range.lowerBound, in: noteText)
-            let regularRange = NSRange(range.upperBound..<noteText.endIndex, in: noteText)
-            
-            attributedString.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 19), range: boldRange)
-            attributedString.addAttribute(.font, value: UIFont.systemFont(ofSize: 19), range: regularRange)
-        }
-        
-        return attributedString
-    }
+           let attributedString = NSMutableAttributedString(string: noteText)
+           if let range = noteText.range(of: "-") {
+               let boldRange = NSRange(noteText.startIndex..<range.lowerBound, in: noteText)
+               let regularRange = NSRange(range.upperBound..<noteText.endIndex, in: noteText)
+               attributedString.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 19), range: boldRange)
+               attributedString.addAttribute(.font, value: UIFont.systemFont(ofSize: 19), range: regularRange)
+           } else {
+               // If there's no hyphen, make sure the text appears as regular
+               let regularRange = NSRange(noteText.startIndex..<noteText.endIndex, in: noteText)
+               attributedString.addAttribute(.font, value: UIFont.systemFont(ofSize: 19), range: regularRange)
+           }
+           return attributedString
+       }
 
       
     func fetchNames() {

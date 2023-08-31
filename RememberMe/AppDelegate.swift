@@ -52,6 +52,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         NotificationCenter.default.post(name: NSNotification.Name("appDidBecomeActive"), object: nil)
     }
 
+    
+    
 
 
     // MARK: UISceneSession Lifecycle

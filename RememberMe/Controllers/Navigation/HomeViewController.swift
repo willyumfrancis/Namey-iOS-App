@@ -650,58 +650,49 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
-    //MARK: - NOTIFICATIONS
-    
+    // MARK: - NOTIFICATIONS
+
     var notifiedRegions = Set<String>()
 
-    
     // When exiting a region, save to UserDefaults
-       func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-           print("Exited region: \(region.identifier)")
+    func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
+        print("Exited region: \(region.identifier)")  // Debugging line
+        notifiedRegions.remove(region.identifier)
+        UserDefaults.standard.set(Array(notifiedRegions), forKey: "notifiedRegions")
+    }
 
-           // Remove the region's identifier from the set of notified regions
-           notifiedRegions.remove(region.identifier)
-           UserDefaults.standard.set(Array(notifiedRegions), forKey: "notifiedRegions")
-       }
-
-    
     func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
-        let radius: CLLocationDistance = 100 // Increase the radius
-        print("Setting up GeoFence at \(location) with radius \(radius)") // Debugging line
+        let radius: CLLocationDistance = 100
+        print("Setting up GeoFence at \(location) with radius \(radius)")  // Debugging line
         let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
         region.notifyOnEntry = true
         region.notifyOnExit = false
         locationManager.startMonitoring(for: region)
     }
 
-        
     func getLastThreeNotes(for locationName: String) -> [Note] {
         return Array(notes.filter { $0.locationName == locationName }.suffix(3))
     }
 
-
-
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-         if !notifiedRegions.contains(region.identifier), let circularRegion = region as? CLCircularRegion {
+        if !notifiedRegions.contains(region.identifier), let circularRegion = region as? CLCircularRegion {
             guard let locationName = fetchLocationNameFor(location: circularRegion.center) else {
-                print("Unable to fetch location name.")
+                print("Unable to fetch location name.")  // Debugging line
                 return
             }
+            
+            print("Entered region: \(locationName)")  // Debugging line
+            
             let lastThreeNotes = getLastThreeNotes(for: locationName)
-
-            // Convert Note objects to strings
             let lastThreeNotesText = lastThreeNotes.map { $0.text }
-
+            
             // Trigger the notification
             sendNotification(locationName: locationName, lastThreeNotes: lastThreeNotesText)
-
-             // Add the region's identifier to the set of notified regions
-                         notifiedRegions.insert(region.identifier)
-                         UserDefaults.standard.set(Array(notifiedRegions), forKey: "notifiedRegions")
-             
+            
+            notifiedRegions.insert(region.identifier)
+            UserDefaults.standard.set(Array(notifiedRegions), forKey: "notifiedRegions")
         }
     }
-
 
     func sendNotification(locationName: String, lastThreeNotes: [String]) {
         print("Sending notification for location: \(locationName)") // Debugging line
