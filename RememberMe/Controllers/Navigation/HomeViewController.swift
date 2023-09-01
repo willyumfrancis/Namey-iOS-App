@@ -542,6 +542,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
           if storedValue != 0 {
               maxPeople = storedValue
           }
+        // Pre-fetch images based on PlacesViewController's locations
+               for locationData in PlacesViewController.locations {
+                   print("HomeViewController is prefetching image for \(locationData.name)")  // Debugging line
+
+                   ImageCacheManager.shared.prefetchImage(for: locationData, completion: { _ in
+            })}
         
         // Load notifiedRegions from UserDefaults
                if let savedRegions = UserDefaults.standard.array(forKey: "notifiedRegions") as? [String] {

@@ -48,12 +48,12 @@ func safeFileName(for locationName: String) -> String {
 
 
 
-class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate, UNUserNotificationCenterDelegate {
+class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate, UNUserNotificationCenterDelegate, UITableViewDataSourcePrefetching {
 
     
       weak var delegate: PlacesViewControllerDelegate?
 
-      var locations: [LocationData] = []
+    static var locations: [LocationData] = []
       var fetchedLocationKeys: Set<String> = []
       let locationManager = CLLocationManager()
       var userLocation: CLLocation?
@@ -61,7 +61,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
       let pageSize: Int = 5
       var notes: [Note] = []
     
-    let imageCache = NSCache<NSString, UIImage>()
+    let imageCache = ImageCacheManager.shared.imageCache
 
     
     @IBOutlet weak var tableView: UITableView!
@@ -77,8 +77,43 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
 
     }
     
+    @objc(tableView:prefetchRowsAtIndexPaths:) func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
+            for indexPath in indexPaths {
+                let locationData = PlacesViewController.locations[indexPath.row]
+                prefetchImage(for: locationData)
+            }
+        }
+        
+        internal func prefetchImage(for locationData: LocationData) {
+            let cacheKey = NSString(string: safeFileName(for: locationData.name))
+            
+            // Check if image is already in cache
+            if imageCache.object(forKey: cacheKey) != nil {
+                return
+            }
+            
+            // Download the image if it's not in cache
+            let storageRef = Storage.storage().reference().child("location_images/\(safeFileName(for: locationData.name)).jpg")
+            
+            storageRef.downloadURL { [weak self] (url, error) in
+                guard let strongSelf = self else { return }
+                
+                if let url = url {
+                    SDWebImageDownloader.shared.downloadImage(with: url, completed: { (image, error, cacheType, imageURL) in
+                        if let downloadedImage = image {
+                            // Cache the downloaded image
+                            strongSelf.imageCache.setObject(downloadedImage, forKey: cacheKey)
+                            print("Prefetched and cached image for \(locationData.name)")  // Debugging line
+                        }
+                    })
+                }
+            }
+        }
+    
     override func viewDidLoad() {
             super.viewDidLoad()
+        tableView.prefetchDataSource = self
+
             
             let locationCellNib = UINib(nibName: "LocationCell", bundle: nil)
             tableView.register(locationCellNib, forCellReuseIdentifier: "LocationCell")
@@ -177,17 +212,19 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                             }
                         }
 
-                        self.locations = Array(fetchedLocationsDict.values).filter { locationData in
+                        PlacesViewController.locations = Array(fetchedLocationsDict.values).filter { locationData in
                             return locationData.name != ""
                         }
+                        print("PlacesViewController.locations has \(PlacesViewController.locations.count) items")  // Debugging line
 
-                        print("Filtered \(self.locations.count) unique locations from fetchedLocationsDict") // Debugging line
+
+                        print("Filtered \(PlacesViewController.locations.count) unique locations from fetchedLocationsDict") // Debugging line
                         
                         self.sortLocationsByDistance()
                         self.loadNextPage()
 
                         DispatchQueue.main.async {
-                            print("Reloaded table with \(self.locations.count) unique locations") // Debugging line
+                            print("Reloaded table with \(PlacesViewController.locations.count) unique locations") // Debugging line
                             self.tableView.reloadData()
                         }
                     } else {
@@ -204,7 +241,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     func sortLocationsByDistance() {
            guard let userLocation = userLocation else { return }
-           locations.sort { locationData1, locationData2 in
+        PlacesViewController.locations.sort { locationData1, locationData2 in
                return
                locationData1.location.distance(from: userLocation) < locationData2.location.distance(from: userLocation)
            }
@@ -261,7 +298,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     func loadNextPage() {
         let startIndex = currentPage * pageSize
-        let endIndex = min((currentPage + 1) * pageSize, locations.count)
+        let endIndex = min((currentPage + 1) * pageSize, PlacesViewController.locations.count)
         
         if startIndex < endIndex {
             currentPage += 1
@@ -272,15 +309,17 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-         return locations.count
+        return PlacesViewController.locations.count
      }
     
     let placeholderImage = UIImage(named: "jellydev")
      
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath) as! LocationCell
-        let locationData = locations[indexPath.row]
+        let locationData = PlacesViewController.locations[indexPath.row]
         cell.locationNameLabel.text = locationData.name
+        let cacheKey = NSString(string: safeFileName(for: locationData.name))
+
 
         // Cancel any ongoing image download tasks when reusing the cell
         cell.locationImageView.sd_cancelCurrentImageLoad()
@@ -289,14 +328,16 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         for subview in cell.locationImageView.subviews {
             subview.removeFromSuperview()
         }
+        // Use cached image directly from singleton
+               if let cachedImage = imageCache.object(forKey: cacheKey) {
+                   cell.locationImageView.image = cachedImage
+               } else {
+                   // Fallback in case image is not in cache
+                   cell.locationImageView.image = nil  // Or set to a placeholder image
+               }
 
-        // Use cached image if available
-        let cacheKey = NSString(string: safeFileName(for: locationData.name))
-        if let cachedImage = imageCache.object(forKey: cacheKey) {
-            cell.locationImageView.image = cachedImage
-            return cell
-        }
-        
+               return cell
+           
 
         // Download the image if it's not in cache
         let storageRef = Storage.storage().reference().child("location_images/\(safeFileName(for: locationData.name)).jpg")
@@ -367,7 +408,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     //SWIPE TO DELETE FUNCTIONS
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            let locationToDelete = locations[indexPath.row]
+            let locationToDelete = PlacesViewController.locations[indexPath.row]
             deleteLocationAndNotes(locationData: locationToDelete, indexPath: indexPath)
         }
     }
@@ -392,9 +433,9 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 print("Document successfully removed!")
                 
                 // Find the index of the location in the locations array
-                if let index = self.locations.firstIndex(where: { $0.name == locationData.name }) {
+                if let index = PlacesViewController.locations.firstIndex(where: { $0.name == locationData.name }) {
                     // If the location is found, remove it from the array
-                    self.locations.remove(at: index)
+                    PlacesViewController.locations.remove(at: index)
                     
                     // Update the table view if the deleted location was found in the locations array
                     self.tableView.deleteRows(at: [indexPath], with: .fade)
@@ -429,7 +470,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let selectedLocation = locations[indexPath.row]
+        let selectedLocation = PlacesViewController.locations[indexPath.row]
 
         // Calculate the average of the selected location's notes' coordinates
         var totalLatitude = 0.0
