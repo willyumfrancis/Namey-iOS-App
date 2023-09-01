@@ -37,6 +37,89 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //FireBase Cloud Storage
     let db = Firestore.firestore()
     
+    //MARK: - Swipe Right Expand Note
+    
+    func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let editAction = UIContextualAction(style: .normal, title: "Expand") { [weak self] (_, _, completionHandler) in
+            self?.editNoteAtIndexPath(indexPath)
+            completionHandler(true)
+        }
+        editAction.backgroundColor = .blue // Choose your color
+        let configuration = UISwipeActionsConfiguration(actions: [editAction])
+        return configuration
+    }
+
+    func editNoteAtIndexPath(_ indexPath: IndexPath) {
+        let note = notes[indexPath.row]
+        
+        // Create the alert controller
+        let alertController = UIAlertController(title: "Edit Note", message: "\n\n\n\n\n\n\n\n\n", preferredStyle: .alert)
+        alertController.view.backgroundColor = UIColor.lightGray // Set the background color
+        
+        // Create the text field
+        let textField = UITextView(frame: CGRect(x: 15, y: 55, width: 240, height: 210))
+        textField.font = UIFont.systemFont(ofSize: 20)
+        textField.text = note.text
+        textField.backgroundColor = UIColor.clear // Set the background to clear
+        
+        alertController.view.addSubview(textField)
+        
+        // Create the actions
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        
+        let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
+            if let updatedText = textField.text {
+                self.updateNoteAtIndexPath(indexPath, withText: updatedText)
+            }
+        }
+        
+        // Add the actions
+        alertController.addAction(cancelAction)
+        alertController.addAction(saveAction)
+        
+        // Present the alert controller
+        self.present(alertController, animated: true, completion: {
+            textField.becomeFirstResponder()
+        })
+    }
+
+
+
+
+
+    func updateNoteAtIndexPath(_ indexPath: IndexPath, withText updatedText: String) {
+        let note = notes[indexPath.row]
+        let locationToSave = note.location // Use the existing location
+        
+        getLocationName(from: locationToSave) { locationName in
+            let locationNameToSave: String
+
+            // Use the existing location name
+            locationNameToSave = note.locationName
+            
+            let imageURLToSave = note.imageURL?.absoluteString ?? ""
+            
+            self.saveNoteToFirestore(noteId: note.id, noteText: updatedText, location: locationToSave, locationName: locationNameToSave, imageURL: imageURLToSave) { [weak self] success in
+                if success {
+                    print("Note saved successfully")
+                    
+                    // Update the local notes array
+                    self?.notes[indexPath.row].text = updatedText
+                    
+                    // Reload the table view
+                    DispatchQueue.main.async {
+                        self?.tableView.reloadRows(at: [indexPath], with: .automatic)
+                    }
+                } else {
+                    print("Error saving note")
+                }
+            }
+        }
+    }
+
+
+
+    
     //MARK: - Whisper API
 
     var isRecording = false // Add this property to keep track of recording state
@@ -169,6 +252,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     //MARK: - VARIABLES & CONSTANTS
     
+    var expandedNotes: Set<String> = []
     var selectedLocationName: String?
     var selectedLocation: CLLocationCoordinate2D? //Necessary?
     var notesFromAverageLocation: [Note] = []
