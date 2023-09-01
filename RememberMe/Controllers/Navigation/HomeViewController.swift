@@ -72,15 +72,15 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
             print("Inside transcribeAudio completion handler") // Debugging line
-
+            
             switch result {
             case .success(let transcription):
                 print("Transcription successful: \(transcription)") // Debugging line
-
+                
                 DispatchQueue.main.async {
                     // Create a new note and add it to the notes array
                     let newNote = Note(id: UUID().uuidString, text: transcription, location: self.selectedLocation ?? CLLocationCoordinate2D(), locationName: "", imageURL: URL(string: ""))
-                               self.notes.append(newNote)
+                    self.notes.append(newNote)
                     
                     // Update the UI to insert the new note into the table view
                     self.tableView.beginUpdates()
@@ -98,11 +98,15 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 }
             case .failure(let error):
                 print("Error transcribing audio: \(error)") // Debugging line
+                DispatchQueue.main.async {
+                    // Show alert to user
+                    let alert = UIAlertController(title: "Transcription Failed", message: "Sorry, we couldn't transcribe your audio. Please try again.", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self.present(alert, animated: true, completion: nil)
+                }
             }
         }
     }
-
-
 
 
 
@@ -473,7 +477,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 
         tableView.dragDelegate = self
         tableView.dropDelegate = self
-        tableView.dragInteractionEnabled = true
+        tableView.dragInteractionEnabled = false
         
         
         //Apparance of App//
@@ -1097,7 +1101,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
             
             // Add a delay before setting the default image
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                 self.setDefaultImageIfNil()
             }
         }
@@ -1294,12 +1298,17 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
                 imagePickerController.sourceType = .camera
                 self.present(imagePickerController, animated: true, completion: nil)
+                self.updateUI(withLocationName: locationName) // Update the UI
+
+                
             }
         }
         let libraryAction = UIAlertAction(title: "Choose from Library", style: .default) { _ in
             if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
                 imagePickerController.sourceType = .photoLibrary
                 self.present(imagePickerController, animated: true, completion: nil)
+                self.updateUI(withLocationName: locationName) // Update the UI
+
             }
         }
         
