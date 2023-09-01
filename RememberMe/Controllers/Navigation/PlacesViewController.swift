@@ -72,6 +72,9 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
+        tableView.reloadData()
+
+
     }
     
     override func viewDidLoad() {
