@@ -1309,11 +1309,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 // Use the selected location if available
                 self.updateNotesLocationName(location: selectedLocation, newLocationName: locationName) { updatedNotes in
                     // Perform any required operations with the updated notes here
+                    self.updateUI(withLocationName: locationName) // Update the UI
                 }
             } else if let userLocation = self.locationManager.location?.coordinate {
                 // Fallback to the user's current location
                 self.updateNotesLocationName(location: userLocation, newLocationName: locationName) { updatedNotes in
                     // Perform any required operations with the updated notes here
+                    self.updateUI(withLocationName: locationName) // Update the UI
                 }
             } else {
                 print("Neither selected location nor user location is available.")
