@@ -11,9 +11,7 @@ class MenuController: UITabBarController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        
-        
+    
         // Customize the tabBar appearance
         tabBar.backgroundColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
         tabBar.layer.borderWidth = 2

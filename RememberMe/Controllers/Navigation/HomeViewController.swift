@@ -44,7 +44,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             self?.editNoteAtIndexPath(indexPath)
             completionHandler(true)
         }
-        editAction.backgroundColor = .blue // Choose your color
+        editAction.backgroundColor = #colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1) // Choose your color
         let configuration = UISwipeActionsConfiguration(actions: [editAction])
         return configuration
     }
@@ -54,10 +54,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         // Create the alert controller
         let alertController = UIAlertController(title: "Edit Note", message: "\n\n\n\n\n\n\n\n\n", preferredStyle: .alert)
-        alertController.view.backgroundColor = UIColor.lightGray // Set the background color
+        alertController.view.layer.cornerRadius = 15
+
+        alertController.view.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1) // Set the background color
+        alertController.view.tintColor = UIColor.black  // Replace UIColor.red with your desired color
+
         
         // Create the text field
-        let textField = UITextView(frame: CGRect(x: 15, y: 55, width: 240, height: 210))
+        let textField = UITextView(frame: CGRect(x: 15, y: 55, width: 240, height: 240))
         textField.font = UIFont.systemFont(ofSize: 20)
         textField.text = note.text
         textField.backgroundColor = UIColor.clear // Set the background to clear
