@@ -543,6 +543,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
               maxPeople = storedValue
           }
         
+        var notifiedRegions = Set<String>() // Declare at class level
+
+        
+        
         // Load notifiedRegions from UserDefaults
                if let savedRegions = UserDefaults.standard.array(forKey: "notifiedRegions") as? [String] {
                    notifiedRegions = Set(savedRegions)
@@ -744,13 +748,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     // MARK: - NOTIFICATIONS
 
-    var notifiedRegions = Set<String>()
-
     // When exiting a region, save to UserDefaults
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
         print("Exited region: \(region.identifier)")  // Debugging line
-        notifiedRegions.remove(region.identifier)
-        UserDefaults.standard.set(Array(notifiedRegions), forKey: "notifiedRegions")
     }
 
     func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
@@ -760,6 +760,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         region.notifyOnEntry = true
         region.notifyOnExit = false
         locationManager.startMonitoring(for: region)
+        print("GeoFence setup complete.") // Debugging line
     }
 
     func getLastThreeNotes(for locationName: String) -> [Note] {
@@ -767,23 +768,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
 
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        if !notifiedRegions.contains(region.identifier), let circularRegion = region as? CLCircularRegion {
-            guard let locationName = fetchLocationNameFor(location: circularRegion.center) else {
-                print("Unable to fetch location name.")  // Debugging line
-                return
-            }
-            
-            print("Entered region: \(locationName)")  // Debugging line
-            
-            let lastThreeNotes = getLastThreeNotes(for: locationName)
-            let lastThreeNotesText = lastThreeNotes.map { $0.text }
-            
-            // Trigger the notification
-            sendNotification(locationName: locationName, lastThreeNotes: lastThreeNotesText)
-            
-            notifiedRegions.insert(region.identifier)
-            UserDefaults.standard.set(Array(notifiedRegions), forKey: "notifiedRegions")
-        }
+        print("Entered region: \(region.identifier)")  // Debugging line
+        
+        let lastThreeNotes = getLastThreeNotes(for: region.identifier)
+        let lastThreeNotesText = lastThreeNotes.map { $0.text }
+        
+        // Trigger the notification
+        sendNotification(locationName: region.identifier, lastThreeNotes: lastThreeNotesText)
     }
 
     func sendNotification(locationName: String, lastThreeNotes: [String]) {
@@ -795,7 +786,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         content.body = "\(notesText)"
         content.categoryIdentifier = "notesCategory"
         
-        //NEW SOUND HERE
+        // NEW SOUND HERE
         content.sound = UNNotificationSound.default
         
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
@@ -827,8 +818,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     func setupNotificationCategory() {
         print("Setting up notification category") // Debugging line
-        let viewLastFiveNotesAction = UNNotificationAction(identifier: "viewLastFiveNotes", title: "View all notes", options: [.foreground])
-        let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastFiveNotesAction], intentIdentifiers: [], options: [])
+        let viewLastThreeNotesAction = UNNotificationAction(identifier: "viewLastThreeNotes", title: "View last three notes", options: [.foreground])
+        let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastThreeNotesAction], intentIdentifiers: [], options: [])
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 
@@ -869,7 +860,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
 
     
-    func updateImageURLForNotesWithSameLocation(location: CLLocationCoordinate2D, newImageURL: URL) {
+    func updateImageURLForNotesWithSameLocation(location: CLLocationCoordinate2D, locationName: String, newImageURL: URL) {
+        print("Attempting to update imageURL for notes at location: \(location), locationName: \(locationName)")
+        
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
             return
@@ -885,14 +878,19 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                         for doc in snapshotDocuments {
                             let data = doc.data()
                             
-                            guard let locationData = data["location"] as? GeoPoint else {
+                            guard let noteLocationData = data["location"] as? GeoPoint else {
                                 print("Missing location data for document ID: \(doc.documentID)")
                                 continue
                             }
                             
-                            let noteLocation = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                            guard let noteLocationName = data["locationName"] as? String else {
+                                print("Missing locationName data for document ID: \(doc.documentID)")
+                                continue
+                            }
                             
-                            if noteLocation.latitude == location.latitude && noteLocation.longitude == location.longitude {
+                            let noteLocation = CLLocationCoordinate2D(latitude: noteLocationData.latitude, longitude: noteLocationData.longitude)
+                            
+                            if (noteLocation.latitude == location.latitude && noteLocation.longitude == location.longitude) || noteLocationName == locationName {
                                 // Update the imageURL for the note with the given document ID
                                 doc.reference.updateData([
                                     "imageURL": newImageURL.absoluteString
@@ -911,6 +909,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 }
             }
     }
+
 
     
     
@@ -1288,8 +1287,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 
                 // Success: tell the completion handler
                 completion(.success(url))
-                self.updateImageURLForNotesWithSameLocation(location: location, newImageURL: url)
-                
+                self.updateImageURLForNotesWithSameLocation(location: location, locationName: locationName, newImageURL: url)
+
                 DispatchQueue.main.async {
                     // reloadData is being called on main thread as UI update should be done on main thread.
                     self.tableView.reloadData()
@@ -1400,23 +1399,26 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
         
-        // Add "Skip" action
-        let skipAction = UIAlertAction(title: "Skip", style: .default) { _ in
-            if let selectedLocation = self.selectedLocation {
-                // Use the selected location if available
-                self.updateNotesLocationName(location: selectedLocation, newLocationName: locationName) { updatedNotes in
-                    // Perform any required operations with the updated notes here
-                    self.updateUI(withLocationName: locationName) // Update the UI
-                }
-            } else if let userLocation = self.locationManager.location?.coordinate {
-                // Fallback to the user's current location
-                self.updateNotesLocationName(location: userLocation, newLocationName: locationName) { updatedNotes in
-                    // Perform any required operations with the updated notes here
-                    self.updateUI(withLocationName: locationName) // Update the UI
-                }
-            } else {
-                print("Neither selected location nor user location is available.")
-            }
+        // Updated "Skip" action
+         let skipAction = UIAlertAction(title: "Skip", style: .default) { _ in
+             print("Skip action triggered.")
+             if let selectedLocation = self.selectedLocation {
+                 // Use the selected location if available
+                 self.updateNotesLocationName(location: selectedLocation, newLocationName: locationName) { updatedNotes in
+                     // Perform any required operations with the updated notes here
+                     self.updateUI(withLocationName: locationName) // Update the UI
+                     self.downloadAndDisplayImage(locationName: locationName) // Retain the associated image
+                 }
+             } else if let userLocation = self.locationManager.location?.coordinate {
+                 // Fallback to the user's current location
+                 self.updateNotesLocationName(location: userLocation, newLocationName: locationName) { updatedNotes in
+                     // Perform any required operations with the updated notes here
+                     self.updateUI(withLocationName: locationName) // Update the UI
+                     self.downloadAndDisplayImage(locationName: locationName) // Retain the associated image
+                 }
+             } else {
+                 print("Neither selected location nor user location is available.")
+             }
         }
 
         
