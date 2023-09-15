@@ -18,6 +18,7 @@ import FirebaseStorage
 import SDWebImage
 import UserNotifications
 import AVFoundation
+import CoreHaptics
 
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
     
@@ -28,14 +29,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     @IBOutlet weak var CurrentPlace: UIImageView!
     @IBOutlet weak var Progressbar: UIProgressView!
     @IBOutlet weak var SaveButtonLook: UIButton!
-    @IBOutlet weak var NewNameLook: UIButton!
     @IBOutlet weak var LocationButtonOutlet: UIButton!
     
+    @IBOutlet weak var NewNoteOutlet: UIButton!
     @IBOutlet weak var locationNameLabel: UILabel!
     @IBOutlet weak var notesCountLabel: UILabel!
     
     //FireBase Cloud Storage
     let db = Firestore.firestore()
+    
+    
     
     //MARK: - Swipe Right Expand Note
     
@@ -367,18 +370,65 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
-            // Use the user's current location
-        guard let userLocation = locationManager.location?.coordinate else {
-               print("User location not available yet")
-               return
-            }
-
-            // Set the user's current location as the selected location
-            selectedLocation = userLocation
-
-            // Update the current location information
-            updateLocation(location: userLocation)
+        // Fetch nearest location and set as current location
+               getNearestLocation { (nearestLocation, nearestLocationName) in
+                   self.currentLocation = nearestLocation
+                   self.currentLocationName = nearestLocationName
+                   self.updateLocation(location: nearestLocation)
+               }
+           }
+    
+    func getNearestLocation(completion: @escaping (CLLocationCoordinate2D, String) -> Void) {
+        guard let userLocation = locationManager.location else {
+            print("User location not available yet")
+            return
         }
+        
+        var nearestNote: Note?
+        var smallestDistance: CLLocationDistance = Double.greatestFiniteMagnitude
+        
+        for note in notes {
+            let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
+            let distance = userLocation.distance(from: noteLocation)
+            
+            if distance < smallestDistance {
+                smallestDistance = distance
+                nearestNote = note
+            }
+        }
+        
+        if let nearestNote = nearestNote {
+            completion(nearestNote.location, nearestNote.locationName)
+        } else {
+            print("No nearby note found")
+        }
+    }
+    
+    func createNewNoteWithNewLocation() {
+        if let currentLocation = self.currentLocation {
+            let emptyURL = URL(string: "")
+            let userDefinedLocationName = currentLocationName ?? ""
+            let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: userDefinedLocationName, imageURL: emptyURL)
+            notes.append(newNote)
+            selectedNote = newNote
+
+            DispatchQueue.main.async {
+                self.tableView.beginUpdates()
+                self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                self.tableView.endUpdates()
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                    guard let self = self else { return }
+                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                        newCell.noteTextField.becomeFirstResponder()
+                    }
+                }
+            }
+        }
+    }
+
+
     
     func updateLocation(location: CLLocationCoordinate2D) {
         loadAndFilterNotes(for: location, goalRadius: 15.0)
@@ -408,30 +458,29 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     //Create New Name
     @IBAction func NewNote(_ sender: UIButton) {
-            if let currentLocation = self.currentLocation {
-                let emptyURL = URL(string: "")
-                let userDefinedLocationName = currentLocationName ?? ""  // Fetch user-defined location name
-                let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: userDefinedLocationName, imageURL: emptyURL)  // Use currentLocation and userDefinedLocationName
-                notes.append(newNote)
-                selectedNote = newNote
+        if let currentLocation = self.currentLocation {
+              let emptyURL = URL(string: "")
+              let userDefinedLocationName = currentLocationName ?? ""  // Fetch user-defined location name
+              let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: userDefinedLocationName, imageURL: emptyURL)  // Use currentLocation and userDefinedLocationName
+              notes.append(newNote)
+              selectedNote = newNote
 
-                DispatchQueue.main.async {
-                    self.tableView.beginUpdates()
-                    self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                    self.tableView.endUpdates()
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                        guard let self = self else { return }
-                        if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                           let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                            newCell.noteTextField.becomeFirstResponder()
-                        }
-                    }
-                }
-            }
-        }
+              DispatchQueue.main.async {
+                  self.tableView.beginUpdates()
+                  self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                  self.tableView.endUpdates()
+                  
+                  DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                      guard let self = self else { return }
+                      if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                         let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                          newCell.noteTextField.becomeFirstResponder()
+                      }
+                  }
+              }
+          }
+      }
 
-    
     
     
     //MARK: - Appearance
@@ -552,6 +601,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                    notifiedRegions = Set(savedRegions)
                }
         
+        // Add a long-press gesture to the NewNote button
+               let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+               longPress.minimumPressDuration = 0.5 // half a second
+        NewNoteOutlet.addGestureRecognizer(longPress)
+               
+        
         // Setting up location manager
             locationManager.delegate = self
             locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -574,10 +629,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         //Apparance of App//
         
-        NewNameLook.layer.cornerRadius = 12
-        NewNameLook.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
-        NewNameLook.layer.borderWidth = 3
-        NewNameLook.layer.borderColor = UIColor.black.cgColor
+        NewNoteOutlet.layer.cornerRadius = 12
+        NewNoteOutlet.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
+        NewNoteOutlet.layer.borderWidth = 3
+        NewNoteOutlet.layer.borderColor = UIColor.black.cgColor
         
         SaveButtonLook.layer.cornerRadius = 12
         SaveButtonLook.backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
@@ -603,6 +658,37 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         navigationItem.rightBarButtonItem = goalButton
     }
     //ENDVIEWDIDLOAD
+    
+    @objc func handleLongPress(_ sender: UILongPressGestureRecognizer) {
+        if sender.state == .began {
+            // Provide haptic feedback
+            let impactFeedbackgenerator = UIImpactFeedbackGenerator(style: .heavy)
+            impactFeedbackgenerator.impactOccurred()
+            
+            // Button press-in animation
+            UIView.animate(withDuration: 0.1, animations: {
+                self.NewNoteOutlet.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+            }) { (_) in
+                // Shake animation
+                let shake = CABasicAnimation(keyPath: "position")
+                shake.duration = 0.07
+                shake.repeatCount = 4
+                shake.autoreverses = true
+                shake.fromValue = NSValue(cgPoint: CGPoint(x: self.NewNoteOutlet.center.x - 10, y: self.NewNoteOutlet.center.y))
+                shake.toValue = NSValue(cgPoint: CGPoint(x: self.NewNoteOutlet.center.x + 10, y: self.NewNoteOutlet.center.y))
+                self.NewNoteOutlet.layer.add(shake, forKey: "position")
+                
+                // Button press-out animation
+                UIView.animate(withDuration: 0.1) {
+                    self.NewNoteOutlet.transform = CGAffineTransform(scaleX: 1, y: 1)
+                }
+                
+                // Your existing functionality for creating a new location
+                print("Long press detected, creating a new location")
+                self.createNewNoteWithNewLocation()
+            }
+        }
+    }
     
     deinit {
         NotificationCenter.default.removeObserver(self)
@@ -649,9 +735,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             notesCountLabel.text = labelText
         }
     }
-
-
-
 
     
     //MARK: - POP-UPS
@@ -1483,14 +1566,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         // Stop updating the location to conserve battery and resources
         locationManager.stopUpdatingLocation()
     }
-
-
-
-
-
-    
-    
-    
     
     //END LOCATION STUFF
     private func setupRoundedImageView() {
@@ -1817,9 +1892,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
     }
     
-
-
-    
 //MARK: - LOAD PLACES VIEW CONTROLLER DATA
     func LoadPlacesNotes(for locationName: String) {
         print("loadPlacesNotes called")
@@ -1878,9 +1950,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 }
             }
     }
-
-
-
 
 
     func fetchImageURLFor(locationName: String, completion: @escaping (URL?) -> Void) {

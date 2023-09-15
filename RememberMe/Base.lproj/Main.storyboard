@@ -237,7 +237,7 @@
                     <connections>
                         <outlet property="CurrentPlace" destination="E2I-xx-41M" id="t5P-hn-gIm"/>
                         <outlet property="LocationButtonOutlet" destination="2Qx-UH-TeP" id="i0o-wX-3sv"/>
-                        <outlet property="NewNameLook" destination="oX5-B4-FmA" id="0yV-Zh-UL1"/>
+                        <outlet property="NewNoteOutlet" destination="oX5-B4-FmA" id="0yV-Zh-UL1"/>
                         <outlet property="Progressbar" destination="qT4-kL-fdE" id="dv4-j2-w4N"/>
                         <outlet property="SaveButtonLook" destination="lmQ-DZ-jTj" id="Jta-fD-gzv"/>
                         <outlet property="locationNameLabel" destination="pBH-KN-QLt" id="lEw-nF-Qz4"/>
