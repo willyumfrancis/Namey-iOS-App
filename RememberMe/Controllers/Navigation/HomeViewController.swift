@@ -19,6 +19,7 @@ import SDWebImage
 import UserNotifications
 import AVFoundation
 
+
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
     
     
@@ -29,9 +30,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     @IBOutlet weak var Progressbar: UIProgressView!
     @IBOutlet weak var SaveButtonLook: UIButton!
     @IBOutlet weak var NewNameLook: UIButton!
+    @IBOutlet weak var Header: UILabel!
     @IBOutlet weak var LocationButtonOutlet: UIButton!
     
     @IBOutlet weak var locationNameLabel: UILabel!
+    
     @IBOutlet weak var notesCountLabel: UILabel!
     
     //FireBase Cloud Storage
@@ -48,17 +51,17 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let configuration = UISwipeActionsConfiguration(actions: [editAction])
         return configuration
     }
-
+    
     func editNoteAtIndexPath(_ indexPath: IndexPath) {
         let note = notes[indexPath.row]
         
         // Create the alert controller
         let alertController = UIAlertController(title: "Edit Note", message: "\n\n\n\n\n\n\n\n\n", preferredStyle: .alert)
         alertController.view.layer.cornerRadius = 15
-
+        
         alertController.view.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1) // Set the background color
         alertController.view.tintColor = UIColor.black  // Replace UIColor.red with your desired color
-
+        
         
         // Create the text field
         let textField = UITextView(frame: CGRect(x: 15, y: 55, width: 240, height: 240))
@@ -86,18 +89,18 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             textField.becomeFirstResponder()
         })
     }
-
-
-
-
-
+    
+    
+    
+    
+    
     func updateNoteAtIndexPath(_ indexPath: IndexPath, withText updatedText: String) {
         let note = notes[indexPath.row]
         let locationToSave = note.location // Use the existing location
         
         getLocationName(from: locationToSave) { locationName in
             let locationNameToSave: String
-
+            
             // Use the existing location name
             locationNameToSave = note.locationName
             
@@ -120,28 +123,27 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
-
-
+    
+    
+    
     
     //MARK: - Whisper API
-
+    
     var isRecording = false // Add this property to keep track of recording state
-
-
-
+    
+    
     @IBAction func toggleRecording(_ sender: UIButton) {
         if isRecording {
-               print("Stopping recording...")
-               stopRecordingAndTranscribeAudio()
-               sender.setImage(UIImage(systemName: "mic"), for: .normal)
-           } else {
-               print("Starting recording...")
-               startRecording()
-               sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
-           }
-           isRecording.toggle()
-       }
+            print("Stopping recording...")
+            stopRecordingAndTranscribeAudio()
+            sender.setImage(UIImage(systemName: "mic"), for: .normal)
+        } else {
+            print("Starting recording...")
+            startRecording()
+            sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
+        }
+        isRecording.toggle()
+    }
     
     func stopRecordingAndTranscribeAudio() {
         print("Stopping recording.")
@@ -156,6 +158,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         } else {
             print("File does not exist")
         }
+        
+        print(audioFilename)
         
         APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
             print("Inside transcribeAudio completion handler") // Debugging line
@@ -194,22 +198,22 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
-
-
-       func showAlert(withTranscription text: String) {
-           let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:\n\n\(text)", preferredStyle: .alert)
-           let okAction = UIAlertAction(title: "OK", style: .default)
-           alertController.addAction(okAction)
-           self.present(alertController, animated: true, completion: nil)
-       }
-
+    
+    
+    
+    func showAlert(withTranscription text: String) {
+        let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:\n\n\(text)", preferredStyle: .alert)
+        let okAction = UIAlertAction(title: "OK", style: .default)
+        alertController.addAction(okAction)
+        self.present(alertController, animated: true, completion: nil)
+    }
+    
     var audioRecorder: AVAudioRecorder!
-
+    
     func startRecording() {
         let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
         print("Starting recording. Audio filename: \(audioFilename)")
-
+        
         let settings: [String: Any] = [
             AVFormatIDKey: kAudioFormatLinearPCM,
             AVSampleRateKey: 44100,
@@ -218,7 +222,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             AVLinearPCMIsBigEndianKey: false,
             AVLinearPCMIsFloatKey: false
         ]
-
+        
         do {
             audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
             audioRecorder.record()
@@ -226,22 +230,22 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("Error starting recording: \(error)")
         }
     }
-
-
-
-
+    
+    
+    
+    
     func createNewNoteWithTranscription(_ transcription: String) {
         if let currentLocation = self.currentLocation {
             let emptyURL = URL(string: "")
             let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: "", imageURL: emptyURL)
             notes.append(newNote)
             selectedNote = newNote
-
+            
             DispatchQueue.main.async {
                 self.tableView.beginUpdates()
                 self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
                 self.tableView.endUpdates()
-
+                
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                     guard let self = self else { return }
                     if let newRowIndexPath = self.tableView.indexPathForLastRow,
@@ -253,7 +257,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
     
-
+    
     //MARK: - VARIABLES & CONSTANTS
     
     var expandedNotes: Set<String> = []
@@ -262,6 +266,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     var notesFromAverageLocation: [Note] = []
     var isLocationNameManuallySet = false  // Add this variable to keep track of user's manual input
 
+    
+    
     var averageSelectedLocation: CLLocationCoordinate2D? {
         didSet {
             if !isLocationNameManuallySet {  // Only update if the name was not manually set
@@ -275,7 +281,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
+    
     var averageSelectedLocationName: String? {
         didSet {
             if !isLocationNameManuallySet {  // Only update if the name was not manually set
@@ -285,9 +291,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
-
-
+    
+    
+    
     
     var currentLocationName: String?
     var currentLocationImageURL: URL?
@@ -302,13 +308,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     var locationUpdateTimer: Timer?
     
     
+    
+    
     var notesLoaded = false
     
     var userLocation: CLLocationCoordinate2D?
-
+    
     
     
     var notes: [Note] = []
+    
     var authStateListenerHandle: AuthStateDidChangeListenerHandle?
     var sliderValueLabel: UILabel!
     var activeNoteCell: NoteCell?
@@ -320,44 +329,44 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     @IBAction func uploadImageButton(_ sender: UIButton) {
         print("Upload Image button pressed")
-           print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
-           print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
-
-           let alertController = UIAlertController(title: "Location Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
-           alertController.addTextField()
-
-           let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
-               guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
-                   print("Location name is empty.")
-                   return
-               }
-               
-               self.currentLocationName = locationName  // Update current location name
-
-               if let selectedLocation = self.selectedLocation, let selectedLocationName = self.selectedLocationName {
-                   // User had selected a location from PlacesViewController
-                   print("Using selected location")  // Debugging
-                   self.updateLocationNameLabel(location: selectedLocation)
-                   self.presentImagePicker(locationName: selectedLocationName)
-               } else if let currentLocation = self.locationManager.location?.coordinate {
-                   // No location was selected; use the current location
-                   print("Using current location")  // Debugging
-                   self.updateLocationNameLabel(location: currentLocation)
-                   self.presentImagePicker(locationName: locationName)
-               }
-               
-               self.updateNotesCountLabel()
-           }
-           
-           alertController.addAction(saveAction)
-
-           let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-           alertController.addAction(cancelAction)
-           
-           self.present(alertController, animated: true)
-       }
+        print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
+        print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
+        
+        let alertController = UIAlertController(title: "Location Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
+        alertController.addTextField()
+        
+        let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
+            guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
+                print("Location name is empty.")
+                return
+            }
+            
+            self.currentLocationName = locationName  // Update current location name
+            
+            if let selectedLocation = self.selectedLocation, let selectedLocationName = self.selectedLocationName {
+                // User had selected a location from PlacesViewController
+                print("Using selected location")  // Debugging
+                self.updateLocationNameLabel(location: selectedLocation)
+                self.presentImagePicker(locationName: selectedLocationName)
+            } else if let currentLocation = self.locationManager.location?.coordinate {
+                // No location was selected; use the current location
+                print("Using current location")  // Debugging
+                self.updateLocationNameLabel(location: currentLocation)
+                self.presentImagePicker(locationName: locationName)
+            }
+            
+            self.updateNotesCountLabel()
+        }
+        
+        alertController.addAction(saveAction)
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        alertController.addAction(cancelAction)
+        
+        self.present(alertController, animated: true)
+    }
     
-
+    
     
     //Goal (Star) Button
     @IBAction func goalButton(_ sender: UIButton) {
@@ -367,25 +376,26 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton) {
-            // Use the user's current location
-        guard let userLocation = locationManager.location?.coordinate else {
-               print("User location not available yet")
-               return
-            }
+        // Use the user's current location
+           guard let userLocation = locationManager.location?.coordinate else {
+                  print("User location not available yet")
+                  return
+               }
 
-            // Set the user's current location as the selected location
-            selectedLocation = userLocation
+               // Set the user's current location as the selected location
+               selectedLocation = userLocation
 
-            // Update the current location information
-            updateLocation(location: userLocation)
-        }
+               // Update the current location information
+               updateLocation(location: userLocation)
+           }
+       
+       func updateLocation(location: CLLocationCoordinate2D) {
+           loadAndFilterNotes(for: location, goalRadius: 15.0)
+           displayImage(location: location)
+           updateNotesCountLabel()
+           averageSelectedLocation = location
+       }
     
-    func updateLocation(location: CLLocationCoordinate2D) {
-        loadAndFilterNotes(for: location, goalRadius: 15.0)
-        displayImage(location: location)
-        updateNotesCountLabel()
-        averageSelectedLocation = location
-    }
 
 
     //MARK: - SAVE AND NEW NOTE CREATION
@@ -403,7 +413,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         return nil
     }
 
-    
     
 
     //Create New Name
@@ -523,9 +532,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         // Set the user's current location as the selected location
         selectedLocation = userLocation
 
-        // Update the current location information
-        updateLocation(location: userLocation)
-    }
+            }
     
     
     // VIEWDIDLOAD BRO
@@ -535,13 +542,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         requestNotificationAuthorization()
         checkNotificationSettings()
         NotificationCenter.default.addObserver(self, selector: #selector(handleAppDidBecomeActive), name: NSNotification.Name("appDidBecomeActive"), object: nil)
-
         
         // Retrieve the stored goal number from UserDefaults
           let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
           if storedValue != 0 {
               maxPeople = storedValue
           }
+        
+
         
         var notifiedRegions = Set<String>() // Declare at class level
 
@@ -1599,10 +1607,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                         if let noteIndex = self?.notes.firstIndex(where: { $0.id == noteId }) {
                             self?.notes[noteIndex].text = noteText
                             DispatchQueue.main.async {
-                                self?.tableView.reloadData()
+//                                self?.tableView.reloadData()
                                 self?.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
                                 self?.updateProgressBar()
                                 self?.updateLocationNameLabel(location: locationToSave)
+
                             }
                         }
                     } else {

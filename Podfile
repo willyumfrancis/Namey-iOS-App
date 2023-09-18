@@ -13,6 +13,9 @@ pod 'SDWebImage'
 pod 'OpenAI'
 pod 'SwiftKeychainWrapper'
 pod 'Alamofire'
+pod 'Firebase/Database'
+
+
 
 
 

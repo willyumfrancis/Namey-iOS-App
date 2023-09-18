@@ -344,25 +344,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         return cell
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
      
     //SWIPE TO DELETE FUNCTIONS
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
