@@ -1547,7 +1547,6 @@ func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegio
     }
 
     // Location Manager Delegate
-    // Location Manager Delegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         print("Location Manager Delegate - didUpdateLocations called") // Debugging
         
