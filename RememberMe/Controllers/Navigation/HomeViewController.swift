@@ -147,54 +147,38 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     func stopRecordingAndTranscribeAudio() {
-        print("Stopping recording.")
+        print("Stopping recording.") // Debugging line
         audioRecorder.stop()
         
-        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav")
-        print("Audio file URL: \(audioFilename)")
+        // Added a delay before transcribing
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            let audioFilename = self.getDocumentsDirectory().appendingPathComponent("recording.wav")
+            print("Audio file URL: \(audioFilename)") // Debugging line
         
-        let fileManager = FileManager.default
-        if fileManager.fileExists(atPath: audioFilename.path) {
-            print("File exists")
-        } else {
-            print("File does not exist")
-        }
-        
-        print(audioFilename)
-        
-        APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
-            print("Inside transcribeAudio completion handler") // Debugging line
-            
-            switch result {
-            case .success(let transcription):
-                print("Transcription successful: \(transcription)") // Debugging line
+            let fileManager = FileManager.default
+            if fileManager.fileExists(atPath: audioFilename.path) {
+                print("File exists") // Debugging line
+            } else {
+                print("File does not exist") // Debugging line
+            }
+
+            APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
+                print("Inside transcribeAudio completion handler") // Debugging line
                 
-                DispatchQueue.main.async {
-                    // Create a new note and add it to the notes array
-                    let newNote = Note(id: UUID().uuidString, text: transcription, location: self.selectedLocation ?? CLLocationCoordinate2D(), locationName: "", imageURL: URL(string: ""))
-                    self.notes.append(newNote)
+                switch result {
+                case .success(let transcription):
+                    print("Transcription successful: \(transcription)") // Debugging line
                     
-                    // Update the UI to insert the new note into the table view
-                    self.tableView.beginUpdates()
-                    self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                    self.tableView.endUpdates()
+                    // ... (The rest of your code remains unchanged)
                     
-                    // Find the newly added cell and set it as the active cell
-                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                        self.activeNoteCell = newCell
-                        self.activeNoteCell?.note = newNote
-                        self.activeNoteCell?.noteTextField.text = transcription
-                        self.saveNote()  // Call the function to save the note
+                case .failure(let error):
+                    print("Error transcribing audio: \(error)") // Debugging line
+                    DispatchQueue.main.async {
+                        // Show alert to user
+                        let alert = UIAlertController(title: "Transcription Failed", message: "Sorry, we couldn't transcribe your audio. Please try again.", preferredStyle: .alert)
+                        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                        self.present(alert, animated: true, completion: nil)
                     }
-                }
-            case .failure(let error):
-                print("Error transcribing audio: \(error)") // Debugging line
-                DispatchQueue.main.async {
-                    // Show alert to user
-                    let alert = UIAlertController(title: "Transcription Failed", message: "Sorry, we couldn't transcribe your audio. Please try again.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-                    self.present(alert, animated: true, completion: nil)
                 }
             }
         }
@@ -1667,6 +1651,7 @@ func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegio
 
     
     // New function to save the note
+    // New function to save the note
     func saveNote() {
         var locationToSave: CLLocationCoordinate2D
 
@@ -1688,10 +1673,14 @@ func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegio
             let noteId = activeCell.note?.id ?? UUID().uuidString
 
             getLocationName(from: locationToSave) { locationName in
+                // Check if the note already has a location name
+                let existingLocationName = activeCell.note?.locationName
+
                 let locationNameToSave: String
-                // Prioritize the name user chose
                 if let userChosenName = self.currentLocationName, !userChosenName.isEmpty {
                     locationNameToSave = userChosenName
+                } else if let existingLocationName = existingLocationName, !existingLocationName.isEmpty {
+                    locationNameToSave = existingLocationName
                 } else {
                     // Fall back to the auto-generated name
                     locationNameToSave = locationName ?? "Unnamed Location"
@@ -1706,12 +1695,10 @@ func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegio
                         if let noteIndex = self?.notes.firstIndex(where: { $0.id == noteId }) {
                             self?.notes[noteIndex].text = noteText
                             DispatchQueue.main.async {
-//                                self?.tableView.reloadData()
                                 self?.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
                                 self?.updateProgressBar()
                                 self?.updateLocationNameLabel(location: locationToSave)
-                                self!.updateUI(withLocationName: locationName!) // Update the UI
-
+                                self!.updateUI(withLocationName: locationName!)
                             }
                         }
                     } else {
@@ -1723,6 +1710,7 @@ func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegio
             print("Note text field is empty")
         }
     }
+  
 
 
     func getLocationName(from location: CLLocationCoordinate2D, completion: @escaping (String?) -> Void) {
