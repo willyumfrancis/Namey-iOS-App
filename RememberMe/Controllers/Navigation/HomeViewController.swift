@@ -160,39 +160,46 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
            print("Recording state changed to: \(isRecording)")
        }
 
-       func stopRecordingAndTranscribeAudio() {
-           print("Inside stopRecordingAndTranscribeAudio function.")
-           
-           // Stop the recording
-           audioRecorder.stop()
-           
-           // Cancel any previous recognition task if it's running
-           recognitionTask?.cancel()
-           recognitionTask = nil
-           
-           let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav")
-           print("Audio file URL: \(audioFilename)")
-           
-           let recognizer = SFSpeechRecognizer()
-           let request = SFSpeechURLRecognitionRequest(url: audioFilename)
-           
-           recognitionTask = recognizer?.recognitionTask(with: request, resultHandler: { (result, error) in
-               if let error = error {
-                   print("There was an error: \(error)")
-                   return
-               }
-               
-               guard let result = result else {
-                   print("No result.")
-                   return
-               }
-               
-               if result.isFinal {
-                   print("Transcription: \(result.bestTranscription.formattedString)")
-                   self.createNewNoteWithTranscription(result.bestTranscription.formattedString)
-               }
-           })
-       }
+    func stopRecordingAndTranscribeAudio() {
+        print("Inside stopRecordingAndTranscribeAudio function.")
+        
+        // Stop the recording
+        audioRecorder.stop()
+        
+        // Cancel any previous recognition task if it's running
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        
+        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav")
+        print("Audio file URL: \(audioFilename)")
+        
+        let recognizer = SFSpeechRecognizer()
+        if recognizer?.isAvailable == false {
+            print("Speech recognition not available.")
+            return
+        }
+        
+        let request = SFSpeechURLRecognitionRequest(url: audioFilename)
+        
+        recognitionTask = recognizer?.recognitionTask(with: request, resultHandler: { (result, error) in
+            if let error = error {
+                print("There was an error: \(error)")
+                self.recognitionTask?.cancel()
+                self.recognitionTask = nil
+                return
+            }
+            
+            guard let result = result else {
+                print("No result.")
+                return
+            }
+            
+            if result.isFinal {
+                print("Transcription: \(result.bestTranscription.formattedString)")
+                self.createNewNoteWithTranscription(result.bestTranscription.formattedString)
+            }
+        })
+    }
 
        func startRecording() {
            print("Inside startRecording function.")
