@@ -763,43 +763,44 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     // MARK: - NOTIFICATIONS
     
-    func setupClosestThreeGeofences(currentLocation: CLLocation) {
-        print("Setting up geofences for closest three locations.") // Debugging line
+    func setupClosestFifteenGeofences(currentLocation: CLLocation) {
+        print("Setting up geofences for closest fifteen locations.") // Debugging line
 
-        // Debugging line to check if we have any notes at all
-        print("Total available notes: \(notes.count)")
+           // Debugging line to check if we have any notes at all
+           print("Total available notes: \(notes.count)")
 
-        let sortedNotes = notes.sorted {
-            let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
-            let location2 = CLLocation(latitude: $1.location.latitude, longitude: $1.location.longitude)
-            return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
-        }
+           let sortedNotes = notes.sorted {
+               let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
+               let location2 = CLLocation(latitude: $1.location.latitude, longitude: $1.location.longitude)
+               return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
+           }
 
-        let closestNotes = Array(sortedNotes.prefix(3))
+           let closestNotes = Array(sortedNotes.prefix(15))
 
-        // Debugging line to check if closestNotes actually contains notes
-        print("Closest notes count: \(closestNotes.count)")
+           // Debugging line to check if closestNotes actually contains notes
+           print("Closest notes count: \(closestNotes.count)")
 
-        for note in closestNotes {
-            let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
-            setupGeoFence(location: coordinate, identifier: note.locationName)
-        }
+           for note in closestNotes {
+               let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
+               setupGeoFence(location: coordinate, identifier: note.locationName)
+           }
 
-        print("Geofences for closest three locations set up.") // Debugging line
+           print("Geofences for closest fifteen locations set up.") // Debugging line
+       }
+    
+
+   
+// When exiting a region, remove it from the list of notified regions
+func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
+    print("Exited region: \(region.identifier)")  // Debugging line
+    
+    // Remove from notified regions
+    notifiedRegions.remove(region.identifier)
+
+    if let circularRegion = region as? CLCircularRegion {
+        print("Exited circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")  // Debugging line
     }
-
-    // When exiting a region, save to UserDefaults
-    func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-        print("Exited region: \(region.identifier)")  // Debugging line
-
-        // Remove from notified regions
-        notifiedRegions.remove(region.identifier)
-
-        if let circularRegion = region as? CLCircularRegion {
-            print("Exited circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")  // Debugging line
-        }
-    }
-
+}
 
 
     func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
@@ -825,11 +826,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         print("Entered region: \(region.identifier)")  // Debugging line
 
-        // Check if a notification has already been sent for this region
-        if notifiedRegions.contains(region.identifier) {
-            print("Already notified for this region. Skipping.")  // Debugging line
-            return
-        }
+//        // Check if a notification has already been sent for this region
+//        if notifiedRegions.contains(region.identifier) {
+//            print("Already notified for this region. Skipping.")  // Debugging line
+//            return
+//        }
 
         if let circularRegion = region as? CLCircularRegion {
             print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")  // Debugging line
@@ -853,7 +854,31 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         locationManager.requestWhenInUseAuthorization()
     }
 
+    // Add a dictionary to keep track of last sent time for each location
+    var lastNotificationSentTime: [String: Date] = [:]
+
     func sendNotification(locationName: String, lastThreeNotes: [String]) {
+        print("Preparing to send notification for location: \(locationName)") // Debugging line
+        
+        // Check if locationName and lastThreeNotes are not empty
+           if locationName.isEmpty || lastThreeNotes.isEmpty {
+               print("Either the location name or the last three notes are empty. Skipping notification.") // Debugging line
+               return
+           }
+
+        // Check for minimum time interval before sending next notification for the same location
+        if let lastTime = lastNotificationSentTime[locationName] {
+            let currentTime = Date()
+            let timeInterval = currentTime.timeIntervalSince(lastTime)
+            if timeInterval < 60 {  // 60 seconds as a rate limit
+                print("Skipping notification for \(locationName) due to rate limiting.") // Debugging line
+                return
+            }
+        }
+
+        // Update the last sent time for this location
+        lastNotificationSentTime[locationName] = Date()
+
         print("Sending notification for location: \(locationName)") // Debugging line
         let content = UNMutableNotificationContent()
         content.title = "Near \(locationName)"
@@ -872,6 +897,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
+
+
 
     func requestNotificationAuthorization() {
         print("Requesting notification authorization") // Debugging line
@@ -1304,8 +1331,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         storageRef.downloadURL { (url, error) in
             if let error = error {
-                print("Error getting download URL: \(error)")
-                return
+               return
             }
             
             guard let url = url else { return }
@@ -1558,7 +1584,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 15.0)
 
         print("Setting up closest three geofences.") // Debugging
-        setupClosestThreeGeofences(currentLocation: newLocation)
+        setupClosestFifteenGeofences(currentLocation: newLocation)
     }
 
 
