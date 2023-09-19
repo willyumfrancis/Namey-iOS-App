@@ -20,6 +20,7 @@ import UserNotifications
 import AVFoundation
 
 
+
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
     
     
@@ -298,7 +299,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     var currentLocationName: String?
     var currentLocationImageURL: URL?
     
-    private let locationManager = CLLocationManager()
+    private var locationManager = CLLocationManager()
     var currentLocation: CLLocationCoordinate2D?
     var selectedNote: Note?
     
@@ -534,38 +535,46 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         selectedLocation = userLocation
 
             }
-    
+    var notifiedRegions = Set<String>() // Declare at class level
+
     
     // VIEWDIDLOAD BRO
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        // Only one instance of setting UNUserNotificationCenter delegate is needed
         UNUserNotificationCenter.current().delegate = self
+
         requestNotificationAuthorization()
         checkNotificationSettings()
+        
         NotificationCenter.default.addObserver(self, selector: #selector(handleAppDidBecomeActive), name: NSNotification.Name("appDidBecomeActive"), object: nil)
         
         // Retrieve the stored goal number from UserDefaults
-          let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
-          if storedValue != 0 {
-              maxPeople = storedValue
-          }
-        
+        let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
+        if storedValue != 0 {
+            maxPeople = storedValue
+        }
 
-        
-        var notifiedRegions = Set<String>() // Declare at class level
-
-        
         
         // Load notifiedRegions from UserDefaults
-               if let savedRegions = UserDefaults.standard.array(forKey: "notifiedRegions") as? [String] {
-                   notifiedRegions = Set(savedRegions)
-               }
+        if let savedRegions = UserDefaults.standard.array(forKey: "notifiedRegions") as? [String] {
+            notifiedRegions = Set(savedRegions)
+        }
         
+        // Make sure locationManager is initialized before setting its delegate
+        if locationManager == nil {
+            locationManager = CLLocationManager()
+        }
+
         // Setting up location manager
-            locationManager.delegate = self
-            locationManager.desiredAccuracy = kCLLocationAccuracyBest
-            locationManager.distanceFilter = kCLDistanceFilterNone
-            locationManager.requestAlwaysAuthorization()
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.distanceFilter = kCLDistanceFilterNone
+        locationManager.requestAlwaysAuthorization()
+        
+        // Setting up notification category
+        setupNotificationCategory()
 
             // Setting up notification center
             UNUserNotificationCenter.current().delegate = self
@@ -613,9 +622,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     //ENDVIEWDIDLOAD
     
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
 
     
     
@@ -756,6 +762,29 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     // MARK: - NOTIFICATIONS
+    
+    // Function to set up geofences for the closest three locations
+    func setupClosestThreeGeofences(currentLocation: CLLocation) {
+        print("Setting up geofences for closest three locations.") // Debugging line
+        
+        let sortedNotes = notes.sorted {
+            let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
+            let location2 = CLLocation(latitude: $1.location.latitude, longitude: $1.location.longitude)
+            return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
+        }
+        
+        let closestNotes = Array(sortedNotes.prefix(3))
+        
+        for note in closestNotes {
+            let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
+            setupGeoFence(location: coordinate, identifier: note.locationName)
+        }
+        
+        print("Geofences for closest three locations set up.") // Debugging line
+    }
+
+
+    
 
     // When exiting a region, save to UserDefaults
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
@@ -773,39 +802,37 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
 
     func getLastThreeNotes(for locationName: String) -> [Note] {
+        print("Fetching last three notes for location: \(locationName)") // Debugging line
         return Array(notes.filter { $0.locationName == locationName }.suffix(3))
     }
-
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         print("Entered region: \(region.identifier)")  // Debugging line
-        
         let lastThreeNotes = getLastThreeNotes(for: region.identifier)
         let lastThreeNotesText = lastThreeNotes.map { $0.text }
-        
         // Trigger the notification
         sendNotification(locationName: region.identifier, lastThreeNotes: lastThreeNotesText)
+    }
+    
+    func requestLocationAuthorization() {
+        locationManager.requestWhenInUseAuthorization()
     }
 
     func sendNotification(locationName: String, lastThreeNotes: [String]) {
         print("Sending notification for location: \(locationName)") // Debugging line
         let content = UNMutableNotificationContent()
         content.title = "Near \(locationName)"
-        
         let notesText = lastThreeNotes.joined(separator: ", ")
         content.body = "\(notesText)"
         content.categoryIdentifier = "notesCategory"
-        
         // NEW SOUND HERE
         content.sound = UNNotificationSound.default
-        
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-        
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("Error adding notification: \(error)")
+                print("Error adding notification: \(error)") // Debugging line
             } else {
-                print("Notification added successfully")
+                print("Notification added successfully") // Debugging line
             }
         }
     }
@@ -815,11 +842,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
             if granted {
-                print("Notification access granted")
+                print("Notification access granted") // Debugging line
             } else {
-                print("Notification access denied")
+                print("Notification access denied") // Debugging line
                 if let error = error {
-                    print("Error requesting authorization: \(error)")
+                    print("Error requesting authorization: \(error)") // Debugging line
                 }
             }
         }
@@ -830,7 +857,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let viewLastThreeNotesAction = UNNotificationAction(identifier: "viewLastThreeNotes", title: "View last three notes", options: [.foreground])
         let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastThreeNotesAction], intentIdentifiers: [], options: [])
         UNUserNotificationCenter.current().setNotificationCategories([category])
+        print("Notification category setup complete.") // Debugging line
     }
+
 
     
     
@@ -1466,7 +1495,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     // Location Manager Delegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        // If the location has already been fetched, return early
+        // Your existing code
         if hasFetchedLocation {
             return
         }
@@ -1477,21 +1506,22 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         self.currentLocation = newLocation.coordinate
         print("User's location: \(newLocation)")
 
-        // Call the updateLocationNameLabel function with the user's current location
+        // Your existing methods
         updateLocationNameLabel(location: newLocation.coordinate)
         self.displayImage(location: self.currentLocation!)
 
-        // Load and filter notes for the current location
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 15.0) // Provide the required parameters
+            self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 15.0)
         }
 
-        // Set the property to true to indicate that the location has been fetched
         hasFetchedLocation = true
-
-        // Stop updating the location to conserve battery and resources
         locationManager.stopUpdatingLocation()
-    }
+
+        if let newLocation = locations.last {
+                setupClosestThreeGeofences(currentLocation: newLocation)
+            }
+        }
+    
 
 
 
