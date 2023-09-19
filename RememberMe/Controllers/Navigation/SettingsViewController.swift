@@ -21,7 +21,6 @@ class AppState {
 }
 
 
-
 class SettingsViewController: UIViewController {
     
     static var savedRotationSpeed: Double = 0.5 // Static property to save rotation speed
@@ -67,12 +66,22 @@ class SettingsViewController: UIViewController {
 //        }
 //    }
     
+    
     override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
             navigationController?.setNavigationBarHidden(true, animated: false)
         audioControlButton.isHidden = true // Initially hide the button
-
-        }
+        
+      
+               
+        
+        // Create a background view
+               let backgroundView = UIView(frame: view.bounds)
+               backgroundView.backgroundColor = UIColor(patternImage: UIImage(named: "starry_night")!) // Replace "starry_night" with your image file name
+               view.insertSubview(backgroundView, at: 0)
+        
+           }
+          
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -89,6 +98,7 @@ class SettingsViewController: UIViewController {
                 } else {
                     print("Could not find audio file.")
                 }
+
 
         // Add UITapGestureRecognizer to catImage
                let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
