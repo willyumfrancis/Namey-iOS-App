@@ -20,6 +20,7 @@
 		75A2588E29D21A1200A8D509 /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A2588D29D21A1200A8D509 /* Note.swift */; };
 		75A2589529D2380000A8D509 /* NoteCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A2589329D2380000A8D509 /* NoteCell.swift */; };
 		75A2589629D2380000A8D509 /* NoteCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 75A2589429D2380000A8D509 /* NoteCell.xib */; };
+		75A66EBA2AB9BD6200B926AB /* dummy.wav in Resources */ = {isa = PBXBuildFile; fileRef = 75A66EB92AB9BD6200B926AB /* dummy.wav */; };
 		75B69CD529BFEEE40049D4F5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */; };
 		75B69CD729BFEEE40049D4F5 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CD629BFEEE40049D4F5 /* SceneDelegate.swift */; };
 		75B69CD929BFEEE40049D4F5 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CD829BFEEE40049D4F5 /* HomeViewController.swift */; };
@@ -51,6 +52,7 @@
 		75A2588D29D21A1200A8D509 /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
 		75A2589329D2380000A8D509 /* NoteCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteCell.swift; sourceTree = "<group>"; };
 		75A2589429D2380000A8D509 /* NoteCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NoteCell.xib; sourceTree = "<group>"; };
+		75A66EB92AB9BD6200B926AB /* dummy.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dummy.wav; sourceTree = "<group>"; };
 		75B69CD129BFEEE40049D4F5 /* Namey.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Namey.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		75B69CD629BFEEE40049D4F5 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -125,6 +127,7 @@
 			isa = PBXGroup;
 			children = (
 				754B6BDF2A9DEDC200F8A3B0 /* eastersong.mp3 */,
+				75A66EB92AB9BD6200B926AB /* dummy.wav */,
 			);
 			path = music;
 			sourceTree = "<group>";
@@ -271,6 +274,7 @@
 				7502561829CE4A1C004FE87A /* GoogleService-Info.plist in Resources */,
 				754B6BE02A9DEDC200F8A3B0 /* eastersong.mp3 in Resources */,
 				75B69CE129BFEEE50049D4F5 /* Assets.xcassets in Resources */,
+				75A66EBA2AB9BD6200B926AB /* dummy.wav in Resources */,
 				75B69CDC29BFEEE40049D4F5 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

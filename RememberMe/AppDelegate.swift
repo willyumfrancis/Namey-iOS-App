@@ -13,6 +13,7 @@ import CoreData
 import OpenAI
 import UserNotifications 
 import CoreLocation
+import Alamofire
 
 
 @main

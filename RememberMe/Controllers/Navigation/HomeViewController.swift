@@ -18,6 +18,8 @@ import FirebaseStorage
 import SDWebImage
 import UserNotifications
 import AVFoundation
+import Speech
+
 
 
 
@@ -128,121 +130,120 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     
-    //MARK: - Whisper API
-    
-    var isRecording = false // Add this property to keep track of recording state
-    
+    //MARK: - Siri API
+
+    var isRecording = false
+
+    var audioRecorder: AVAudioRecorder!
+    var recognitionTask: SFSpeechRecognitionTask?
+
+
+    func getDocumentsDirectory() -> URL {
+        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+        return paths[0]
+    }
+
     
     @IBAction func toggleRecording(_ sender: UIButton) {
-        if isRecording {
-            print("Stopping recording...")
-            stopRecordingAndTranscribeAudio()
-            sender.setImage(UIImage(systemName: "mic"), for: .normal)
-        } else {
-            print("Starting recording...")
-            startRecording()
-            sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
-        }
-        isRecording.toggle()
-    }
-    
-    func stopRecordingAndTranscribeAudio() {
-        print("Stopping recording.") // Debugging line
-        audioRecorder.stop()
-        
-        // Added a delay before transcribing
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            let audioFilename = self.getDocumentsDirectory().appendingPathComponent("recording.wav")
-            print("Audio file URL: \(audioFilename)") // Debugging line
-        
-            let fileManager = FileManager.default
-            if fileManager.fileExists(atPath: audioFilename.path) {
-                print("File exists") // Debugging line
-            } else {
-                print("File does not exist") // Debugging line
-            }
+        print("Toggling recording.")
+           
+           if isRecording {
+               print("Stopping recording.")
+               stopRecordingAndTranscribeAudio()
+               sender.setImage(UIImage(systemName: "mic"), for: .normal)
+           } else {
+               print("Starting recording.")
+               startRecording()
+               sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
+           }
+           isRecording.toggle()
+           print("Recording state changed to: \(isRecording)")
+       }
 
-            APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
-                print("Inside transcribeAudio completion handler") // Debugging line
-                
-                switch result {
-                case .success(let transcription):
-                    print("Transcription successful: \(transcription)") // Debugging line
-                    
-                    // ... (The rest of your code remains unchanged)
-                    
-                case .failure(let error):
-                    print("Error transcribing audio: \(error)") // Debugging line
-                    DispatchQueue.main.async {
-                        // Show alert to user
-                        let alert = UIAlertController(title: "Transcription Failed", message: "Sorry, we couldn't transcribe your audio. Please try again.", preferredStyle: .alert)
-                        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-                        self.present(alert, animated: true, completion: nil)
-                    }
-                }
-            }
-        }
-    }
-    
-    
-    
-    func showAlert(withTranscription text: String) {
-        let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:\n\n\(text)", preferredStyle: .alert)
-        let okAction = UIAlertAction(title: "OK", style: .default)
-        alertController.addAction(okAction)
-        self.present(alertController, animated: true, completion: nil)
-    }
-    
-    var audioRecorder: AVAudioRecorder!
-    
-    func startRecording() {
-        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
-        print("Starting recording. Audio filename: \(audioFilename)")
-        
-        let settings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: 44100,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 16,
-            AVLinearPCMIsBigEndianKey: false,
-            AVLinearPCMIsFloatKey: false
-        ]
-        
-        do {
-            audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
-            audioRecorder.record()
-        } catch let error {
-            print("Error starting recording: \(error)")
-        }
-    }
-    
-    
-    
-    
-    func createNewNoteWithTranscription(_ transcription: String) {
-        if let currentLocation = self.currentLocation {
-            let emptyURL = URL(string: "")
-            let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: "", imageURL: emptyURL)
-            notes.append(newNote)
-            selectedNote = newNote
-            
-            DispatchQueue.main.async {
-                self.tableView.beginUpdates()
-                self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                self.tableView.endUpdates()
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                    guard let self = self else { return }
-                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                        newCell.noteTextField.becomeFirstResponder()
-                    }
-                }
-            }
-        }
-    }
-    
-    
+       func stopRecordingAndTranscribeAudio() {
+           print("Inside stopRecordingAndTranscribeAudio function.")
+           
+           // Stop the recording
+           audioRecorder.stop()
+           
+           // Cancel any previous recognition task if it's running
+           recognitionTask?.cancel()
+           recognitionTask = nil
+           
+           let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav")
+           print("Audio file URL: \(audioFilename)")
+           
+           let recognizer = SFSpeechRecognizer()
+           let request = SFSpeechURLRecognitionRequest(url: audioFilename)
+           
+           recognitionTask = recognizer?.recognitionTask(with: request, resultHandler: { (result, error) in
+               if let error = error {
+                   print("There was an error: \(error)")
+                   return
+               }
+               
+               guard let result = result else {
+                   print("No result.")
+                   return
+               }
+               
+               if result.isFinal {
+                   print("Transcription: \(result.bestTranscription.formattedString)")
+                   self.createNewNoteWithTranscription(result.bestTranscription.formattedString)
+               }
+           })
+       }
+
+       func startRecording() {
+           print("Inside startRecording function.")
+           
+           let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav")
+           print("Audio filename: \(audioFilename)")
+           
+           let settings: [String: Any] = [
+               AVFormatIDKey: kAudioFormatLinearPCM,
+               AVSampleRateKey: 44100,
+               AVNumberOfChannelsKey: 1,
+               AVLinearPCMBitDepthKey: 16,
+               AVLinearPCMIsBigEndianKey: false,
+               AVLinearPCMIsFloatKey: false
+           ]
+           
+           do {
+               audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
+               audioRecorder.record()
+               print("Recording started.")
+           } catch let error {
+               print("Error starting recording: \(error)")
+           }
+       }
+
+       func createNewNoteWithTranscription(_ transcription: String) {
+           if let currentLocation = self.currentLocation {
+               print("Creating new note with transcription.")
+               
+               let emptyURL = URL(string: "")
+               let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: "", imageURL: emptyURL)
+               notes.append(newNote)
+               selectedNote = newNote
+               
+               DispatchQueue.main.async {
+                   print("Inserting new row.")
+                   
+                   self.tableView.beginUpdates()
+                   self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                   self.tableView.endUpdates()
+                   
+                   DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                       guard let self = self else { return }
+                       if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                          let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                           newCell.noteTextField.becomeFirstResponder()
+                       }
+                   }
+               }
+           }
+       }
     //MARK: - VARIABLES & CONSTANTS
     
     var expandedNotes: Set<String> = []
@@ -1628,12 +1629,12 @@ func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegio
     }
 
     
-    
-    //Phone Doc Function for Image Picker
-    func getDocumentsDirectory() -> URL {
-        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        return paths[0]
-    }
+//
+//    //Phone Doc Function for Image Picker
+//    func getDocumentsDirectory() -> URL {
+//        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+//        return paths[0]
+//    }
     
     
     //MARK: - NOTES

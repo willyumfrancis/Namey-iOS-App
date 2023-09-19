@@ -109,7 +109,7 @@
                                     <action selector="uploadImageButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="zR3-xR-yj1"/>
                                 </connections>
                             </button>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="bcf-Hp-n1G">
+                            <button opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="bcf-Hp-n1G">
                                 <rect key="frame" x="248" y="425" width="19" height="34"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="19" id="bcO-pN-iKH"/>
@@ -148,7 +148,7 @@
                                 <lineBreakStrategy key="lineBreakStrategy"/>
                             </label>
                             <progressView opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="750" progressViewStyle="bar" progress="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="qT4-kL-fdE">
-                                <rect key="frame" x="52" y="158.33333333333337" width="289" height="2.6666666666666288"/>
+                                <rect key="frame" x="52" y="158.33333333333334" width="289" height="2.6666666666666572"/>
                             </progressView>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="S3I-vi-liH" userLabel="Goal Button">
                                 <rect key="frame" x="313" y="59" width="28" height="29"/>
