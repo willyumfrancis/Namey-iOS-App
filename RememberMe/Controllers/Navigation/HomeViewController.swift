@@ -542,85 +542,85 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Only one instance of setting UNUserNotificationCenter delegate is needed
+        // Set UNUserNotificationCenter delegate
         UNUserNotificationCenter.current().delegate = self
 
+        // Request authorization for notifications
         requestNotificationAuthorization()
         checkNotificationSettings()
-        
+
+        // Observe when the app becomes active
         NotificationCenter.default.addObserver(self, selector: #selector(handleAppDidBecomeActive), name: NSNotification.Name("appDidBecomeActive"), object: nil)
-        
-        // Retrieve the stored goal number from UserDefaults
+
+        // Load stored goal number from UserDefaults
         let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
         if storedValue != 0 {
             maxPeople = storedValue
         }
 
-        
         // Load notifiedRegions from UserDefaults
         if let savedRegions = UserDefaults.standard.array(forKey: "notifiedRegions") as? [String] {
             notifiedRegions = Set(savedRegions)
         }
-        
-        // Make sure locationManager is initialized before setting its delegate
+
+        // Initialize location manager and set its properties
         if locationManager == nil {
             locationManager = CLLocationManager()
         }
+        // Setting up location manager for continuous updates
+           locationManager.delegate = self
+           locationManager.desiredAccuracy = kCLLocationAccuracyBest
+           locationManager.distanceFilter = 100 // Adjust this distance to your needs (in meters)
+           locationManager.requestAlwaysAuthorization()
+           
 
-        // Setting up location manager
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = kCLDistanceFilterNone
-        locationManager.requestAlwaysAuthorization()
-        
-        // Setting up notification category
+        // Set up notification category
         setupNotificationCategory()
 
-            // Setting up notification center
-            UNUserNotificationCenter.current().delegate = self
-            requestNotificationAuthorization()
-            setupNotificationCategory()
+        // Update the progress bar
+        updateProgressBar()
 
-        // Update the progress bar according to the retrieved goal number
-           updateProgressBar()
-        
-                
         tableView.dragDelegate = self
         tableView.dropDelegate = self
         tableView.dragInteractionEnabled = false
-        
-        
-        //Apparance of App//
-        
-        NewNameLook.layer.cornerRadius = 12
-        NewNameLook.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
-        NewNameLook.layer.borderWidth = 3
-        NewNameLook.layer.borderColor = UIColor.black.cgColor
-        
-        SaveButtonLook.layer.cornerRadius = 12
-        SaveButtonLook.backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
-        SaveButtonLook.layer.borderWidth = 3
-        SaveButtonLook.layer.borderColor = UIColor.black.cgColor
-        
-        print("viewDidLoad called") // Add print statement
+
+        // Appearance settings for UI components
+        setupUIAppearance()
+
+        print("viewDidLoad called")  // Debugging line
+
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(UINib(nibName: "NoteCell", bundle: nil), forCellReuseIdentifier: "NoteCell")
-        
+
+        // Additional setup
         setupLocationManager()
         setupRoundedImageView()
         setupRoundedProgressBar()
-        
+
         let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
         CurrentPlace.isUserInteractionEnabled = true
         CurrentPlace.addGestureRecognizer(tapGestureRecognizer)
 
-        
-        
+        // Navigation bar button
         let goalButton = UIBarButtonItem(title: "Set Goal", style: .plain, target: self, action: #selector(goalButtonTapped))
         navigationItem.rightBarButtonItem = goalButton
     }
+
     //ENDVIEWDIDLOAD
+    
+    func setupUIAppearance() {
+        NewNameLook.layer.cornerRadius = 12
+        NewNameLook.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
+        NewNameLook.layer.borderWidth = 3
+        NewNameLook.layer.borderColor = UIColor.black.cgColor
+
+        SaveButtonLook.layer.cornerRadius = 12
+        SaveButtonLook.backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
+        SaveButtonLook.layer.borderWidth = 3
+        SaveButtonLook.layer.borderColor = UIColor.black.cgColor
+    }
+
     
 
     
@@ -763,33 +763,44 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     // MARK: - NOTIFICATIONS
     
-    // Function to set up geofences for the closest three locations
     func setupClosestThreeGeofences(currentLocation: CLLocation) {
         print("Setting up geofences for closest three locations.") // Debugging line
-        
+
+        // Debugging line to check if we have any notes at all
+        print("Total available notes: \(notes.count)")
+
         let sortedNotes = notes.sorted {
             let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
             let location2 = CLLocation(latitude: $1.location.latitude, longitude: $1.location.longitude)
             return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
         }
-        
+
         let closestNotes = Array(sortedNotes.prefix(3))
-        
+
+        // Debugging line to check if closestNotes actually contains notes
+        print("Closest notes count: \(closestNotes.count)")
+
         for note in closestNotes {
             let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
             setupGeoFence(location: coordinate, identifier: note.locationName)
         }
-        
+
         print("Geofences for closest three locations set up.") // Debugging line
     }
-
-
-    
 
     // When exiting a region, save to UserDefaults
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
         print("Exited region: \(region.identifier)")  // Debugging line
+
+        // Remove from notified regions
+        notifiedRegions.remove(region.identifier)
+
+        if let circularRegion = region as? CLCircularRegion {
+            print("Exited circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")  // Debugging line
+        }
     }
+
+
 
     func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
         let radius: CLLocationDistance = 100
@@ -797,21 +808,46 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
         region.notifyOnEntry = true
         region.notifyOnExit = false
-        locationManager.startMonitoring(for: region)
-        print("GeoFence setup complete.") // Debugging line
+        
+        if CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) {
+            locationManager.startMonitoring(for: region)
+            print("GeoFence setup complete.") // Debugging line
+        } else {
+            print("GeoFence monitoring is not available for this device.") // Debugging line
+        }
     }
 
     func getLastThreeNotes(for locationName: String) -> [Note] {
         print("Fetching last three notes for location: \(locationName)") // Debugging line
         return Array(notes.filter { $0.locationName == locationName }.suffix(3))
     }
+    
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         print("Entered region: \(region.identifier)")  // Debugging line
+
+        // Check if a notification has already been sent for this region
+        if notifiedRegions.contains(region.identifier) {
+            print("Already notified for this region. Skipping.")  // Debugging line
+            return
+        }
+
+        if let circularRegion = region as? CLCircularRegion {
+            print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")  // Debugging line
+        }
+
         let lastThreeNotes = getLastThreeNotes(for: region.identifier)
         let lastThreeNotesText = lastThreeNotes.map { $0.text }
+
+        // Debugging lines
+        print("Last three notes for this region: \(lastThreeNotesText)")
+
         // Trigger the notification
         sendNotification(locationName: region.identifier, lastThreeNotes: lastThreeNotesText)
+
+        // Add to notified regions
+        notifiedRegions.insert(region.identifier)
     }
+
     
     func requestLocationAuthorization() {
         locationManager.requestWhenInUseAuthorization()
@@ -1494,33 +1530,39 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     var hasFetchedLocation = false
 
     // Location Manager Delegate
+    func resetGeofencing() {
+        print("Resetting Geofencing and hasFetchedLocation.") // Debugging
+        hasFetchedLocation = false
+        locationManager.startUpdatingLocation()
+    }
+
+    // Location Manager Delegate
+    // Location Manager Delegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        // Your existing code
-        if hasFetchedLocation {
+        print("Location Manager Delegate - didUpdateLocations called") // Debugging
+        
+        guard let newLocation = locations.last else {
+            print("No new location available.") // Debugging
             return
         }
 
-        guard let newLocation = locations.last else { return }
-
         self.userLocation = newLocation.coordinate
         self.currentLocation = newLocation.coordinate
-        print("User's location: \(newLocation)")
+        print("User's location: \(newLocation)") // Debugging
 
-        // Your existing methods
+        // Update UI and perform other operations
         updateLocationNameLabel(location: newLocation.coordinate)
         self.displayImage(location: self.currentLocation!)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 15.0)
-        }
+        print("Loading and filtering notes.") // Debugging
+        self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 15.0)
 
-        hasFetchedLocation = true
-        locationManager.stopUpdatingLocation()
+        print("Setting up closest three geofences.") // Debugging
+        setupClosestThreeGeofences(currentLocation: newLocation)
+    }
 
-        if let newLocation = locations.last {
-                setupClosestThreeGeofences(currentLocation: newLocation)
-            }
-        }
+
+
     
 
 

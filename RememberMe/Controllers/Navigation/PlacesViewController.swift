@@ -15,7 +15,6 @@ import Photos
 import MobileCoreServices
 import FirebaseStorage
 import SDWebImage
-import UserNotifications
 
 struct LocationData {
     let name: String
@@ -48,7 +47,7 @@ func safeFileName(for locationName: String) -> String {
 
 
 
-class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate, UNUserNotificationCenterDelegate {
+class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate {
 
     
       weak var delegate: PlacesViewControllerDelegate?
@@ -84,7 +83,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             tableView.register(locationCellNib, forCellReuseIdentifier: "LocationCell")
             tableView.dataSource = self
             tableView.delegate = self
-            UNUserNotificationCenter.current().delegate = self
             loadLocationData()
             
             locationManager.delegate = self
