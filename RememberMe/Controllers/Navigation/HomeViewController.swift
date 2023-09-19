@@ -329,43 +329,44 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     @IBAction func uploadImageButton(_ sender: UIButton) {
         print("Upload Image button pressed")
-        print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
-        print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
-        
-        let alertController = UIAlertController(title: "Location Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
-        alertController.addTextField()
-        
-        let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
-            guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
-                print("Location name is empty.")
-                return
-            }
-            
-            self.currentLocationName = locationName  // Update current location name
-            
-            if let selectedLocation = self.selectedLocation, let selectedLocationName = self.selectedLocationName {
-                // User had selected a location from PlacesViewController
-                print("Using selected location")  // Debugging
-                self.updateLocationNameLabel(location: selectedLocation)
-                self.presentImagePicker(locationName: selectedLocationName)
-            } else if let currentLocation = self.locationManager.location?.coordinate {
-                // No location was selected; use the current location
-                print("Using current location")  // Debugging
-                self.updateLocationNameLabel(location: currentLocation)
-                self.presentImagePicker(locationName: locationName)
-            }
-            
-            self.updateNotesCountLabel()
-        }
-        
-        alertController.addAction(saveAction)
-        
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-        alertController.addAction(cancelAction)
-        
-        self.present(alertController, animated: true)
-    }
-    
+                 print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
+                 print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
+
+                 let alertController = UIAlertController(title: "Location Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
+                 alertController.addTextField()
+
+                 let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
+                     guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
+                         print("Location name is empty.")
+                         return
+                     }
+                     
+                     self.currentLocationName = locationName  // Update current location name
+
+                     if let selectedLocation = self.selectedLocation, let selectedLocationName = self.selectedLocationName {
+                         // User had selected a location from PlacesViewController
+                         print("Using selected location")  // Debugging
+                         self.updateLocationNameLabel(location: selectedLocation)
+                         self.presentImagePicker(locationName: selectedLocationName)
+                     } else if let currentLocation = self.locationManager.location?.coordinate {
+                         // No location was selected; use the current location
+                         print("Using current location")  // Debugging
+                         self.updateLocationNameLabel(location: currentLocation)
+                         self.presentImagePicker(locationName: locationName)
+                     }
+                     
+                     self.updateNotesCountLabel()
+                 }
+                 
+                 alertController.addAction(saveAction)
+
+                 let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+                 alertController.addAction(cancelAction)
+                 
+                 self.present(alertController, animated: true)
+             }
+          
+
     
     
     //Goal (Star) Button
@@ -648,12 +649,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let displayedLocationName = locationNameLabel.text ?? "Unknown Location"
 
         if currentPeople == 0 {
-            notesCountLabel.text = "Go meet some people!"
+            notesCountLabel.text = "Jot a name down!"
         } else if currentPeople == 1 {
-            let labelText = "You know 1 person at \(displayedLocationName)"
+            let labelText = "You have 1 note here."
             notesCountLabel.text = labelText
         } else {
-            let labelText = "You know \(currentPeople) people at \(displayedLocationName)."
+            let labelText = "You have \(currentPeople) notes here."
             notesCountLabel.text = labelText
         }
     }
@@ -1611,6 +1612,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                 self?.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
                                 self?.updateProgressBar()
                                 self?.updateLocationNameLabel(location: locationToSave)
+                                self!.updateUI(withLocationName: locationName!) // Update the UI
 
                             }
                         }
@@ -1646,9 +1648,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                     locationName += ", \(locality)"
                 }
 
-                if let administrativeArea = placemark.administrativeArea {
-                    locationName += ", \(administrativeArea)"
-                }
 
                 if locationName.isEmpty {
                     locationName = "Unnamed Location"
