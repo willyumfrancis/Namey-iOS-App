@@ -264,6 +264,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //MARK: - VARIABLES & CONSTANTS
     
+    
+    //Loading in Closest location variable true/false on entering placesviewcontroller.
+    var hasEnteredPlacesViewController = false
+
+    
     var expandedNotes: Set<String> = []
     var selectedLocationName: String?
     var selectedLocation: CLLocationCoordinate2D? //Necessary?
@@ -423,7 +428,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                return
            }
            
-           let prompt = "Give me practical one-statement advice on how to be more sociable. Its ok to be short. Imagine the person is in the room."
+           let prompt = "Give me a daily actionable advice on socializing, psychology, and leadership. Pick one with a max of 50 charecters. Do not repeat yourself."
            
            let messages = [["role": "system", "content": "You are Tony Robbins and Naval Ravikant combined into one great man giving advice. Do not use quotation marks."],
                            ["role": "user", "content": prompt]]
@@ -621,10 +626,15 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
               maxPeople = storedValue
           }
         
-
+        getAdvice { advice in
+                    DispatchQueue.main.async {
+                        self.AdviceOutlet.text = advice
+                        print("Advice updated in viewDidLoad")  // Debugging print statement
+                    }
+                }
         
         var notifiedRegions = Set<String>() // Declare at class level
-
+        
         
         
         // Load notifiedRegions from UserDefaults
@@ -2176,6 +2186,11 @@ extension HomeViewController: UIScrollViewDelegate {
 
 
 extension HomeViewController: PlacesViewControllerDelegate {
+    
+    func didEnterPlacesViewController() {
+        hasEnteredPlacesViewController = true
+    }
+    
     func didSelectLocation(with locationName: String) {
         tabBarController?.selectedIndex = 0
         // Lookup the coordinate based on the location name from your data model
@@ -2186,6 +2201,16 @@ extension HomeViewController: PlacesViewControllerDelegate {
         LoadPlacesNotes(for: locationName)
         displayImage(locationName: locationName)
     }
+    
+    func didUpdateClosestLocation(_ closestLocation: LocationData?) {
+        if !hasEnteredPlacesViewController {
+            if let closestLocation = closestLocation {
+                print("Closest location is: \(closestLocation.name)")  // Debugging line
+                self.selectedLocationName = closestLocation.name
+                LoadPlacesNotes(for: closestLocation.name)
+                displayImage(locationName: closestLocation.name)
+            }
+        }
+    }
+    
 }
-
-

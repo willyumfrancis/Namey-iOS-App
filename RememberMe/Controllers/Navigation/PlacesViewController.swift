@@ -107,6 +107,11 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             }
         }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        delegate?.didEnterPlacesViewController()
+    }
+
 
 
     
@@ -208,6 +213,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                return
                locationData1.location.distance(from: userLocation) < locationData2.location.distance(from: userLocation)
            }
+        delegate?.didUpdateClosestLocation(locations.first)
+
        }
     
     func loadNotes(completion: @escaping ([Note]) -> Void) {
@@ -447,6 +454,11 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
 
 //MARK: - Extensions + Protocols
 protocol PlacesViewControllerDelegate: AnyObject {
+    func didEnterPlacesViewController()
+    func didUpdateClosestLocation(_ closestLocation: LocationData?)
     func didSelectLocation(with locationName: String)
 }
+
+
+
 
