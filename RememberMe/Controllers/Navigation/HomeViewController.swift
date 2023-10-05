@@ -18,6 +18,7 @@ import FirebaseStorage
 import SDWebImage
 import UserNotifications
 import AVFoundation
+import OpenAI
 
 
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
@@ -36,6 +37,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     @IBOutlet weak var locationNameLabel: UILabel!
     
     @IBOutlet weak var notesCountLabel: UILabel!
+    
+    @IBOutlet weak var AdviceOutlet: UILabel!
+    
     
     //FireBase Cloud Storage
     let db = Firestore.firestore()
@@ -369,9 +373,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     
     
-    //Goal (Star) Button
-    @IBAction func goalButton(_ sender: UIButton) {
-        goalButtonTapped()
+    //AI Button
+    @IBAction func aibutton(_ sender: UIButton) {
+        print("AI button tapped") // Debugging print statement
+
+               // Fetch advice directly when the AI button is tapped
+               getAdvice { advice in
+                   DispatchQueue.main.async {
+                       self.AdviceOutlet.text = advice
+                   }
+               }
         
     }
     
@@ -397,7 +408,67 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
            averageSelectedLocation = location
        }
     
-
+    //MARK: - AI CODE
+    func getAPIKey(named keyname: String, from plistName: String) -> String? {
+        var nsDictionary: NSDictionary?
+        if let path = Bundle.main.path(forResource: plistName, ofType: "plist") {
+            nsDictionary = NSDictionary(contentsOfFile: path)
+        }
+        return nsDictionary?[keyname] as? String
+    }
+    
+    func getAdvice(completion: @escaping (String) -> Void) {
+           guard let apiKey = getAPIKey(named: "OpenAI_API_Key", from: "GoogleService-Info") else {
+               print("API Key not found") // Debugging print statement
+               return
+           }
+           
+           let prompt = "Give me practical one-statement advice on how to be more sociable. Its ok to be short. Imagine the person is in the room."
+           
+           let messages = [["role": "system", "content": "You are Tony Robbins and Albert Einstein combined into one great man giving advice."],
+                           ["role": "user", "content": prompt]]
+           
+           let json: [String: Any] = ["model": "gpt-3.5-turbo", "messages": messages]
+           let jsonData = try? JSONSerialization.data(withJSONObject: json)
+           
+           var request = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
+           request.httpMethod = "POST"
+           request.httpBody = jsonData
+           request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+           request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+           
+           let task = URLSession.shared.dataTask(with: request) { data, response, error in
+               print("Entered URLSession data task") // Debugging print statement
+               
+               if let error = error {
+                   print("Error fetching advice: \(error)") // Debugging print statement
+                   return
+               }
+               
+               if let data = data {
+                   do {
+                       if let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                          let choices = jsonResponse["choices"] as? [[String: Any]],
+                          let message = choices.first?["message"] as? [String: Any],
+                          let text = message["content"] as? String {
+                           
+                           let advice = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                           print("Advice: \(advice)") // Debugging print statement
+                           completion(advice)
+                       } else {
+                           print("Unexpected response: \(String(data: data, encoding: .utf8) ?? "N/A")") // Debugging print statement
+                       }
+                   } catch {
+                       print("JSON Serialization error: \(error)") // Debugging print statement
+                   }
+               } else {
+                   print("Data is nil") // Debugging print statement
+               }
+           }
+           task.resume()
+       }
+   
+    
 
     //MARK: - SAVE AND NEW NOTE CREATION
     //Save Name Button
@@ -446,21 +517,21 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //MARK: - Appearance
   
-    func updateProgressBar() {
-        updateNotesCountLabel()
-        let currentPeople = notes.count
-        let progress = min(Float(currentPeople) / Float(maxPeople), 1.0)
-        
-        Progressbar.setProgress(progress, animated: true)
-        
-        if progress == 1.0 {
-            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
-            
-        } else {
-            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
-            
-        }
-    }
+//    func updateProgressBar() {
+//        updateNotesCountLabel()
+//        let currentPeople = notes.count
+//        let progress = min(Float(currentPeople) / Float(maxPeople), 1.0)
+//
+//        Progressbar.setProgress(progress, animated: true)
+//
+//        if progress == 1.0 {
+//            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
+//
+//        } else {
+//            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
+//
+//        }
+//    }
 
     
     
@@ -572,8 +643,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             requestNotificationAuthorization()
             setupNotificationCategory()
 
-        // Update the progress bar according to the retrieved goal number
-           updateProgressBar()
+//        // Update the progress bar according to the retrieved goal number
+//           updateProgressBar()
         
                 
         tableView.dragDelegate = self
@@ -732,7 +803,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             // Save value to UserDefaults when Done is pressed
             UserDefaults.standard.set(self?.maxPeople, forKey: "GoalNumber")
             
-            self?.updateProgressBar()
+//            self?.updateProgressBar()
         }
         
         alertController.addAction(cancelAction)
@@ -1610,7 +1681,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             DispatchQueue.main.async {
 //                                self?.tableView.reloadData()
                                 self?.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
-                                self?.updateProgressBar()
+//                                self?.updateProgressBar()
                                 self?.updateLocationNameLabel(location: locationToSave)
                                 self!.updateUI(withLocationName: locationName!) // Update the UI
 
@@ -1817,7 +1888,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             print("Showing \(self?.notes.count ?? 0) notes based on location")
                             self?.tableView.reloadData()
                             
-                            self?.updateProgressBar()
+//                            self?.updateProgressBar()
                             self?.updateLocationNameLabel(location: location) // Update the location name label
                         }
                     }
@@ -1873,7 +1944,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             print("Showing \(self?.notes.count ?? 0) notes based on location")
                             self?.tableView.reloadData()
                             
-                            self?.updateProgressBar()
+//                            self?.updateProgressBar()
                             // Update the location name label
                             self?.locationNameLabel.text = "\(locationName)"
                             self?.currentLocationName = locationName
