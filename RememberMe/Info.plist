@@ -4,30 +4,6 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>We need access to your microphone ti transcribe audio to text for a hands-free experience.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera to let you take and upload photos.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to your photo library for you to upload spot photos.</string>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>We use your location to locate establishments you are visiting. It is a core function of the app</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app can run in the background to provide real-time navigation updates.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Roboto-Regular.ttf</string>

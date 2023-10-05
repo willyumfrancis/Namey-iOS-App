@@ -446,9 +446,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                return
            }
            
-           let prompt = "Give me one daily actionable advice with a max of 70 charecters. Do not give vague advice and no quotation marks. Make it precise. I am a person in a new place."
+           let prompt = "Give me one daily actionable advice with a max of 70 charecters. Do not give vague advice and no quotation marks. Make it precise."
            
-           let messages = [["role": "system", "content": "You are the greatest life coach in history"],
+           let messages = [["role": "system", "content": "You are a positive fortune cookie."],
                            ["role": "user", "content": prompt]]
            
            let json: [String: Any] = ["model": "gpt-3.5-turbo", "messages": messages]

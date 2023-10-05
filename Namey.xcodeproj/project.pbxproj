@@ -492,7 +492,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RememberMe/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Namie;
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to locate establishments you are visiting. It's a core function of the app.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to let you take and upload photos.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app can run in the background to provide real-time navigation updates.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to locate establishments you are visiting. It is a core function of the app";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to your microphone ti transcribe audio to text for a hands-free experience.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photo library for you to upload spot photos.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app needs your microphone for text-to-speech functonality.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -524,7 +529,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RememberMe/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Namie;
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to locate establishments you are visiting. It's a core function of the app.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to let you take and upload photos.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app can run in the background to provide real-time navigation updates.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to locate establishments you are visiting. It is a core function of the app";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to your microphone ti transcribe audio to text for a hands-free experience.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photo library for you to upload spot photos.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app needs your microphone for text-to-speech functonality.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
