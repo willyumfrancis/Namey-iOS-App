@@ -425,7 +425,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
            
            let prompt = "Give me practical one-statement advice on how to be more sociable. Its ok to be short. Imagine the person is in the room."
            
-           let messages = [["role": "system", "content": "You are Tony Robbins and Albert Einstein combined into one great man giving advice."],
+           let messages = [["role": "system", "content": "You are Tony Robbins and Naval Ravikant combined into one great man giving advice. Do not use quotation marks."],
                            ["role": "user", "content": prompt]]
            
            let json: [String: Any] = ["model": "gpt-3.5-turbo", "messages": messages]
