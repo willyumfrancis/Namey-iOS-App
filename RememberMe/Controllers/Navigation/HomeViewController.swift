@@ -337,44 +337,62 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     @IBAction func uploadImageButton(_ sender: UIButton) {
-        print("Upload Image button pressed")
-                 print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
-                 print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
+            print("Upload Image button pressed")
+            print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
+            print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
 
-                 let alertController = UIAlertController(title: "Location Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
-                 alertController.addTextField()
+            let alertController = UIAlertController(title: "Location Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
+            alertController.addTextField()
 
-                 let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
-                     guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
-                         print("Location name is empty.")
-                         return
-                     }
-                     
-                     self.currentLocationName = locationName  // Update current location name
+            let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
+                guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
+                    print("Location name is empty.")  // Debugging
+                    return
+                }
+                
+                self.locationNameLabel.text = locationName  // Update current location name
+                self.processLocationNameAndPresentImagePicker(locationName: locationName)
+            }
+            
+            let skipAction = UIAlertAction(title: "Skip", style: .default) { _ in
+                if let currentLocationName = self.locationNameLabel.text, !currentLocationName.isEmpty {
+                    print("Skipping new name. Using current location name: \(currentLocationName)")  // Debugging
+                    self.processLocationNameAndPresentImagePicker(locationName: currentLocationName)
+                } else {
+                    print("No current location name to skip to.")  // Debugging
+                }
+            }
+            
+            alertController.addAction(saveAction)
+            alertController.addAction(skipAction)
 
-                     if let selectedLocation = self.selectedLocation, let selectedLocationName = self.selectedLocationName {
-                         // User had selected a location from PlacesViewController
-                         print("Using selected location")  // Debugging
-                         self.updateLocationNameLabel(location: selectedLocation)
-                         self.presentImagePicker(locationName: selectedLocationName)
-                     } else if let currentLocation = self.locationManager.location?.coordinate {
-                         // No location was selected; use the current location
-                         print("Using current location")  // Debugging
-                         self.updateLocationNameLabel(location: currentLocation)
-                         self.presentImagePicker(locationName: locationName)
-                     }
-                     
-                     self.updateNotesCountLabel()
-                 }
-                 
-                 alertController.addAction(saveAction)
+            let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+            alertController.addAction(cancelAction)
+            
+            self.present(alertController, animated: true)
+        }
 
-                 let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-                 alertController.addAction(cancelAction)
-                 
-                 self.present(alertController, animated: true)
-             }
-          
+
+        func processLocationNameAndPresentImagePicker(locationName: String) {
+            if let selectedLocation = self.selectedLocation {
+                // User had selected a location from PlacesViewController
+                print("Using selected location")  // Debugging
+                self.updateLocationNameLabel(location: selectedLocation)
+                self.presentImagePicker(locationName: locationName)
+            } else if let currentLocation = self.locationManager.location?.coordinate {
+                // No location was selected; use the current location
+                print("Using current location")  // Debugging
+                self.updateLocationNameLabel(location: currentLocation)
+                self.presentImagePicker(locationName: locationName)
+            } else if let currentLocationName = self.currentLocationName, !currentLocationName.isEmpty {
+                // Use the current location name if available
+                print("Using current location name: \(currentLocationName)")  // Debugging
+                self.presentImagePicker(locationName: currentLocationName)
+            }
+
+            self.updateNotesCountLabel()
+        }
+
 
     
     
@@ -428,9 +446,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                return
            }
            
-           let prompt = "Give me a daily actionable advice on socializing, psychology, and leadership. Pick one with a max of 50 charecters. Do not repeat yourself."
+           let prompt = "Give me one daily actionable advice with a max of 70 charecters. Do not give vague advice and no quotation marks. Make it precise. I am a person in a new place."
            
-           let messages = [["role": "system", "content": "You are Tony Robbins and Naval Ravikant combined into one great man giving advice. Do not use quotation marks."],
+           let messages = [["role": "system", "content": "You are the greatest life coach in history"],
                            ["role": "user", "content": prompt]]
            
            let json: [String: Any] = ["model": "gpt-3.5-turbo", "messages": messages]
@@ -1196,8 +1214,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                             }
                                         }
                                     }
-
-                                    // ... (rest of the code remains the same)
 
                                 }
                             }
