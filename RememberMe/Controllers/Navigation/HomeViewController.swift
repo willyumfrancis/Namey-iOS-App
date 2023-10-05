@@ -136,18 +136,18 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     var isRecording = false // Add this property to keep track of recording state
     
     
-    @IBAction func toggleRecording(_ sender: UIButton) {
-        if isRecording {
-            print("Stopping recording...")
-            stopRecordingAndTranscribeAudio()
-            sender.setImage(UIImage(systemName: "mic"), for: .normal)
-        } else {
-            print("Starting recording...")
-            startRecording()
-            sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
-        }
-        isRecording.toggle()
-    }
+//    @IBAction func toggleRecording(_ sender: UIButton) {
+//        if isRecording {
+//            print("Stopping recording...")
+//            stopRecordingAndTranscribeAudio()
+//            sender.setImage(UIImage(systemName: "mic"), for: .normal)
+//        } else {
+//            print("Starting recording...")
+//            startRecording()
+//            sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
+//        }
+//        isRecording.toggle()
+//    }
     
     func stopRecordingAndTranscribeAudio() {
         print("Stopping recording.")
