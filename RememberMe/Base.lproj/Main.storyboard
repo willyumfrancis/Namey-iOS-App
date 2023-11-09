@@ -114,8 +114,9 @@
                                 <constraints>
                                     <constraint firstAttribute="width" constant="19" id="bcO-pN-iKH"/>
                                 </constraints>
+                                <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" title=""/>
+                                <buttonConfiguration key="configuration" style="plain" image="mic" catalog="system" title=""/>
                                 <connections>
                                     <action selector="toggleRecording:" destination="BYZ-38-t0r" eventType="touchUpInside" id="63l-5T-a3j"/>
                                 </connections>
@@ -630,6 +631,7 @@
         <image name="house.fill" catalog="system" width="128" height="104"/>
         <image name="jellydev" width="2161" height="3260"/>
         <image name="location.square.fill" catalog="system" width="128" height="114"/>
+        <image name="mic" catalog="system" width="110" height="128"/>
         <image name="person.text.rectangle.fill" catalog="system" width="128" height="93"/>
         <image name="play.fill" catalog="system" width="117" height="128"/>
         <image name="star.fill" catalog="system" width="128" height="116"/>
