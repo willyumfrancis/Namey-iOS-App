@@ -699,12 +699,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                return
            }
            
-           let prompt = "Give me a life tip of the day with a max of 70 charecters. Do not give vague advice and no quotation marks. Make it precise."
+           let prompt = "Tell me a historical fact with a max of 70 charecters and no quotation marks."
            
-           let messages = [["role": "system", "content": "You are Peter Thiel and Elon Musk combined"],
+           let messages = [["role": "system", "content": "You are a Fun Historian"],
                            ["role": "user", "content": prompt]]
            
-           let json: [String: Any] = ["model": "gpt-3.5-turbo", "messages": messages]
+           let json: [String: Any] = ["model": "gpt-4", "messages": messages]
            let jsonData = try? JSONSerialization.data(withJSONObject: json)
            
            var request = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
