@@ -292,18 +292,16 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         // Cancel any ongoing image download tasks when reusing the cell
         cell.locationImageView.sd_cancelCurrentImageLoad()
 
-        // Remove any placeholder subviews from previous reuse
-        for subview in cell.locationImageView.subviews {
-            subview.removeFromSuperview()
-        }
-
         // Use cached image if available
         let cacheKey = NSString(string: safeFileName(for: locationData.name))
         if let cachedImage = imageCache.object(forKey: cacheKey) {
             cell.locationImageView.image = cachedImage
             return cell
         }
-        
+
+        // Set the placeholder image initially
+        cell.locationImageView.image = placeholderImage
+        cell.locationImageView.alpha = 0 // Start with a transparent image view for the fade-in effect
 
         // Download the image if it's not in cache
         let storageRef = Storage.storage().reference().child("location_images/\(safeFileName(for: locationData.name)).jpg")
@@ -311,39 +309,24 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             guard let strongSelf = self else { return }
 
             if let url = url {
-                cell.locationImageView.sd_setImage(with: url, completed: { (image, error, cacheType, imageURL) in
+                cell.locationImageView.sd_setImage(with: url, placeholderImage: strongSelf.placeholderImage, options: [], completed: { (image, error, cacheType, imageURL) in
                     if let downloadedImage = image {
                         // Cache the downloaded image
                         strongSelf.imageCache.setObject(downloadedImage, forKey: cacheKey)
+                        
+                        UIView.transition(with: cell.locationImageView,
+                                          duration: 0.3,
+                                          options: .transitionCrossDissolve,
+                                          animations: {
+                                            cell.locationImageView.image = downloadedImage
+                                            cell.locationImageView.alpha = 1 // Fade in the imageView to full opacity
+                                          }, completion: nil)
                     }
                 })
             } else {
-                print("URL is nil, will show placeholder image after 2 seconds.")
-
-                // Delay placeholder image by 2 seconds
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                    // Check if the cell is still being used for the same data item before setting placeholder
-                    if cell.locationNameLabel.text == locationData.name {
-                        // Create a sub-image view for the placeholder image
-                        let placeholderImageView = UIImageView(image: strongSelf.placeholderImage)
-
-                        // Adjust the frame to be 20 pixels down
-                        var newFrame = cell.locationImageView.bounds
-                        newFrame.origin.y += 20
-                        placeholderImageView.frame = newFrame
-
-                        placeholderImageView.contentMode = .scaleAspectFit
-                        placeholderImageView.clipsToBounds = true
-                        cell.locationImageView.addSubview(placeholderImageView)
-
-                        // Initially move the placeholder image view down by its height
-                        placeholderImageView.transform = CGAffineTransform(translationX: 0, y: placeholderImageView.frame.height)
-
-                        // Animate the placeholder to slide up into its original position
-                        UIView.animate(withDuration: 1.5) {
-                            placeholderImageView.transform = CGAffineTransform.identity
-                        }
-                    }
+                print("Error: Unable to download image. A placeholder will be used.")
+                UIView.animate(withDuration: 0.3) {
+                    cell.locationImageView.alpha = 1 // Even for placeholder, we perform a fade-in
                 }
             }
         }

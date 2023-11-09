@@ -442,10 +442,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             case .failure(let error):
                 print("Error transcribing audio: \(error)") // Debugging line
                 DispatchQueue.main.async {
-                    // Show alert to user
-                    let alert = UIAlertController(title: "Transcription Failed", message: "Sorry, we couldn't transcribe your audio. Please try again.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-                    self.present(alert, animated: true, completion: nil)
+      
                 }
             }
         }
@@ -704,7 +701,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
            let messages = [["role": "system", "content": "You are a Fun Historian"],
                            ["role": "user", "content": prompt]]
            
-           let json: [String: Any] = ["model": "gpt-4", "messages": messages]
+           let json: [String: Any] = ["model": "gpt-3.5-turbo", "messages": messages]
            let jsonData = try? JSONSerialization.data(withJSONObject: json)
            
            var request = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
