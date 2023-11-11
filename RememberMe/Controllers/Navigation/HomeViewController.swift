@@ -68,39 +68,35 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     // Define a property to keep track of whether the location has been fetched
     var hasFetchedLocation = false
 
-    // Location Manager Delegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if hasFetchedLocation {
-            return
-        }
+           if hasFetchedLocation {
+               return
+           }
 
-        guard let newLocation = locations.last else { return }
+           guard let newLocation = locations.last else { return }
 
-        self.userLocation = newLocation.coordinate
-        self.currentLocation = newLocation.coordinate
-        print("User's location: \(newLocation)")
+           self.userLocation = newLocation.coordinate
+           self.currentLocation = newLocation.coordinate
+           print("User's location: \(newLocation)")
 
-        updateLocationNameLabel(location: newLocation.coordinate)
-        self.displayImage(location: self.currentLocation!)
+           updateLocationNameLabel(location: newLocation.coordinate)
+           self.displayImage(location: self.currentLocation!)
 
-        if let coord = self.currentLocation {
-            let locationObj = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
-            setupClosestFifteenGeofences(currentLocation: locationObj) {
-                print("Called setupClosestFifteenGeofences completion block in didUpdateLocations")
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                    self.loadAndFilterNotes(for: self.userLocation!, goalRadius: 15.0) {
-                        print("Notes are loaded and filtered.")
-                    }
-                }
-            }
-        }
+           if let coord = self.currentLocation {
+               let locationObj = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
+               loadAndFilterNotes(for: coord, goalRadius: 15.0) {
+                   print("Notes are loaded and filtered.")
+                   self.setupClosestFifteenGeofences(currentLocation: locationObj) {
+                       print("Called setupClosestFifteenGeofences completion block in didUpdateLocations")
+                   }
+               }
+           }
 
-        hasFetchedLocation = true
-    }
+           hasFetchedLocation = true
+       }
 
-         
     func setupClosestFifteenGeofences(currentLocation: CLLocation, completion: @escaping () -> Void) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
             print("Setting up geofences for closest fifteen locations.")  // Debugging print statement
 
             let sortedNotes = self.notes.sorted {
@@ -162,35 +158,34 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
              return Array(notes.filter { $0.locationName == locationName }.suffix(3))
          }
          
-     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-             print("Entered region: \(region.identifier)")  // Debugging line
-             
-             // Check if a notification has already been sent for this region
-             if self.notifiedRegions.contains(region.identifier) {
-                 print("Already notified for this region. Skipping.")  // Debugging line
-                 return
-             }
-             
-             
-             if let circularRegion = region as? CLCircularRegion {
-                 print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")  // Debugging line
-             }
-         }
+   
+    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            print("Entered region: \(region.identifier)")
 
-             let lastThreeNotes = getLastThreeNotes(for: region.identifier)
-             let lastThreeNotesText = lastThreeNotes.map { $0.text }
+            if let circularRegion = region as? CLCircularRegion {
+                print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")
+            }
 
-             // Debugging lines
-             print("Last three notes for this region: \(lastThreeNotesText)")
+            // Load notes for the region
+            self.LoadPlacesNotes(for: region.identifier) {
+                // After loading, fetch the last three notes
+                let lastThreeNotes = self.getLastThreeNotes(for: region.identifier)
+                let lastThreeNotesText = lastThreeNotes.map { $0.text }
 
-             // Trigger the notification
-             sendNotification(locationName: region.identifier, lastThreeNotes: lastThreeNotesText)
+                if !lastThreeNotesText.isEmpty {
+                    self.sendNotification(locationName: region.identifier, lastThreeNotes: lastThreeNotesText)
+                    self.notifiedRegions.insert(region.identifier)
+                } else {
+                    print("No notes available for region: \(region.identifier)")
+                }
+            }
+        }
+    }
 
-             // Add to notified regions
-             notifiedRegions.insert(region.identifier)
-         }
-         
+
+
+
 
          
          func requestLocationAuthorization() {
@@ -227,7 +222,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 let content = UNMutableNotificationContent()
                 content.title = "Near \(locationName)"
                 let notesText = lastThreeNotes.joined(separator: ", ")
-                content.body = "Last notes: \(notesText)"
+                content.body = "\(notesText)"
                 content.categoryIdentifier = "notesCategory"
                 content.sound = UNNotificationSound.default
                 let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
@@ -266,6 +261,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
          }
     
     
+    //MARK: - END NOTIES
     
     
     
@@ -2059,7 +2055,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     
 //MARK: - LOAD PLACES VIEW CONTROLLER DATA
-    func LoadPlacesNotes(for locationName: String) {
+    func LoadPlacesNotes(for locationName: String, completion: (() -> Void)? = nil) {
         print("loadPlacesNotes called")
         
         guard let userEmail = Auth.auth().currentUser?.email else {
@@ -2102,7 +2098,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                         DispatchQueue.main.async {
                             print("Showing \(self?.notes.count ?? 0) notes based on location")
                             self?.tableView.reloadData()
-                            
+                            self?.locationNameLabel.text = "\(locationName)"
+                            self?.currentLocationName = locationName
+                            // Call completion here if not dependent on the image URL fetching
+                            completion?()
 //                            self?.updateProgressBar()
                             // Update the location name label
                             self?.locationNameLabel.text = "\(locationName)"
