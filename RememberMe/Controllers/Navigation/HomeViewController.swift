@@ -18,7 +18,8 @@ import FirebaseStorage
 import SDWebImage
 import UserNotifications
 import AVFoundation
-import OpenAI
+import Speech
+
 
 struct Geofence {
     let location: CLLocationCoordinate2D
@@ -33,6 +34,9 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
     var notifiedRegions: Set<String> = []
     var lastNotificationSentTime: [String: Date] = [:]
     var currentGeofenceRadius: CLLocationDistance = 30 // Default value or suitable initial value
+    
+    static let shared = GeofenceManager()
+
     
     override init() {
         super.init()
@@ -49,143 +53,9 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
     
     // MARK: - NOTIFICATIONS
-    
-    // Location Manager
-    func setupLocationManager() {
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestWhenInUseAuthorization()
-        locationManager.startUpdatingLocation()
-    }
-
-    var hasProcessedLocationUpdate = false
-
-    // Location Manager Delegate
-    var lastLocationUpdateTime: Date?
-
-    // Location Manager Delegate
-    var lastProcessedLocation: CLLocationCoordinate2D?
-
-    // Define a property to keep track of whether the location has been fetched
-    var hasFetchedLocation = false
-
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if hasFetchedLocation {
-            return
-        }
-
-        guard let newLocation = locations.last else { return }
-
-        self.userLocation = newLocation.coordinate
-        self.currentLocation = newLocation.coordinate
-        print("User's location: \(newLocation)")
-
-        updateLocationNameLabel(location: newLocation.coordinate)
-        self.displayImage(location: self.currentLocation!)
-
-        if let coord = self.currentLocation {
-            let locationObj = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
-            loadAndFilterNotes(for: coord, goalRadius: 15.0) {
-                print("Notes are loaded and filtered.")
-                self.setupClosestFifteenGeofences(currentLocation: locationObj) {
-                    print("Called setupClosestFifteenGeofences completion block in didUpdateLocations")
-                }
-            }
-        }
-
-        hasFetchedLocation = true
-    }
-
-    func setupClosestFifteenGeofences(currentLocation: CLLocation, completion: @escaping () -> Void) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
-            print("Setting up geofences for closest fifteen locations.")  // Debugging print statement
-
-            let sortedNotes = self.notes.sorted {
-                let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
-                let location2 = CLLocation(latitude: $1.location.latitude, longitude: $1.location.longitude)
-                return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
-            }
-
-            let closestNotes = Array(sortedNotes.prefix(15))
-            print("Closest notes count: \(closestNotes.count)")  // Debugging print statement
-
-            self.geofenceManager.geofences.removeAll()
-
-            for note in closestNotes {
-                let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
-                let geofence = Geofence(location: coordinate, radius: 100, identifier: note.locationName)
-                self.geofenceManager.geofences.append(geofence)
-                self.setupGeoFence(location: geofence.location, identifier: geofence.identifier)
-            }
-
-            print("Geofences for closest fifteen locations set up.")  // Debugging print statement
-            completion()
-        }
-    }
-
-        
-     // When exiting a region, remove it from the list of notified regions
-     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-         print("Exited region: \(region.identifier)")  // Debugging line
-         
-         // Remove from notified regions
-         notifiedRegions.remove(region.identifier)
-
-         if let circularRegion = region as? CLCircularRegion {
-             print("Exited circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")  // Debugging line
-         }
-     }
+   
 
     var geofenceManager = GeofenceManager()  // Initialize GeofenceManager
-
-
-         func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
-             let radius: CLLocationDistance = 100
-             print("Setting up GeoFence at \(location) with radius \(radius)")  // Debugging line
-             let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
-             region.notifyOnEntry = true
-             region.notifyOnExit = false
-             
-             if CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) {
-                 locationManager.startMonitoring(for: region)
-                 print("GeoFence setup complete.") // Debugging line
-             } else {
-                 print("GeoFence monitoring is not available for this device.") // Debugging line
-             }
-         }
-
-         func getLastThreeNotes(for locationName: String) -> [Note] {
-             print("Fetching last three notes for location: \(locationName)") // Debugging line
-             return Array(notes.filter { $0.locationName == locationName }.suffix(3))
-         }
-         
-   
-    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            print("Entered region: \(region.identifier)")
-
-            if let circularRegion = region as? CLCircularRegion {
-                print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")
-            }
-
-            // Load notes for the region
-            self.LoadPlacesNotes(for: region.identifier) {
-                // After loading, fetch the last three notes
-                let lastThreeNotes = self.getLastThreeNotes(for: region.identifier)
-                let lastThreeNotesText = lastThreeNotes.map { $0.text }
-
-                if !lastThreeNotesText.isEmpty {
-                    self.sendNotification(locationName: region.identifier, lastThreeNotes: lastThreeNotesText)
-                    self.notifiedRegions.insert(region.identifier)
-                } else {
-                    print("No notes available for region: \(region.identifier)")
-                }
-            }
-        }
-    }
-
-
-
 
 
          
@@ -193,50 +63,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
              locationManager.requestWhenInUseAuthorization()
          }
 
-         // Add a dictionary to keep track of last sent time for each location
-         var lastNotificationSentTime: [String: Date] = [:]
 
-    func sendNotification(locationName: String, lastThreeNotes: [String]) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                print("Preparing to send notification for location: \(locationName)") // Debugging line
-                
-                // Check if locationName and lastThreeNotes are not empty
-                if locationName.isEmpty || lastThreeNotes.isEmpty {
-                    print("Either the location name or the last three notes are empty. Skipping notification.") // Debugging line
-                    return
-                }
-                
-                // Check for minimum time interval before sending next notification for the same location
-                if let lastTime = self.geofenceManager.lastNotificationSentTime[locationName] {
-                    let currentTime = Date()
-                    let timeInterval = currentTime.timeIntervalSince(lastTime)
-                    if timeInterval < 60 {  // 60 seconds as a rate limit
-                        print("Skipping notification for \(locationName) due to rate limiting.") // Debugging line
-                        return
-                    }
-                }
-                
-                // Update the last sent time for this location
-                self.geofenceManager.lastNotificationSentTime[locationName] = Date()
-                
-                print("Sending notification for location: \(locationName)") // Debugging line
-                let content = UNMutableNotificationContent()
-                content.title = "Near \(locationName)"
-                let notesText = lastThreeNotes.joined(separator: ", ")
-                content.body = "\(notesText)"
-                content.categoryIdentifier = "notesCategory"
-                content.sound = UNNotificationSound.default
-                let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-                let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-                UNUserNotificationCenter.current().add(request) { error in
-                    if let error = error {
-                        print("Error adding notification: \(error)") // Debugging line
-                    } else {
-                        print("Notification added successfully") // Debugging line
-                    }
-                }
-            }
-        }
+            
 
          func requestNotificationAuthorization() {
              print("Requesting notification authorization") // Debugging line
@@ -378,6 +206,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //MARK: - Whisper API
     
+    func primeWhisperAPI() {
+        let dummyButton = UIButton()
+        toggleRecording(dummyButton) // Start recording
+        toggleRecording(dummyButton) // Stop recording
+    }
+
+    
     var isRecording = false // Add this property to keep track of recording state
     
     
@@ -397,49 +232,44 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     func stopRecordingAndTranscribeAudio() {
         print("Stopping recording.")
         audioRecorder.stop()
-        
+
         let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav")
         print("Audio file URL: \(audioFilename)")
-        
-        let fileManager = FileManager.default
-        if fileManager.fileExists(atPath: audioFilename.path) {
-            print("File exists")
-        } else {
-            print("File does not exist")
-        }
-        
-        print(audioFilename)
-        
-        APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
-            print("Inside transcribeAudio completion handler") // Debugging line
-            
-            switch result {
-            case .success(let transcription):
-                print("Transcription successful: \(transcription)") // Debugging line
-                
+
+        // Request authorization for speech recognition
+        SFSpeechRecognizer.requestAuthorization { authStatus in
+            switch authStatus {
+            case .authorized:
+                self.transcribeAudioFile(url: audioFilename)
+            default:
+                print("Speech recognition authorization denied")
                 DispatchQueue.main.async {
-                    // Create a new note and add it to the notes array
-                    let newNote = Note(id: UUID().uuidString, text: transcription, location: self.selectedLocation ?? CLLocationCoordinate2D(), locationName: "", imageURL: URL(string: ""))
-                    self.notes.append(newNote)
-                    
-                    // Update the UI to insert the new note into the table view
-                    self.tableView.beginUpdates()
-                    self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                    self.tableView.endUpdates()
-                    
-                    // Find the newly added cell and set it as the active cell
-                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                        self.activeNoteCell = newCell
-                        self.activeNoteCell?.note = newNote
-                        self.activeNoteCell?.noteTextField.text = transcription
-                        self.saveNote()  // Call the function to save the note
-                    }
+                    // Handle the error (e.g., show an alert)
                 }
-            case .failure(let error):
-                print("Error transcribing audio: \(error)") // Debugging line
+            }
+        }
+    }
+
+    func transcribeAudioFile(url: URL) {
+        guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else {
+            print("Speech recognizer not available")
+            return
+        }
+
+        let request = SFSpeechURLRecognitionRequest(url: url)
+        recognizer.recognitionTask(with: request) { result, error in
+            guard let result = result else {
+                print("There was an error transcribing the audio: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+
+            if result.isFinal {
+                let transcription = result.bestTranscription.formattedString
+                print("Transcription successful: \(transcription)")
+
                 DispatchQueue.main.async {
-      
+                    // Use the transcription (e.g., update UI or create a new note)
+                    self.createNewNoteWithTranscription(transcription)
                 }
             }
         }
@@ -478,20 +308,20 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     
-    
-    
     func createNewNoteWithTranscription(_ transcription: String) {
-        if let currentLocation = self.currentLocation {
+        // Use the current displayed location name and its coordinates
+        let userDefinedLocationName = currentLocationName ?? ""
+        if let currentLocationCoordinate = self.selectedLocation ?? self.currentLocation {
             let emptyURL = URL(string: "")
-            let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: "", imageURL: emptyURL)
+            let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocationCoordinate, locationName: userDefinedLocationName, imageURL: emptyURL)
             notes.append(newNote)
             selectedNote = newNote
-            
+
             DispatchQueue.main.async {
                 self.tableView.beginUpdates()
                 self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
                 self.tableView.endUpdates()
-                
+
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                     guard let self = self else { return }
                     if let newRowIndexPath = self.tableView.indexPathForLastRow,
@@ -502,6 +332,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
+
     
     
     //MARK: - VARIABLES & CONSTANTS
@@ -757,7 +588,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         return nil
     }
 
-    
 
     //Create New Name
     @IBAction func NewNote(_ sender: UIButton) {
@@ -788,22 +618,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     //MARK: - Appearance
-  
-//    func updateProgressBar() {
-//        updateNotesCountLabel()
-//        let currentPeople = notes.count
-//        let progress = min(Float(currentPeople) / Float(maxPeople), 1.0)
-//
-//        Progressbar.setProgress(progress, animated: true)
-//
-//        if progress == 1.0 {
-//            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
-//
-//        } else {
-//            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
-//
-//        }
-//    }
 
     
     
@@ -886,6 +700,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         requestNotificationAuthorization()
         checkNotificationSettings()
         NotificationCenter.default.addObserver(self, selector: #selector(handleAppDidBecomeActive), name: NSNotification.Name("appDidBecomeActive"), object: nil)
+        primeWhisperAPI() // Prime the Whisper API
+
         
         // Retrieve the stored goal number from UserDefaults
           let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
@@ -918,8 +734,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             requestNotificationAuthorization()
             setupNotificationCategory()
 
-//        // Update the progress bar according to the retrieved goal number
-//           updateProgressBar()
         
         
                 
@@ -945,7 +759,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         tableView.delegate = self
         tableView.register(UINib(nibName: "NoteCell", bundle: nil), forCellReuseIdentifier: "NoteCell")
         
-        setupLocationManager()
         setupRoundedImageView()
         setupRoundedProgressBar()
         
@@ -1797,7 +1610,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
         if let selectedLocation = selectedLocation {
             locationToSave = selectedLocation
-        } else if let currentLocation = locationManager.location?.coordinate {
+        } else if let currentLocation = currentLocation {
             locationToSave = currentLocation
         } else {
             print("Failed to get user's current location or selected location")

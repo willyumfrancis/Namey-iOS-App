@@ -3,25 +3,35 @@ import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
 import CoreData
-import OpenAI
 import UserNotifications
 import CoreLocation
 
 @main
-class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, CLLocationManagerDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     
-    // Initialize the CLLocationManager
-    var locationManager = CLLocationManager()
     var geofenceManager: GeofenceManager!
-
-
-    // MARK: - Notification Stack
-
+    
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Firebase setup
+        FirebaseApp.configure()
+        
+        // Request notification authorization
+        requestNotificationAuthorization()
+        
+        // Setup notification categories
+        setupNotificationCategory()
+        
+        // Initialize and start GeofenceManager
+        geofenceManager = GeofenceManager.shared
+        
+        return true
+    }
+    
+    // Request notification authorization from the user
     func requestNotificationAuthorization() {
-        print("Requesting notification authorization") // Debugging line
         let center = UNUserNotificationCenter.current()
         center.delegate = self
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if granted {
                 print("Notification access granted")
             } else {
@@ -33,41 +43,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         }
     }
     
+    // Setup notification categories for actions within notifications
     func setupNotificationCategory() {
-        print("Setting up notification category") // Debugging line
         let viewLastThreeNotesAction = UNNotificationAction(identifier: "viewLastThreeNotes", title: "View last three notes", options: [.foreground])
         let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastThreeNotesAction], intentIdentifiers: [], options: [])
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
-
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-          
-          // Initialize GeofenceManager
-          geofenceManager = GeofenceManager()
-          
-          FirebaseApp.configure()
-          requestNotificationAuthorization()
-          setupNotificationCategory()
-          
-          let db = Firestore.firestore()
-          print(db) // Debugging line
-          
-          return true
-      }
     
     func applicationDidBecomeActive(_ application: UIApplication) {
         NotificationCenter.default.post(name: NSNotification.Name("appDidBecomeActive"), object: nil)
     }
     
-    // MARK: UISceneSession Lifecycle
-
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
         return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }
     
+    
     // MARK: - Core Data stack
-
-    lazy var persistentContainer: NSPersistentContainer = {
+    
+    var persistentContainer: NSPersistentContainer = {
         let container = NSPersistentContainer(name: "RememberMe")
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
