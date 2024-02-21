@@ -126,6 +126,7 @@ class SettingsViewController: UIViewController {
 
     
     @objc private func imageTapped() {
+        
            rotationSpeed += 0.03
            let rotationAnimation = CABasicAnimation(keyPath: "transform.rotation")
            rotationAnimation.toValue = NSNumber(value: Double.pi * 2.0 * rotationSpeed)
@@ -145,6 +146,7 @@ class SettingsViewController: UIViewController {
        
     
     @objc private func labelTapped() {
+        
            if catImage.transform.d != 0 { // checking if the image is visible
                UIView.animate(withDuration: 0.3, animations: {
                    self.catImage.transform = self.catImage.transform.scaledBy(x: 0.9, y: 0.9) // reduce the size by 10%
