@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0D236302C40BB898E3F71C0D /* Pods_Namey.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9CEC1B239EFD2CE1DAEA4441 /* Pods_Namey.framework */; };
 		750933FA2B85E060006DB77F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 750933F92B85E060006DB77F /* GoogleService-Info.plist */; };
+		750933FC2B85F3D9006DB77F /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750933FB2B85F3D9006DB77F /* HomeViewController.swift */; };
 		7516ED2229D215CB00801960 /* K.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7516ED2129D215CB00801960 /* K.swift */; };
 		7545750A29C00798004242C5 /* LogInViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750929C00798004242C5 /* LogInViewController.swift */; };
 		7545750C29C00848004242C5 /* PlacesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750B29C00848004242C5 /* PlacesViewController.swift */; };
@@ -22,7 +23,6 @@
 		75A2589629D2380000A8D509 /* NoteCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 75A2589429D2380000A8D509 /* NoteCell.xib */; };
 		75B69CD529BFEEE40049D4F5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */; };
 		75B69CD729BFEEE40049D4F5 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CD629BFEEE40049D4F5 /* SceneDelegate.swift */; };
-		75B69CD929BFEEE40049D4F5 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CD829BFEEE40049D4F5 /* HomeViewController.swift */; };
 		75B69CDC29BFEEE40049D4F5 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 75B69CDA29BFEEE40049D4F5 /* Main.storyboard */; };
 		75B69CDF29BFEEE40049D4F5 /* RememberMe.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CDD29BFEEE40049D4F5 /* RememberMe.xcdatamodeld */; };
 		75B69CE129BFEEE50049D4F5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 75B69CE029BFEEE50049D4F5 /* Assets.xcassets */; };
@@ -41,6 +41,7 @@
 		7502561529CE4851004FE87A /* Roboto-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Bold.ttf"; sourceTree = "<group>"; };
 		7502561629CE485D004FE87A /* Roboto-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Regular.ttf"; sourceTree = "<group>"; };
 		750933F92B85E060006DB77F /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		750933FB2B85F3D9006DB77F /* HomeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = HomeViewController.swift; path = ../../../../HomeViewController.swift; sourceTree = "<group>"; };
 		7516ED2129D215CB00801960 /* K.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = K.swift; sourceTree = "<group>"; };
 		7545750929C00798004242C5 /* LogInViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogInViewController.swift; sourceTree = "<group>"; };
 		7545750B29C00848004242C5 /* PlacesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesViewController.swift; sourceTree = "<group>"; };
@@ -55,7 +56,6 @@
 		75B69CD129BFEEE40049D4F5 /* Namey.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Namey.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		75B69CD629BFEEE40049D4F5 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
-		75B69CD829BFEEE40049D4F5 /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
 		75B69CDB29BFEEE40049D4F5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		75B69CDE29BFEEE40049D4F5 /* RememberMe.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = RememberMe.xcdatamodel; sourceTree = "<group>"; };
 		75B69CE029BFEEE50049D4F5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -114,7 +114,7 @@
 		7545750D29C00853004242C5 /* Navigation */ = {
 			isa = PBXGroup;
 			children = (
-				75B69CD829BFEEE40049D4F5 /* HomeViewController.swift */,
+				750933FB2B85F3D9006DB77F /* HomeViewController.swift */,
 				7545750B29C00848004242C5 /* PlacesViewController.swift */,
 				7545750E29C00868004242C5 /* NamesViewController.swift */,
 				7545751029C0086F004242C5 /* SettingsViewController.swift */,
@@ -331,8 +331,8 @@
 				75EC7DE32A93FF8200A8EB75 /* APIManager.swift in Sources */,
 				75B69CDF29BFEEE40049D4F5 /* RememberMe.xcdatamodeld in Sources */,
 				7516ED2229D215CB00801960 /* K.swift in Sources */,
-				75B69CD929BFEEE40049D4F5 /* HomeViewController.swift in Sources */,
 				75E3997E2AA1AC9300914DA5 /* ImageCacheManager.swift in Sources */,
+				750933FC2B85F3D9006DB77F /* HomeViewController.swift in Sources */,
 				75B69CD529BFEEE40049D4F5 /* AppDelegate.swift in Sources */,
 				7545751129C0086F004242C5 /* SettingsViewController.swift in Sources */,
 				75A2589529D2380000A8D509 /* NoteCell.swift in Sources */,
