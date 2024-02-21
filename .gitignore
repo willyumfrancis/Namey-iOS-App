@@ -1,4 +1,5 @@
 # Ignore GoogleService-Info.plist
 GoogleService-Info.plist
 *.xcuserdatad/
-
+# CocoaPods
+Pods/
