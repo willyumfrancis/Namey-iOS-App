@@ -116,6 +116,11 @@
 			<key>orderHint</key>
 			<integer>15</integer>
 		</dict>
+		<key>Libuv-gRPC.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>29</integer>
+		</dict>
 		<key>OpenAI.xcscheme</key>
 		<dict>
 			<key>isShown</key>

@@ -73,8 +73,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     let auth = Auth.auth()
     
     override func viewWillAppear(_ animated: Bool) {
+
         super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(true, animated: false)
         tableView.reloadData()
 
 
@@ -82,6 +82,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     override func viewDidLoad() {
             super.viewDidLoad()
+        
             
             let locationCellNib = UINib(nibName: "LocationCell", bundle: nil)
             tableView.register(locationCellNib, forCellReuseIdentifier: "LocationCell")
@@ -89,6 +90,10 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             tableView.delegate = self
             UNUserNotificationCenter.current().delegate = self
             loadLocationData()
+        
+        // Remove vertical and horizontal scroll indicators
+           tableView.showsVerticalScrollIndicator = false
+           tableView.showsHorizontalScrollIndicator = false
         
             
             locationManager.delegate = self
@@ -216,14 +221,18 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     }
     
     func sortLocationsByDistance() {
-           guard let userLocation = userLocation else { return }
-           locations.sort { locationData1, locationData2 in
-               return
-               locationData1.location.distance(from: userLocation) < locationData2.location.distance(from: userLocation)
-           }
+        guard let userLocation = userLocation else {
+            print("User location is not available")
+            return
+        }
+        locations.sort { locationData1, locationData2 in
+            let distance1 = locationData1.location.distance(from: userLocation)
+            let distance2 = locationData2.location.distance(from: userLocation)
+            return distance1 < distance2
+        }
         delegate?.didUpdateClosestLocation(locations.first)
+    }
 
-       }
     
     func loadNotes(completion: @escaping ([Note]) -> Void) {
         guard let userEmail = Auth.auth().currentUser?.email else {

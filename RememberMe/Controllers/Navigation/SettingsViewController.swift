@@ -69,7 +69,6 @@ class SettingsViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
-            navigationController?.setNavigationBarHidden(true, animated: false)
         audioControlButton.isHidden = true // Initially hide the button
         
       

@@ -701,6 +701,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         checkNotificationSettings()
         NotificationCenter.default.addObserver(self, selector: #selector(handleAppDidBecomeActive), name: NSNotification.Name("appDidBecomeActive"), object: nil)
         primeWhisperAPI() // Prime the Whisper API
+        
+        // Remove vertical and horizontal scroll indicators
+           tableView.showsVerticalScrollIndicator = false
+           tableView.showsHorizontalScrollIndicator = false
 
         
         // Retrieve the stored goal number from UserDefaults

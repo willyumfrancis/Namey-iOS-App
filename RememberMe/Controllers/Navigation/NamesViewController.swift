@@ -30,7 +30,6 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
       
       override func viewWillAppear(_ animated: Bool) {
           super.viewWillAppear(animated)
-          navigationController?.setNavigationBarHidden(true, animated: false)
           
           NameList.dataSource = self
           NameList.delegate = self
@@ -46,6 +45,10 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
             alphabetScrollView.layer.borderWidth = 2
         alphabetScrollView.layer.cornerRadius = 10.0 // Add this line
            alphabetScrollView.clipsToBounds = true
+        
+        // Remove vertical scroll indicator
+           NameList.showsVerticalScrollIndicator = false
+        
             
         let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
         for letter in alphabet {
