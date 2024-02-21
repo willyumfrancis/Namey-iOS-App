@@ -47,8 +47,6 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
     }
 }
     
-    
-
 
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
     
@@ -56,15 +54,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
    
 
     var geofenceManager = GeofenceManager()  // Initialize GeofenceManager
-
-
-         
          func requestLocationAuthorization() {
              locationManager.requestWhenInUseAuthorization()
          }
-
-
-            
 
          func requestNotificationAuthorization() {
              print("Requesting notification authorization") // Debugging line
@@ -88,14 +80,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
              UNUserNotificationCenter.current().setNotificationCategories([category])
              print("Notification category setup complete.") // Debugging line
          }
-    
-    
     //MARK: - END NOTIES
-    
-    
-    
-    
-    
     
     //MARK: - OUTLETS
     @IBOutlet weak var tableView: UITableView!
@@ -167,10 +152,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         })
     }
     
-    
-    
-    
-    
     func updateNoteAtIndexPath(_ indexPath: IndexPath, withText updatedText: String) {
         let note = notes[indexPath.row]
         let locationToSave = note.location // Use the existing location
@@ -200,8 +181,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-    
-    
     
     
     //MARK: - Whisper API
@@ -274,9 +253,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-    
-    
-    
+
+
     func showAlert(withTranscription text: String) {
         let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:\n\n\(text)", preferredStyle: .alert)
         let okAction = UIAlertAction(title: "OK", style: .default)
@@ -332,9 +310,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
-    
-    
     //MARK: - VARIABLES & CONSTANTS
     
     
@@ -373,10 +348,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-    
-    
-    
-    
+
     var currentLocationName: String?
     var currentLocationImageURL: URL?
     
@@ -385,31 +357,20 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     var selectedNote: Note?
     
     let progressBar = UIProgressView(progressViewStyle: .default)
-    
+
     var maxPeople = 3
     var locationUpdateTimer: Timer?
     
-    
-    // Assuming you have other variables and initializers defined elsewhere
     var notes: [Note] = []  // Replace Note with your Note class
     var notifiedRegions: Set<String> = []
-    
-    
     var notesLoaded = false
-    
     var userLocation: CLLocationCoordinate2D?
-    
-    
-    
-    
     var authStateListenerHandle: AuthStateDidChangeListenerHandle?
     var sliderValueLabel: UILabel!
     var activeNoteCell: NoteCell?
     
     var fetchedLocationKeys: Set<String> = []
     var notesFetched = false
-    
-    
     
     @IBAction func uploadImageButton(_ sender: UIButton) {
             print("Upload Image button pressed")
@@ -467,9 +428,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
             self.updateNotesCountLabel()
         }
-
-
-    
     
     //AI Button
     @IBAction func aibutton(_ sender: UIButton) {
@@ -569,10 +527,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
            task.resume()
        }
    
-    
-    
-    
-
     //MARK: - SAVE AND NEW NOTE CREATION
     //Save Name Button
     @IBAction func SaveNote(_ sender: UIButton) {
@@ -781,9 +735,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         NotificationCenter.default.removeObserver(self)
     }
 
-    
-    
-    
     func createAttributedString(from noteText: String) -> NSAttributedString {
         let attributedString = NSMutableAttributedString(string: noteText)
         
@@ -822,10 +773,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             notesCountLabel.text = labelText
         }
     }
-
-
-
-
     
     //MARK: - POP-UPS
     
@@ -863,8 +810,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             delayCounter += 1
         }
     }
-    
-    
+
     
     @objc func goalButtonTapped() {
         let alertController = UIAlertController(title: "Set Goal", message: "\n\n\n\n\n", preferredStyle: .alert)
@@ -916,13 +862,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let value = Int(sender.value)
         sliderValueLabel.text = "\(value)"
     }
-    
-    
-    
-    
-    
-    
-    
 
 //MARK: - UPLOAD PHOTO CODE
     
@@ -956,9 +895,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         self.tabBarController?.tabBar.isHidden = true
     }
 
-
-
-    
     func updateImageURLForNotesWithSameLocation(location: CLLocationCoordinate2D, locationName: String, newImageURL: URL) {
         print("Attempting to update imageURL for notes at location: \(location), locationName: \(locationName)")
         
@@ -1009,9 +945,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
     }
 
-
-    
-    
     func updateNotesImageURLGeoLocation(imageURL: URL?) {
             guard let userEmail = Auth.auth().currentUser?.email else {
                 print("User email not found")
@@ -1156,10 +1089,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         // You can decide whether to create a new note or not
     }
 
-
-    
-    
-    
     
     //MARK: - IMPORTANT UPDATE L NAME FUNCTION
     
@@ -1463,9 +1392,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
 
-    
-    
-    
     // Image Picker iOS
     func presentImagePicker(locationName: String) {
         // Store the location name for later use
@@ -1526,21 +1452,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         present(alertController, animated: true, completion: nil)
     }
-    
-    
-    
-    
 
-
-
-
-
-
-
-
-    
-    
-    
     
     //END LOCATION STUFF
     private func setupRoundedImageView() {
@@ -2019,7 +1931,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
 
 
-
     func updateViewWithNote(_ note: Note) {
         // Set current location
         self.currentLocation = note.location
@@ -2032,10 +1943,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         // Update the table view
         self.tableView.reloadData()
     }
-
-
-
-
 
 }
     
