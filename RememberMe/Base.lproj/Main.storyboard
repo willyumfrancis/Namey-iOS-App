@@ -76,8 +76,8 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" keyboardDismissMode="onDrag" dataMode="prototypes" style="plain" separatorStyle="none" sectionIndexMinimumDisplayRowCount="9" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" springLoaded="YES" translatesAutoresizingMaskIntoConstraints="NO" id="r8s-nI-bUC">
-                                <rect key="frame" x="52" y="175" width="289" height="244"/>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" misplaced="YES" alwaysBounceVertical="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" keyboardDismissMode="onDrag" dataMode="prototypes" style="plain" separatorStyle="none" sectionIndexMinimumDisplayRowCount="9" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" springLoaded="YES" translatesAutoresizingMaskIntoConstraints="NO" id="r8s-nI-bUC">
+                                <rect key="frame" x="31" y="175" width="332" height="244"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <inset key="separatorInset" minX="15" minY="0.0" maxX="0.0" maxY="0.0"/>
@@ -85,45 +85,12 @@
                                 <color key="sectionIndexBackgroundColor" red="1" green="0.90853528910000003" blue="0.82987820130000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="sectionIndexTrackingBackgroundColor" red="0.24500425170000001" green="0.84239477039999999" blue="0.82987820130000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </tableView>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="E2I-xx-41M">
-                                <rect key="frame" x="58" y="461" width="277" height="235"/>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="E2I-xx-41M">
+                                <rect key="frame" x="31" y="461" width="332" height="235"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="235" id="Hd8-BA-X9z"/>
                                 </constraints>
                             </imageView>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="2Qx-UH-TeP">
-                                <rect key="frame" x="313" y="425" width="22" height="34"/>
-                                <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" image="location.square.fill" catalog="system" title=""/>
-                                <connections>
-                                    <action selector="LocationButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="leo-ba-I0l"/>
-                                </connections>
-                            </button>
-                            <button opaque="NO" alpha="0.65000000000000002" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nL5-cf-paW">
-                                <rect key="frame" x="276" y="425" width="26" height="34"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="26" id="vuh-Y5-LTt"/>
-                                </constraints>
-                                <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" image="camera" catalog="system" title=""/>
-                                <connections>
-                                    <action selector="uploadImageButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="zR3-xR-yj1"/>
-                                </connections>
-                            </button>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="bcf-Hp-n1G">
-                                <rect key="frame" x="248" y="425" width="19" height="34"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="19" id="qD2-e9-8s1"/>
-                                </constraints>
-                                <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" image="mic" catalog="system" title=""/>
-                                <connections>
-                                    <action selector="toggleRecording:" destination="BYZ-38-t0r" eventType="touchUpInside" id="63l-5T-a3j"/>
-                                </connections>
-                            </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="oX5-B4-FmA">
                                 <rect key="frame" x="58" y="708" width="72" height="39"/>
                                 <constraints>
@@ -180,8 +147,8 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" restorationIdentifier="AdviceOutlet" text="" textAlignment="natural" lineBreakMode="wordWrap" numberOfLines="2" baselineAdjustment="alignBaselines" minimumFontSize="15" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9az-fw-h3z">
-                                <rect key="frame" x="58" y="126" width="277" height="49"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" restorationIdentifier="AdviceOutlet" text="" textAlignment="natural" lineBreakMode="wordWrap" numberOfLines="2" baselineAdjustment="alignBaselines" minimumFontSize="15" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9az-fw-h3z">
+                                <rect key="frame" x="31" y="126" width="332" height="49"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="49" id="Ovd-dR-gP5"/>
                                 </constraints>
@@ -189,6 +156,39 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <button opaque="NO" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="2Qx-UH-TeP">
+                                <rect key="frame" x="341" y="426" width="22" height="34"/>
+                                <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain" image="location.square.fill" catalog="system" title=""/>
+                                <connections>
+                                    <action selector="LocationButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="leo-ba-I0l"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" alpha="0.65000000000000002" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nL5-cf-paW">
+                                <rect key="frame" x="304" y="426" width="26" height="34"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="26" id="vuh-Y5-LTt"/>
+                                </constraints>
+                                <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain" image="camera" catalog="system" title=""/>
+                                <connections>
+                                    <action selector="uploadImageButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="zR3-xR-yj1"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="bcf-Hp-n1G">
+                                <rect key="frame" x="276" y="426" width="19" height="34"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="19" id="qD2-e9-8s1"/>
+                                </constraints>
+                                <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain" image="mic" catalog="system" title=""/>
+                                <connections>
+                                    <action selector="toggleRecording:" destination="BYZ-38-t0r" eventType="touchUpInside" id="63l-5T-a3j"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -250,10 +250,10 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="140" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="flH-qH-l4W">
-                                <rect key="frame" x="33" y="108" width="327" height="611"/>
+                                <rect key="frame" x="33" y="132" width="327" height="587"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="611" id="JC9-wq-mBN"/>
+                                    <constraint firstAttribute="height" constant="587" id="JC9-wq-mBN"/>
                                 </constraints>
                             </tableView>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" translatesAutoresizingMaskIntoConstraints="NO" id="GJ1-Mp-NRq">
@@ -278,16 +278,28 @@
                                 <viewLayoutGuide key="contentLayoutGuide" id="FhU-xY-66J"/>
                                 <viewLayoutGuide key="frameLayoutGuide" id="RNu-ZR-PnI"/>
                             </scrollView>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="U7S-EC-ToH">
+                                <rect key="frame" x="310" y="89" width="50" height="35"/>
+                                <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain" image="arrow.clockwise.circle.fill" catalog="system" title=""/>
+                                <connections>
+                                    <action selector="ResetButton:" destination="CEP-KN-Br7" eventType="touchUpInside" id="544-0p-jYb"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="XyK-48-Y4p"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="flH-qH-l4W" firstAttribute="top" secondItem="XyK-48-Y4p" secondAttribute="top" constant="5" id="2iB-YW-0It"/>
+                            <constraint firstItem="flH-qH-l4W" firstAttribute="top" secondItem="XyK-48-Y4p" secondAttribute="top" constant="29" id="2iB-YW-0It"/>
                             <constraint firstItem="flH-qH-l4W" firstAttribute="centerX" secondItem="XW2-qi-g7n" secondAttribute="centerX" id="6hE-wb-Aai"/>
                             <constraint firstItem="flH-qH-l4W" firstAttribute="leading" secondItem="GJ1-Mp-NRq" secondAttribute="leading" id="8Hh-BK-0ZN"/>
+                            <constraint firstItem="U7S-EC-ToH" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="XW2-qi-g7n" secondAttribute="leading" constant="20" symbolic="YES" id="Sa6-ZL-Q49"/>
+                            <constraint firstItem="flH-qH-l4W" firstAttribute="top" secondItem="U7S-EC-ToH" secondAttribute="bottom" constant="8" id="bRN-nR-KgF"/>
                             <constraint firstItem="GJ1-Mp-NRq" firstAttribute="top" secondItem="flH-qH-l4W" secondAttribute="bottom" id="hjC-mS-QxI" userLabel="Alpha Scroll View.top = Name List.bottom + 5"/>
                             <constraint firstItem="flH-qH-l4W" firstAttribute="trailing" secondItem="GJ1-Mp-NRq" secondAttribute="trailing" id="oo3-0h-9yV"/>
                             <constraint firstItem="GJ1-Mp-NRq" firstAttribute="leading" secondItem="XyK-48-Y4p" secondAttribute="leading" constant="33" id="pHg-Pf-Ct6"/>
+                            <constraint firstItem="U7S-EC-ToH" firstAttribute="trailing" secondItem="flH-qH-l4W" secondAttribute="trailing" id="voJ-Xi-TIi"/>
                         </constraints>
                     </view>
                     <tabBarItem key="tabBarItem" title="Places" image="building.2.fill" catalog="system" id="WL0-EW-oAH"/>

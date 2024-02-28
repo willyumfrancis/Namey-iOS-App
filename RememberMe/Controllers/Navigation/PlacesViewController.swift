@@ -52,9 +52,13 @@ func safeFileName(for locationName: String) -> String {
 
 
 class PlacesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, CLLocationManagerDelegate, UNUserNotificationCenterDelegate {
+    var isFilteringByLetter = false
+
 
     
       weak var delegate: PlacesViewControllerDelegate?
+
+    var filteredLocations: [LocationData] = []
 
       var locations: [LocationData] = []
       var fetchedLocationKeys: Set<String> = []
@@ -69,6 +73,11 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     @IBOutlet weak var tableView: UITableView!
     
+    
+    @IBAction func ResetButton(_ sender: Any) {
+        resetFilter()
+
+    }
     @IBOutlet weak var AlphaScrollView: UIScrollView!
     @IBOutlet weak var AlphaPlaces: UIStackView!
     
@@ -147,18 +156,18 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             }
         }
 
-        @objc func alphabetButtonTapped(_ sender: UIButton) {
-            guard let letter = sender.titleLabel?.text, !locations.isEmpty else { return }
-            filterLocations(startingWith: letter)
-        }
+    @objc func alphabetButtonTapped(_ sender: UIButton) {
+        guard let letter = sender.titleLabel?.text else { return }
+        isFilteringByLetter = true
+        filterLocations(startingWith: letter)
+    }
 
-        func filterLocations(startingWith letter: String) {
-            guard let index = locations.firstIndex(where: { $0.name.uppercased().hasPrefix(letter) }) else {
-                return
-            }
-            let indexPath = IndexPath(row: index, section: 0)
-            tableView.scrollToRow(at: indexPath, at: .top, animated: true)
-        }
+    func filterLocations(startingWith letter: String) {
+        filteredLocations = locations.filter { $0.name.uppercased().starts(with: letter) }
+        tableView.reloadData()
+    }
+
+
 
 
 
@@ -221,8 +230,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                             if let locationName = data["locationName"] as? String,
                                let locationData = data["location"] as? GeoPoint {
 
-//                                print("Location Name: \(locationName)") // Debugging line
-
                                 let location = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
                                 var imageURL: URL? = nil
 
@@ -232,24 +239,27 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
 
                                 let locationDataInstance = LocationData(name: locationName, location: location, imageURL: imageURL)
                                 
-//                                print("Adding location \(locationName) to fetchedLocationsDict") // Debugging line
                                 fetchedLocationsDict[locationName] = locationDataInstance // Use the name as a key to eliminate duplicates
                             } else {
                                 print("Failed to parse location data for document ID: \(doc.documentID)")
                             }
                         }
 
-                        self.locations = Array(fetchedLocationsDict.values).filter { locationData in
-                            return locationData.name != ""
+                        self.locations = Array(fetchedLocationsDict.values)
+                        // Check if we are currently filtering by letter; if not, sort by distance
+                        if !self.isFilteringByLetter {
+                            if let userLocation = self.userLocation {
+                                self.locations.sort { $0.location.distance(from: userLocation) < $1.location.distance(from: userLocation) }
+                            }
+                        } else {
+                            // Keep the alphabetical order if isFilteringByLetter is true
+                            self.locations.sort { $0.name < $1.name }
                         }
 
-                        print("Filtered \(self.locations.count) unique locations from fetchedLocationsDict") // Debugging line
-                        
-                        self.sortLocationsByDistance()
-                        self.loadNextPage()
+                        // Update filteredLocations either way to keep the table view and data source consistent
+                        self.filteredLocations = self.locations
 
                         DispatchQueue.main.async {
-                            print("Reloaded table with \(self.locations.count) unique locations") // Debugging line
                             self.tableView.reloadData()
                         }
                     } else {
@@ -258,6 +268,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 }
             }
     }
+
     
     func sortLocationsByDistance() {
         guard let userLocation = userLocation else {
@@ -271,6 +282,13 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         }
         delegate?.didUpdateClosestLocation(locations.first)
     }
+    
+    func resetFilter() {
+        isFilteringByLetter = false
+        filteredLocations = locations // Assuming 'locations' is already sorted by proximity
+        tableView.reloadData()
+    }
+
 
     
     func loadNotes(completion: @escaping ([Note]) -> Void) {
@@ -335,14 +353,14 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-         return locations.count
+        return filteredLocations.count
      }
     
     let placeholderImage = UIImage(named: "jellydev")
      
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath) as! LocationCell
-        let locationData = locations[indexPath.row]
+          let locationData = filteredLocations[indexPath.row]
         cell.locationNameLabel.text = locationData.name
 
         // Cancel any ongoing image download tasks when reusing the cell
@@ -456,7 +474,9 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let selectedLocation = locations[indexPath.row]
+
+        // Decide which array to use based on whether we're currently filtering.
+        let selectedLocation = isFilteringByLetter ? filteredLocations[indexPath.row] : locations[indexPath.row]
 
         // Calculate the average of the selected location's notes' coordinates
         var totalLatitude = 0.0
@@ -487,6 +507,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         UserDefaults.standard.synchronize()
         delegate?.didSelectLocation(with: selectedLocation.name)
     }
+
     
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         let locationName = region.identifier // Directly use identifier as it's non-optional
