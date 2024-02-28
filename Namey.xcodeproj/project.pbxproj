@@ -94,13 +94,6 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		7516ED1929D0C7B800801960 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
 		7516ED1A29D0C7D900801960 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -165,7 +158,6 @@
 			children = (
 				754B6BDE2A9DED6100F8A3B0 /* music */,
 				7516ED1A29D0C7D900801960 /* Models */,
-				7516ED1929D0C7B800801960 /* Views */,
 				75B69CD429BFEEE40049D4F5 /* AppDelegate.swift */,
 				75A2589329D2380000A8D509 /* NoteCell.swift */,
 				75A2589429D2380000A8D509 /* NoteCell.xib */,

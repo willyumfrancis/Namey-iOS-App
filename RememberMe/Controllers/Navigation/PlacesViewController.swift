@@ -69,6 +69,10 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     @IBOutlet weak var tableView: UITableView!
     
+    @IBOutlet weak var AlphaScrollView: UIScrollView!
+    @IBOutlet weak var AlphaPlaces: UIStackView!
+    
+    
     let db = Firestore.firestore()
     let auth = Auth.auth()
     
@@ -90,6 +94,15 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             tableView.delegate = self
             UNUserNotificationCenter.current().delegate = self
             loadLocationData()
+        
+        setupAlphabetScrollView()
+        
+        // Set border for the scrollView
+        AlphaScrollView.layer.borderColor = UIColor.black.cgColor
+        AlphaScrollView.layer.borderWidth = 2
+        AlphaScrollView.layer.cornerRadius = 10.0 // Add this line
+        AlphaScrollView.clipsToBounds = true
+
         
         // Remove vertical and horizontal scroll indicators
            tableView.showsVerticalScrollIndicator = false
@@ -120,6 +133,32 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         super.viewDidAppear(animated)
         delegate?.didEnterPlacesViewController()
     }
+
+    func setupAlphabetScrollView() {
+            let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+            for letter in alphabet {
+                let button = UIButton()
+                button.setTitle(String(letter), for: .normal)
+                button.setTitleColor(.black, for: .normal)
+                button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 18)
+
+                button.addTarget(self, action: #selector(alphabetButtonTapped), for: .touchUpInside)
+                AlphaPlaces.addArrangedSubview(button)
+            }
+        }
+
+        @objc func alphabetButtonTapped(_ sender: UIButton) {
+            guard let letter = sender.titleLabel?.text, !locations.isEmpty else { return }
+            filterLocations(startingWith: letter)
+        }
+
+        func filterLocations(startingWith letter: String) {
+            guard let index = locations.firstIndex(where: { $0.name.uppercased().hasPrefix(letter) }) else {
+                return
+            }
+            let indexPath = IndexPath(row: index, section: 0)
+            tableView.scrollToRow(at: indexPath, at: .top, animated: true)
+        }
 
 
 
