@@ -417,39 +417,48 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         }
     }
     func deleteLocationAndNotes(locationData: LocationData, indexPath: IndexPath) {
-        // Deleting notes associated with the location.
-        db.collection("notes")
-            .whereField("locationName", isEqualTo: locationData.name)
-            .getDocuments { (querySnapshot, error) in
+        // Presenting a confirmation alert before deleting
+        let alert = UIAlertController(title: "Delete Location", message: "Are you sure you want to delete this location and all its notes?", preferredStyle: .alert)
+        let yesAction = UIAlertAction(title: "Yes", style: .destructive) { [weak self] action in
+            guard let self = self else { return }
+
+            // Proceed with deleting location and its notes
+            self.db.collection("notes")
+                .whereField("locationName", isEqualTo: locationData.name)
+                .getDocuments { (querySnapshot, error) in
+                    if let error = error {
+                        print("Error getting documents: \(error)")
+                    } else {
+                        for document in querySnapshot!.documents {
+                            document.reference.delete()
+                        }
+                    }
+                }
+
+            // Deleting location from Firestore
+            self.db.collection("locations").document(locationData.name).delete { error in
                 if let error = error {
-                    print("Error getting documents: \(error)")
+                    print("Error removing document: \(error)")
                 } else {
-                    for document in querySnapshot!.documents {
-                        document.reference.delete()
+                    print("Document successfully removed!")
+
+                    // Remove the location from the local array and update the table view
+                    if let index = self.locations.firstIndex(where: { $0.name == locationData.name }) {
+                        self.locations.remove(at: index)
+                        self.tableView.deleteRows(at: [indexPath], with: .fade)
+                    } else {
+                        print("Error: could not find location in locations array")
                     }
                 }
             }
-        // Deleting location from Firestore.
-        db.collection("locations").document(locationData.name).delete { error in
-            if let error = error {
-                print("Error removing document: \(error)")
-            } else {
-                print("Document successfully removed!")
-                
-                // Find the index of the location in the locations array
-                if let index = self.locations.firstIndex(where: { $0.name == locationData.name }) {
-                    // If the location is found, remove it from the array
-                    self.locations.remove(at: index)
-                    
-                    // Update the table view if the deleted location was found in the locations array
-                    self.tableView.deleteRows(at: [indexPath], with: .fade)
-                } else {
-                    // If the location was not found in the array, log an error
-                    print("Error: could not find location in locations array")
-                }
-            }
         }
+
+        let noAction = UIAlertAction(title: "No", style: .cancel, handler: nil)
+        alert.addAction(yesAction)
+        alert.addAction(noAction)
+        present(alert, animated: true)
     }
+
 
     func downloadAndDisplayImage(locationData: LocationData, completion: @escaping (URL) -> Void) {
         guard let userEmail = Auth.auth().currentUser?.email else {
@@ -544,7 +553,6 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
              locationManager.startMonitoring(for: geofenceRegion)
          }
      }
-
 
         func sendNotificationForLocation(_ location: LocationData) {
             let content = UNMutableNotificationContent()
