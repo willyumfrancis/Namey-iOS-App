@@ -422,35 +422,41 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         let yesAction = UIAlertAction(title: "Yes", style: .destructive) { [weak self] action in
             guard let self = self else { return }
 
-            // Proceed with deleting location and its notes
+            // Check if there are notes associated with the location
             self.db.collection("notes")
                 .whereField("locationName", isEqualTo: locationData.name)
                 .getDocuments { (querySnapshot, error) in
                     if let error = error {
                         print("Error getting documents: \(error)")
                     } else {
+                        let group = DispatchGroup()
                         for document in querySnapshot!.documents {
-                            document.reference.delete()
+                            group.enter()
+                            document.reference.delete { error in
+                                if let error = error {
+                                    print("Error removing document: \(error)")
+                                }
+                                group.leave()
+                            }
+                        }
+
+                        group.notify(queue: .main) {
+                            // After all notes are deleted, delete the location
+                            self.db.collection("locations").document(locationData.name).delete { error in
+                                if let error = error {
+                                    print("Error removing location: \(error)")
+                                } else {
+                                    print("Location successfully removed!")
+
+                                    // Remove the location from the local array
+                                    self.locations.removeAll { $0.name == locationData.name }
+                                    // Reload the tableView instead of deleting single row to avoid inconsistency
+                                    self.tableView.reloadData()
+                                }
+                            }
                         }
                     }
                 }
-
-            // Deleting location from Firestore
-            self.db.collection("locations").document(locationData.name).delete { error in
-                if let error = error {
-                    print("Error removing document: \(error)")
-                } else {
-                    print("Document successfully removed!")
-
-                    // Remove the location from the local array and update the table view
-                    if let index = self.locations.firstIndex(where: { $0.name == locationData.name }) {
-                        self.locations.remove(at: index)
-                        self.tableView.deleteRows(at: [indexPath], with: .fade)
-                    } else {
-                        print("Error: could not find location in locations array")
-                    }
-                }
-            }
         }
 
         let noAction = UIAlertAction(title: "No", style: .cancel, handler: nil)
@@ -458,6 +464,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         alert.addAction(noAction)
         present(alert, animated: true)
     }
+
+
 
 
     func downloadAndDisplayImage(locationData: LocationData, completion: @escaping (URL) -> Void) {

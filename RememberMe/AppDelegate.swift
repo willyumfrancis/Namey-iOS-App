@@ -24,8 +24,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         // Initialize and start GeofenceManager
         geofenceManager = GeofenceManager.shared
         
-        return true
-    }
+        
+         if let notification = launchOptions?[.remoteNotification] as? [String: AnyObject],
+            let locationName = notification["locationName"] as? String {
+             // Navigate to HomeViewController and call LoadPlacesNotes
+         }
+         
+         return true
+     }
+        
     
     // Request notification authorization from the user
     func requestNotificationAuthorization() {
