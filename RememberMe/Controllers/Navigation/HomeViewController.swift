@@ -48,220 +48,228 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
 
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
     
-    // MARK: - NOTIFICATIONS
-    
-    // Location Manager
-    func setupLocationManager() {
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestWhenInUseAuthorization()
-        locationManager.startUpdatingLocation()
-    }
 
-    var hasProcessedLocationUpdate = false
-
-    // Location Manager Delegate
-    var lastLocationUpdateTime: Date?
-
-    // Location Manager Delegate
-    var lastProcessedLocation: CLLocationCoordinate2D?
-
-    // Define a property to keep track of whether the location has been fetched
-    var hasFetchedLocation = false
-
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if hasFetchedLocation {
-            return
+       // MARK: - NOTIFICATIONS
+           
+        func setupLocationManager() {
+            locationManager.delegate = self
+            locationManager.desiredAccuracy = kCLLocationAccuracyBest
+            locationManager.requestAlwaysAuthorization()  // Changed from requestWhenInUseAuthorization
+            locationManager.startUpdatingLocation()
         }
 
-        guard let newLocation = locations.last else { return }
 
-        self.userLocation = newLocation.coordinate
-        self.currentLocation = newLocation.coordinate
-        print("User's location: \(newLocation)")
+           var hasProcessedLocationUpdate = false
 
-        updateLocationNameLabel(location: newLocation.coordinate)
-        self.displayImage(location: self.currentLocation!)
+           // Location Manager Delegate
+           var lastLocationUpdateTime: Date?
 
-        if let coord = self.currentLocation {
-            let locationObj = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
-            loadAndFilterNotes(for: coord, goalRadius: 15.0) {
-                print("Notes are loaded and filtered.")
-                self.setupClosestFifteenGeofences(currentLocation: locationObj) {
-                    print("Called setupClosestFifteenGeofences completion block in didUpdateLocations")
+           // Location Manager Delegate
+           var lastProcessedLocation: CLLocationCoordinate2D?
+
+           // Define a property to keep track of whether the location has been fetched
+           var hasFetchedLocation = false
+
+           func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+               if hasFetchedLocation {
+                   return
+               }
+
+               guard let newLocation = locations.last else { return }
+
+               self.userLocation = newLocation.coordinate
+               self.currentLocation = newLocation.coordinate
+               print("User's location: \(newLocation)")
+
+               updateLocationNameLabel(location: newLocation.coordinate)
+               self.displayImage(location: self.currentLocation!)
+
+               if let coord = self.currentLocation {
+                   let locationObj = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
+                   loadAndFilterNotes(for: coord, goalRadius: 15.0) {
+                       print("Notes are loaded and filtered.")
+                       self.setupClosestFifteenGeofences(currentLocation: locationObj) {
+                           print("Called setupClosestFifteenGeofences completion block in didUpdateLocations")
+                       }
+                   }
+               }
+
+               hasFetchedLocation = true
+           }
+
+           func setupClosestFifteenGeofences(currentLocation: CLLocation, completion: @escaping () -> Void) {
+               DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
+                   print("Setting up geofences for closest fifteen locations.")  // Debugging print statement
+
+                   let sortedNotes = self.notes.sorted {
+                       let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
+                       let location2 = CLLocation(latitude: $1.location.latitude, longitude: $1.location.longitude)
+                       return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
+                   }
+
+                   let closestNotes = Array(sortedNotes.prefix(15))
+                   print("Closest notes count: \(closestNotes.count)")  // Debugging print statement
+
+                   self.geofenceManager.geofences.removeAll()
+
+                   for note in closestNotes {
+                       let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
+                       let geofence = Geofence(location: coordinate, radius: 100, identifier: note.locationName)
+                       self.geofenceManager.geofences.append(geofence)
+                       self.setupGeoFence(location: geofence.location, identifier: geofence.identifier)
+                   }
+
+                   print("Geofences for closest fifteen locations set up.")  // Debugging print statement
+                   completion()
+               }
+           }
+
+               
+            // When exiting a region, remove it from the list of notified regions
+            func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
+                print("Exited region: \(region.identifier)")  // Debugging line
+                
+                // Remove from notified regions
+                notifiedRegions.remove(region.identifier)
+
+                if let circularRegion = region as? CLCircularRegion {
+                    print("Exited circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")  // Debugging line
                 }
             }
-        }
 
-        hasFetchedLocation = true
-    }
-
-    func setupClosestFifteenGeofences(currentLocation: CLLocation, completion: @escaping () -> Void) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
-            print("Setting up geofences for closest fifteen locations.")  // Debugging print statement
-
-            let sortedNotes = self.notes.sorted {
-                let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
-                let location2 = CLLocation(latitude: $1.location.latitude, longitude: $1.location.longitude)
-                return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
-            }
-
-            let closestNotes = Array(sortedNotes.prefix(15))
-            print("Closest notes count: \(closestNotes.count)")  // Debugging print statement
-
-            self.geofenceManager.geofences.removeAll()
-
-            for note in closestNotes {
-                let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
-                let geofence = Geofence(location: coordinate, radius: 100, identifier: note.locationName)
-                self.geofenceManager.geofences.append(geofence)
-                self.setupGeoFence(location: geofence.location, identifier: geofence.identifier)
-            }
-
-            print("Geofences for closest fifteen locations set up.")  // Debugging print statement
-            completion()
-        }
-    }
-
-        
-     // When exiting a region, remove it from the list of notified regions
-     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-         print("Exited region: \(region.identifier)")  // Debugging line
-         
-         // Remove from notified regions
-         notifiedRegions.remove(region.identifier)
-
-         if let circularRegion = region as? CLCircularRegion {
-             print("Exited circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")  // Debugging line
-         }
-     }
-
-    var geofenceManager = GeofenceManager()  // Initialize GeofenceManager
+           var geofenceManager = GeofenceManager()  // Initialize GeofenceManager
 
 
-         func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
-             let radius: CLLocationDistance = 100
-             print("Setting up GeoFence at \(location) with radius \(radius)")  // Debugging line
-             let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
-             region.notifyOnEntry = true
-             region.notifyOnExit = false
-             
-             if CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) {
-                 locationManager.startMonitoring(for: region)
-                 print("GeoFence setup complete.") // Debugging line
-             } else {
-                 print("GeoFence monitoring is not available for this device.") // Debugging line
-             }
-         }
-
-         func getLastThreeNotes(for locationName: String) -> [Note] {
-             print("Fetching last three notes for location: \(locationName)") // Debugging line
-             return Array(notes.filter { $0.locationName == locationName }.suffix(3))
-         }
-         
-   
-    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            print("Entered region: \(region.identifier)")
-
-            if let circularRegion = region as? CLCircularRegion {
-                print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")
-            }
-
-            // Load notes for the region
-            self.LoadPlacesNotes(for: region.identifier) {
-                // After loading, fetch the last three notes
-                let lastThreeNotes = self.getLastThreeNotes(for: region.identifier)
-                let lastThreeNotesText = lastThreeNotes.map { $0.text }
-
-                if !lastThreeNotesText.isEmpty {
-                    self.sendNotification(locationName: region.identifier, lastThreeNotes: lastThreeNotesText)
-                    self.notifiedRegions.insert(region.identifier)
-                } else {
-                    print("No notes available for region: \(region.identifier)")
-                }
-            }
-        }
-    }
-
-
-
-
-
-         
-         func requestLocationAuthorization() {
-             locationManager.requestWhenInUseAuthorization()
-         }
-
-         // Add a dictionary to keep track of last sent time for each location
-         var lastNotificationSentTime: [String: Date] = [:]
-
-    func sendNotification(locationName: String, lastThreeNotes: [String]) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                print("Preparing to send notification for location: \(locationName)") // Debugging line
-                
-                // Check if locationName and lastThreeNotes are not empty
-                if locationName.isEmpty || lastThreeNotes.isEmpty {
-                    print("Either the location name or the last three notes are empty. Skipping notification.") // Debugging line
-                    return
-                }
-                
-                // Check for minimum time interval before sending next notification for the same location
-                if let lastTime = self.geofenceManager.lastNotificationSentTime[locationName] {
-                    let currentTime = Date()
-                    let timeInterval = currentTime.timeIntervalSince(lastTime)
-                    if timeInterval < 60 {  // 60 seconds as a rate limit
-                        print("Skipping notification for \(locationName) due to rate limiting.") // Debugging line
-                        return
-                    }
-                }
-                
-                // Update the last sent time for this location
-                self.geofenceManager.lastNotificationSentTime[locationName] = Date()
-                
-                print("Sending notification for location: \(locationName)") // Debugging line
-                let content = UNMutableNotificationContent()
-                content.title = "Near \(locationName)"
-                let notesText = lastThreeNotes.joined(separator: ", ")
-                content.body = "\(notesText)"
-                content.categoryIdentifier = "notesCategory"
-                content.sound = UNNotificationSound.default
-                let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-                let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-                UNUserNotificationCenter.current().add(request) { error in
-                    if let error = error {
-                        print("Error adding notification: \(error)") // Debugging line
+                func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
+                    let radius: CLLocationDistance = 25
+                    print("Setting up GeoFence at \(location) with radius \(radius)")  // Debugging line
+                    let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
+                    region.notifyOnEntry = true
+                    region.notifyOnExit = false
+                    
+                    if CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) {
+                        locationManager.startMonitoring(for: region)
+                        print("GeoFence setup complete.") // Debugging line
                     } else {
-                        print("Notification added successfully") // Debugging line
+                        print("GeoFence monitoring is not available for this device.") // Debugging line
                     }
                 }
+
+                func getLastThreeNotes(for locationName: String) -> [Note] {
+                    print("Fetching last three notes for location: \(locationName)") // Debugging line
+                    return Array(notes.filter { $0.locationName == locationName }.suffix(3))
+                }
+                
+          
+           func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+               DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                   print("Entered region: \(region.identifier)")
+
+                   if let circularRegion = region as? CLCircularRegion {
+                       print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")
+                   }
+
+                   // Load notes for the region
+                   self.LoadPlacesNotes(for: region.identifier) {
+                       // After loading, fetch the last three notes
+                       let lastThreeNotes = self.getLastThreeNotes(for: region.identifier)
+                       let lastThreeNotesText = lastThreeNotes.map { $0.text }
+
+                       if !lastThreeNotesText.isEmpty {
+                           self.sendNotification(locationName: region.identifier, lastThreeNotes: lastThreeNotesText)
+                           self.notifiedRegions.insert(region.identifier)
+                       } else {
+                           print("No notes available for region: \(region.identifier)")
+                       }
+                   }
+               }
+           }
+
+
+
+
+
+                
+                func requestLocationAuthorization() {
+                    locationManager.requestWhenInUseAuthorization()
+                }
+
+                // Add a dictionary to keep track of last sent time for each location
+                var lastNotificationSentTime: [String: Date] = [:]
+
+           func sendNotification(locationName: String, lastThreeNotes: [String]) {
+                   DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                       print("Preparing to send notification for location: \(locationName)") // Debugging line
+                       
+                       
+                       // Check if locationName and lastThreeNotes are not empty
+                       if locationName.isEmpty || lastThreeNotes.isEmpty {
+                           print("Either the location name or the last three notes are empty. Skipping notification.") // Debugging line
+                           return
+                       }
+                       
+                       
+                       // Update the last sent time for this location
+                       self.geofenceManager.lastNotificationSentTime[locationName] = Date()
+                       
+                       print("Sending notification for location: \(locationName)") // Debugging line
+                       let content = UNMutableNotificationContent()
+                       content.title = "Near \(locationName)"
+                       let notesText = lastThreeNotes.joined(separator: ", ")
+                       content.body = "\(notesText)"
+                       content.categoryIdentifier = "notesCategory"
+                       content.sound = UNNotificationSound.default
+                       let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+                       let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+                       UNUserNotificationCenter.current().add(request) { error in
+                           if let error = error {
+                               print("Error adding notification: \(error)") // Debugging line
+                           } else {
+                               print("Notification added successfully") // Debugging line
+                           }
+                       }
+                   }
+               }
+
+                func requestNotificationAuthorization() {
+                    print("Requesting notification authorization") // Debugging line
+                    let center = UNUserNotificationCenter.current()
+                    center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
+                        if granted {
+                            print("Notification access granted") // Debugging line
+                        } else {
+                            print("Notification access denied") // Debugging line
+                            if let error = error {
+                                print("Error requesting authorization: \(error)") // Debugging line
+                            }
+                        }
+                    }
+                }
+
+                func setupNotificationCategory() {
+                    print("Setting up notification category") // Debugging line
+                    let viewLastThreeNotesAction = UNNotificationAction(identifier: "viewLastThreeNotes", title: "View last three notes", options: [.foreground])
+                    let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastThreeNotesAction], intentIdentifiers: [], options: [])
+                    UNUserNotificationCenter.current().setNotificationCategories([category])
+                    print("Notification category setup complete.") // Debugging line
+                }
+        
+        func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+            let userInfo = response.notification.request.content.userInfo
+            if let locationName = userInfo["locationName"] as? String {
+                // Call your function to load notes for the specified location
+                self.LoadPlacesNotes(for: locationName) {
+                    // Any additional UI updates after loading the notes can be handled here
+                    // For example, scrolling to the top of the notes list
+                    self.tableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
+                    print("App Sending User to Place in ViewController") // Debugging line
+                }
             }
+            completionHandler()
         }
 
-         func requestNotificationAuthorization() {
-             print("Requesting notification authorization") // Debugging line
-             let center = UNUserNotificationCenter.current()
-             center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
-                 if granted {
-                     print("Notification access granted") // Debugging line
-                 } else {
-                     print("Notification access denied") // Debugging line
-                     if let error = error {
-                         print("Error requesting authorization: \(error)") // Debugging line
-                     }
-                 }
-             }
-         }
-
-         func setupNotificationCategory() {
-             print("Setting up notification category") // Debugging line
-             let viewLastThreeNotesAction = UNNotificationAction(identifier: "viewLastThreeNotes", title: "View last three notes", options: [.foreground])
-             let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastThreeNotesAction], intentIdentifiers: [], options: [])
-             UNUserNotificationCenter.current().setNotificationCategories([category])
-             print("Notification category setup complete.") // Debugging line
-         }
-    
-    
+           
+           
     //MARK: - END NOTIES
     
     

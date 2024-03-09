@@ -7,22 +7,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "AA3CC99F-7A7C-4193-913B-1491339C875C"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "RememberMe/Controllers/Navigation/PlacesViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "442"
-            endingLineNumber = "442"
-            landmarkName = "PlacesViewControllerDelegate"
-            landmarkType = "5">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "B6C2372F-6B7C-478A-9A12-1DF33DD6B8B4"
             shouldBeEnabled = "No"
             ignoreCount = "0"
@@ -30,72 +14,10 @@
             filePath = "RememberMe/Controllers/Navigation/PlacesViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "283"
-            endingLineNumber = "283"
-            landmarkName = "tableView(_:numberOfRowsInSection:)"
+            startingLineNumber = "340"
+            endingLineNumber = "340"
+            landmarkName = "tableView(_:commit:forRowAt:)"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "B6C2372F-6B7C-478A-9A12-1DF33DD6B8B4 - e5712d15633d3141"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "Namey.PlacesViewController.locationManager(_: __C.CLLocationManager, didExitRegion: __C.CLRegion) -&gt; ()"
-                  moduleName = "Namey"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/williammisiaszek/Code/Namey/RememberMe/Controllers/Navigation/PlacesViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "270"
-                  endingLineNumber = "270"
-                  offsetFromSymbolStart = "196">
-               </Location>
-               <Location
-                  uuid = "B6C2372F-6B7C-478A-9A12-1DF33DD6B8B4 - 81f8e32f5bf97de3"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 (Swift.Optional&lt;__C.FIRQuerySnapshot&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in Namey.PlacesViewController.loadLocationData() -&gt; ()"
-                  moduleName = "Namey"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/williammisiaszek/Code/Namey/RememberMe/Controllers/Navigation/PlacesViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "270"
-                  endingLineNumber = "270"
-                  offsetFromSymbolStart = "2156">
-               </Location>
-               <Location
-                  uuid = "B6C2372F-6B7C-478A-9A12-1DF33DD6B8B4 - f810fe4943c402dc"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "Namey.PlacesViewController.loadNextPage() -&gt; ()"
-                  moduleName = "Namey"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/williammisiaszek/Code/Namey/RememberMe/Controllers/Navigation/PlacesViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "270"
-                  endingLineNumber = "270"
-                  offsetFromSymbolStart = "692">
-               </Location>
-               <Location
-                  uuid = "B6C2372F-6B7C-478A-9A12-1DF33DD6B8B4 - ed42ec23909fef30"
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 (Swift.Optional&lt;__C.FIRQuerySnapshot&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in Namey.PlacesViewController.loadNotes(completion: (Swift.Array&lt;Namey.Note&gt;) -&gt; ()) -&gt; ()"
-                  moduleName = "Namey"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/williammisiaszek/Code/Namey/Namey-iOS-App/RememberMe/Controllers/Navigation/PlacesViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "277"
-                  endingLineNumber = "277"
-                  offsetFromSymbolStart = "1416">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -108,8 +30,8 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "654"
-            endingLineNumber = "654"
+            startingLineNumber = "662"
+            endingLineNumber = "662"
             landmarkName = "aibutton(_:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -124,9 +46,25 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "856"
-            endingLineNumber = "856"
+            startingLineNumber = "864"
+            endingLineNumber = "864"
             landmarkName = "viewWillAppear(_:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "F4B2B2AE-F4B0-48B7-B2E5-3294DBC611A4"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "RememberMe/AppDelegate.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "40"
+            endingLineNumber = "40"
+            landmarkName = "requestNotificationAuthorization()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
