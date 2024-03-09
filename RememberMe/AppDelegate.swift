@@ -22,7 +22,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         setupNotificationCategory()
         
         // Initialize and start GeofenceManager
-        geofenceManager = GeofenceManager.shared
         
         
          if let notification = launchOptions?[.remoteNotification] as? [String: AnyObject],

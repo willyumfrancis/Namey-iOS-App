@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		0D236302C40BB898E3F71C0D /* Pods_Namey.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9CEC1B239EFD2CE1DAEA4441 /* Pods_Namey.framework */; };
 		750933FA2B85E060006DB77F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 750933F92B85E060006DB77F /* GoogleService-Info.plist */; };
-		750933FC2B85F3D9006DB77F /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750933FB2B85F3D9006DB77F /* HomeViewController.swift */; };
 		7516ED2229D215CB00801960 /* K.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7516ED2129D215CB00801960 /* K.swift */; };
 		7545750A29C00798004242C5 /* LogInViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750929C00798004242C5 /* LogInViewController.swift */; };
 		7545750C29C00848004242C5 /* PlacesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545750B29C00848004242C5 /* PlacesViewController.swift */; };
@@ -34,6 +33,7 @@
 		75E3997E2AA1AC9300914DA5 /* ImageCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E3997D2AA1AC9300914DA5 /* ImageCacheManager.swift */; };
 		75EC7DE32A93FF8200A8EB75 /* APIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EC7DE22A93FF8200A8EB75 /* APIManager.swift */; };
 		75F5D89529C63D2A00272A2F /* MenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F5D89429C63D2A00272A2F /* MenuController.swift */; };
+		75FCF1D32B9D1DAA0029BFD8 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FCF1D22B9D1DAA0029BFD8 /* HomeViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,7 +41,6 @@
 		7502561529CE4851004FE87A /* Roboto-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Bold.ttf"; sourceTree = "<group>"; };
 		7502561629CE485D004FE87A /* Roboto-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Regular.ttf"; sourceTree = "<group>"; };
 		750933F92B85E060006DB77F /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		750933FB2B85F3D9006DB77F /* HomeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = HomeViewController.swift; path = ../../../../HomeViewController.swift; sourceTree = "<group>"; };
 		7516ED2129D215CB00801960 /* K.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = K.swift; sourceTree = "<group>"; };
 		7545750929C00798004242C5 /* LogInViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogInViewController.swift; sourceTree = "<group>"; };
 		7545750B29C00848004242C5 /* PlacesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesViewController.swift; sourceTree = "<group>"; };
@@ -68,6 +67,7 @@
 		75E3997D2AA1AC9300914DA5 /* ImageCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCacheManager.swift; sourceTree = "<group>"; };
 		75EC7DE22A93FF8200A8EB75 /* APIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIManager.swift; sourceTree = "<group>"; };
 		75F5D89429C63D2A00272A2F /* MenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuController.swift; sourceTree = "<group>"; };
+		75FCF1D22B9D1DAA0029BFD8 /* HomeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
 		9CEC1B239EFD2CE1DAEA4441 /* Pods_Namey.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Namey.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C61B636FCDA26CB4C0C103B5 /* Pods-Namey.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Namey.release.xcconfig"; path = "Target Support Files/Pods-Namey/Pods-Namey.release.xcconfig"; sourceTree = "<group>"; };
 		D52F56AC43D9BDF3ECF77AD1 /* Pods-RememberMe.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RememberMe.release.xcconfig"; path = "Target Support Files/Pods-RememberMe/Pods-RememberMe.release.xcconfig"; sourceTree = "<group>"; };
@@ -107,7 +107,7 @@
 		7545750D29C00853004242C5 /* Navigation */ = {
 			isa = PBXGroup;
 			children = (
-				750933FB2B85F3D9006DB77F /* HomeViewController.swift */,
+				75FCF1D22B9D1DAA0029BFD8 /* HomeViewController.swift */,
 				7545750B29C00848004242C5 /* PlacesViewController.swift */,
 				7545750E29C00868004242C5 /* NamesViewController.swift */,
 				7545751029C0086F004242C5 /* SettingsViewController.swift */,
@@ -324,7 +324,6 @@
 				75B69CDF29BFEEE40049D4F5 /* RememberMe.xcdatamodeld in Sources */,
 				7516ED2229D215CB00801960 /* K.swift in Sources */,
 				75E3997E2AA1AC9300914DA5 /* ImageCacheManager.swift in Sources */,
-				750933FC2B85F3D9006DB77F /* HomeViewController.swift in Sources */,
 				75B69CD529BFEEE40049D4F5 /* AppDelegate.swift in Sources */,
 				7545751129C0086F004242C5 /* SettingsViewController.swift in Sources */,
 				75A2589529D2380000A8D509 /* NoteCell.swift in Sources */,
@@ -334,6 +333,7 @@
 				7545750F29C00868004242C5 /* NamesViewController.swift in Sources */,
 				7545750C29C00848004242C5 /* PlacesViewController.swift in Sources */,
 				75B69CEF29BFF5200049D4F5 /* RegisterViewController.swift in Sources */,
+				75FCF1D32B9D1DAA0029BFD8 /* HomeViewController.swift in Sources */,
 				75B69CED29BFF5120049D4F5 /* WelcomeViewController.swift in Sources */,
 				75B69CD729BFEEE40049D4F5 /* SceneDelegate.swift in Sources */,
 				75A2588E29D21A1200A8D509 /* Note.swift in Sources */,
