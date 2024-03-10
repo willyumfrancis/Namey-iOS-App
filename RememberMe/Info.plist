@@ -2,18 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera to let you take and upload photos.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app can run in the background to provide real-time navigation updates.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>We use your location to locate establishments you are visiting. It is a core function of the app</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>We need access to your microphone to transcribe audio to text for a hands-free experience.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to your photo library for you to upload spot photos.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>This app needs your microphone for text-to-speech functonality.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>UIAppFonts</key>
@@ -42,5 +30,12 @@
 			</array>
 		</dict>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>location</string>
+		<string>processing</string>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

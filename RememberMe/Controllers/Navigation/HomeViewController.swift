@@ -37,11 +37,14 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
     override init() {
         super.init()
         self.locationManager = CLLocationManager()
-        self.locationManager.delegate = self
-        self.locationManager.requestAlwaysAuthorization()
-        print("Location manager initialized")  // Debugging line
+         self.locationManager.delegate = self
+         self.locationManager.requestAlwaysAuthorization() // Request for always authorization
+         self.locationManager.allowsBackgroundLocationUpdates = true // Enable background updates
+         self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
+         print("Location manager initialized for background location updates.")  // Debugging line
+     }
     }
-}
+
     
     
 
@@ -161,29 +164,32 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 }
                 
           
-           func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-               DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                   print("Entered region: \(region.identifier)")
+    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        print("Entered region: \(region.identifier)") // Debug statement to indicate region entry.
 
-                   if let circularRegion = region as? CLCircularRegion {
-                       print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")
-                   }
+        if let circularRegion = region as? CLCircularRegion {
+            print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)") // Debugging details about the entered region.
+        }
 
-                   // Load notes for the region
-                   self.LoadPlacesNotes(for: region.identifier) {
-                       // After loading, fetch the last three notes
-                       let lastThreeNotes = self.getLastThreeNotes(for: region.identifier)
-                       let lastThreeNotesText = lastThreeNotes.map { $0.text }
+        // Ensure execution in the main thread for UI updates and fetching notes.
+        DispatchQueue.main.async {
+            // Load notes for the region directly without waiting, as time is limited in the background.
+            self.LoadPlacesNotes(for: region.identifier) {
+                // After loading, fetch the last three notes.
+                let lastThreeNotes = self.getLastThreeNotes(for: region.identifier)
+                let lastThreeNotesText = lastThreeNotes.map { $0.text }
 
-                       if !lastThreeNotesText.isEmpty {
-                           self.sendNotification(locationName: region.identifier, lastThreeNotes: lastThreeNotesText)
-                           self.notifiedRegions.insert(region.identifier)
-                       } else {
-                           print("No notes available for region: \(region.identifier)")
-                       }
-                   }
-               }
-           }
+                if !lastThreeNotesText.isEmpty {
+                    // Send notification if there are notes for the entered region.
+                    self.sendNotification(locationName: region.identifier, lastThreeNotes: lastThreeNotesText)
+                    self.notifiedRegions.insert(region.identifier)
+                } else {
+                    print("No notes available for region: \(region.identifier)") // Debug statement if no notes are available.
+                }
+            }
+        }
+    }
+
 
 
 
@@ -521,7 +527,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     var expandedNotes: Set<String> = []
     var selectedLocationName: String?
-    var selectedLocation: CLLocationCoordinate2D? //Necessary?
+    var selectedLocation: CLLocationCoordinate2D?
     var notesFromAverageLocation: [Note] = []
     var isLocationNameManuallySet = false  // Add this variable to keep track of user's manual input
 
@@ -662,18 +668,19 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     //Location Button
-    @IBAction func LocationButton(_ sender: UIButton) {
+    @IBAction func LocationButton(_ sender: UIButton?) {
+
         // Use the user's current location
-           guard let userLocation = locationManager.location?.coordinate else {
+           guard let currentLocation = locationManager.location?.coordinate else {
                   print("User location not available yet")
                   return
                }
 
                // Set the user's current location as the selected location
-               selectedLocation = userLocation
+               selectedLocation = currentLocation
 
                // Update the current location information
-               updateLocation(location: userLocation)
+               updateLocation(location: currentLocation)
            }
        
     func updateLocation(location: CLLocationCoordinate2D) {
@@ -792,6 +799,193 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
 
+    // textFieldShouldReturn method
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        if let cell = textField.superview?.superview as? NoteCell {
+            activeNoteCell = cell
+            saveNote() // Calls the saveNote function to perform the save action
+        }
+        return true
+    }
+
+    
+    func saveNote() {
+        var locationToSave: CLLocationCoordinate2D?
+        var locationNameForNote: String?
+
+        // Prioritize selectedLocation over currentLocation
+        if let selectedLocation = selectedLocation {
+            locationToSave = selectedLocation
+            print("Debug: Using selected location for saving note.")
+            locationNameForNote = fetchLocationNameFor(location: selectedLocation)
+        } else if let currentLocation = currentLocation {
+            locationToSave = currentLocation
+            print("Debug: Using current location for saving note.")
+            locationNameForNote = fetchLocationNameFor(location: currentLocation)
+        } else {
+            print("Failed to get user's current location or selected location")
+            return // Exit if there is no location determined.
+        }
+
+        guard let saveLocation = locationToSave,
+              let activeCell = activeNoteCell,
+              let noteText = activeCell.noteTextField.text,
+              !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let userEmail = Auth.auth().currentUser?.email else {
+            print("Failed to prepare data for saving")
+            return
+        }
+
+        // Use the fetched location name if available; otherwise, use "New Place".
+        locationNameForNote = locationNameForNote ?? "New Place"
+
+        let noteId = activeCell.note?.id ?? UUID().uuidString
+
+        // Proceed to save the note with the determined location name and coordinates.
+        saveNoteToFirestore(noteId: noteId, noteText: noteText, location: saveLocation, locationName: locationNameForNote!, imageURL: self.currentLocationImageURL?.absoluteString ?? "") { success in
+            if success {
+                print("Note successfully saved to Firestore with location name: '\(locationNameForNote!)'.")
+                DispatchQueue.main.async {
+                    if let noteIndex = self.notes.firstIndex(where: { $0.id == noteId }) {
+                        self.notes[noteIndex].text = noteText
+                        self.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
+                    }
+                    self.updateLocationNameLabel(location: saveLocation)
+                    self.updateUI(withLocationName: locationNameForNote!)  // Ensure this is using the same location name
+                }
+            }
+        }
+    }
+
+
+
+    func saveNoteHelper(userEmail: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, noteId: String?) {
+        let noteId = noteId ?? UUID().uuidString
+        print("Debug: Determined location name to save as '\(locationName)'.")
+        let imageURLToSave = self.currentLocationImageURL?.absoluteString ?? ""
+
+        let noteData: [String: Any] = [
+            "user": userEmail,
+            "note": noteText,
+            "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
+            "locationName": locationName,
+            "imageURL": imageURLToSave,
+            "timestamp": Timestamp(date: Date())
+        ]
+
+        self.db.collection("notes").document(noteId).setData(noteData) { error in
+            if let error = error {
+                print("Error saving note to Firestore: \(error)")
+            } else {
+                print("Note successfully saved to Firestore with location name: '\(locationName)'.")
+                DispatchQueue.main.async {
+                    if let noteIndex = self.notes.firstIndex(where: { $0.id == noteId }) {
+                        self.notes[noteIndex].text = noteText
+                        self.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
+                    }
+                    self.updateLocationNameLabel(location: location)
+                    self.updateUI(withLocationName: locationName)
+                }
+                self.checkAndExpandRegionForNewNote(at: location)
+            }
+        }
+    }
+
+
+
+    func determineLocationName(userChosenName: String?, autoGeneratedName: String?) -> String {
+        if let userChosenName = userChosenName, !userChosenName.isEmpty {
+            return userChosenName
+        } else {
+            return autoGeneratedName ?? "Unnamed Location"
+        }
+    }
+
+    func checkAndExpandRegionForNewNote(at location: CLLocationCoordinate2D) {
+        let newNoteLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+        var maxDistance: CLLocationDistance = 0
+
+        for note in notes {
+            let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
+            let distance = newNoteLocation.distance(from: noteLocation)
+            if distance > maxDistance {
+                maxDistance = distance
+            }
+        }
+
+        // Assuming geofenceManager is an instance of GeofenceManager accessible in this scope
+        if maxDistance > geofenceManager.currentGeofenceRadius {
+            adjustGeofenceRadius(to: maxDistance)
+        }
+    }
+
+
+    func adjustGeofenceRadius(to newRadius: CLLocationDistance) {
+        geofenceManager.currentGeofenceRadius = newRadius
+
+        for (index, geofence) in geofenceManager.geofences.enumerated() {
+            if geofence.radius < newRadius {
+                // Update the radius of the geofence
+                var updatedGeofence = geofence
+                updatedGeofence.radius = newRadius
+                geofenceManager.geofences[index] = updatedGeofence
+
+                // Check if the geofence is being monitored and update it
+                if let region = geofenceManager.locationManager.monitoredRegions.first(where: { $0.identifier == geofence.identifier }) as? CLCircularRegion {
+                    // Stop monitoring the old region
+                    geofenceManager.locationManager.stopMonitoring(for: region)
+
+                    // Create and start monitoring a new region with the updated radius
+                    let updatedRegion = CLCircularRegion(center: region.center, radius: newRadius, identifier: region.identifier)
+                    updatedRegion.notifyOnEntry = true
+                    updatedRegion.notifyOnExit = false
+                    geofenceManager.locationManager.startMonitoring(for: updatedRegion)
+                }
+            }
+        }
+
+     
+    }
+
+
+
+
+    func getLocationName(from location: CLLocationCoordinate2D, completion: @escaping (String?) -> Void) {
+        let geocoder = CLGeocoder()
+        let location = CLLocation(latitude: location.latitude, longitude: location.longitude)
+
+        geocoder.reverseGeocodeLocation(location) { (placemarks, error) in
+            if let error = error {
+                print("There was an error reverse geocoding the location: \(error)")
+                completion(nil)
+            } else if let placemark = placemarks?.first {
+                // Here you can choose how you want to format the location name
+                // This is just one example
+                var locationName = ""
+
+                if let name = placemark.name {
+                    locationName += name
+                }
+
+                if let locality = placemark.locality {
+                    locationName += ", \(locality)"
+                }
+
+
+                if locationName.isEmpty {
+                    locationName = "Unnamed Location"
+                }
+
+                completion(locationName)
+            } else {
+                print("No placemarks found for location")
+                completion(nil)
+            }
+        }
+    }
+
+    
     
     
     
@@ -908,6 +1102,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                     }
                 }
                 
+        LocationButton(UIButton())
         
         
         // Load notifiedRegions from UserDefaults
@@ -1786,164 +1981,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         return paths[0]
     }
     
-    
-    //MARK: - NOTES
-    
-    // textFieldShouldReturn method
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        if let cell = textField.superview?.superview as? NoteCell {
-            activeNoteCell = cell
-            saveNote() // Calls the saveNote function to perform the save action
-        }
-        return true
-    }
-
-    
-    func saveNote() {
-        var locationToSave: CLLocationCoordinate2D
-
-        if let selectedLocation = selectedLocation {
-            locationToSave = selectedLocation
-        } else if let currentLocation = locationManager.location?.coordinate {
-            locationToSave = currentLocation
-        } else {
-            print("Failed to get user's current location or selected location")
-            return
-        }
-
-        guard let activeCell = activeNoteCell else {
-            print("Failed to get active cell")
-            return
-        }
-
-        if let noteText = activeCell.noteTextField.text, !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let noteId = activeCell.note?.id ?? UUID().uuidString
-
-            getLocationName(from: locationToSave) { [weak self] locationName in
-                guard let self = self else { return }
-
-                let locationNameToSave = self.determineLocationName(userChosenName: self.currentLocationName, autoGeneratedName: locationName)
-                let imageURLToSave = self.currentLocationImageURL?.absoluteString ?? ""
-
-                activeCell.note?.location = locationToSave
-
-                self.saveNoteToFirestore(noteId: noteId, noteText: noteText, location: locationToSave, locationName: locationNameToSave, imageURL: imageURLToSave) { [weak self] success in
-                    if success {
-                        print("Note saved successfully")
-                        if let noteIndex = self?.notes.firstIndex(where: { $0.id == noteId }) {
-                            self?.notes[noteIndex].text = noteText
-                            DispatchQueue.main.async {
-                                self?.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
-                                self?.updateLocationNameLabel(location: locationToSave)
-                                self!.updateUI(withLocationName: locationName ?? "Unnamed Location") // Update the UI
-                            }
-                        }
-                        // Check if the new note's location expands the region
-                        self?.checkAndExpandRegionForNewNote(at: locationToSave)
-                    } else {
-                        print("Error saving note")
-                    }
-                }
-            }
-        } else {
-            print("Note text field is empty")
-        }
-    }
-
-    func determineLocationName(userChosenName: String?, autoGeneratedName: String?) -> String {
-        if let userChosenName = userChosenName, !userChosenName.isEmpty {
-            return userChosenName
-        } else {
-            return autoGeneratedName ?? "Unnamed Location"
-        }
-    }
-
-    func checkAndExpandRegionForNewNote(at location: CLLocationCoordinate2D) {
-        let newNoteLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
-        var maxDistance: CLLocationDistance = 0
-
-        for note in notes {
-            let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
-            let distance = newNoteLocation.distance(from: noteLocation)
-            if distance > maxDistance {
-                maxDistance = distance
-            }
-        }
-
-        // Assuming geofenceManager is an instance of GeofenceManager accessible in this scope
-        if maxDistance > geofenceManager.currentGeofenceRadius {
-            adjustGeofenceRadius(to: maxDistance)
-        }
-    }
-
-
-    func adjustGeofenceRadius(to newRadius: CLLocationDistance) {
-        geofenceManager.currentGeofenceRadius = newRadius
-
-        for (index, geofence) in geofenceManager.geofences.enumerated() {
-            if geofence.radius < newRadius {
-                // Update the radius of the geofence
-                var updatedGeofence = geofence
-                updatedGeofence.radius = newRadius
-                geofenceManager.geofences[index] = updatedGeofence
-
-                // Check if the geofence is being monitored and update it
-                if let region = geofenceManager.locationManager.monitoredRegions.first(where: { $0.identifier == geofence.identifier }) as? CLCircularRegion {
-                    // Stop monitoring the old region
-                    geofenceManager.locationManager.stopMonitoring(for: region)
-
-                    // Create and start monitoring a new region with the updated radius
-                    let updatedRegion = CLCircularRegion(center: region.center, radius: newRadius, identifier: region.identifier)
-                    updatedRegion.notifyOnEntry = true
-                    updatedRegion.notifyOnExit = false
-                    geofenceManager.locationManager.startMonitoring(for: updatedRegion)
-                }
-            }
-        }
-
-        // Optionally, update any UI elements or perform additional actions required due to the change in geofence radius
-        // ...
-    }
-
-
-
-
-    func getLocationName(from location: CLLocationCoordinate2D, completion: @escaping (String?) -> Void) {
-        let geocoder = CLGeocoder()
-        let location = CLLocation(latitude: location.latitude, longitude: location.longitude)
-
-        geocoder.reverseGeocodeLocation(location) { (placemarks, error) in
-            if let error = error {
-                print("There was an error reverse geocoding the location: \(error)")
-                completion(nil)
-            } else if let placemark = placemarks?.first {
-                // Here you can choose how you want to format the location name
-                // This is just one example
-                var locationName = ""
-
-                if let name = placemark.name {
-                    locationName += name
-                }
-
-                if let locality = placemark.locality {
-                    locationName += ", \(locality)"
-                }
-
-
-                if locationName.isEmpty {
-                    locationName = "Unnamed Location"
-                }
-
-                completion(locationName)
-            } else {
-                print("No placemarks found for location")
-                completion(nil)
-            }
-        }
-    }
-
-    func updateAllNotesInFirestore(location: CLLocationCoordinate2D, newLocationName: String, newImageURL: URL, completion: @escaping (Bool) -> Void) {
+  func updateAllNotesInFirestore(location: CLLocationCoordinate2D, newLocationName: String, newImageURL: URL, completion: @escaping (Bool) -> Void) {
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
             completion(false)
