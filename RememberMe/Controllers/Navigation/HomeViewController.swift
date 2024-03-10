@@ -506,7 +506,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
                 self.tableView.endUpdates()
                 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
                     guard let self = self else { return }
                     if let newRowIndexPath = self.tableView.indexPathForLastRow,
                        let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
@@ -669,6 +669,15 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton?) {
+        // Animation to scale down the button
+            UIView.animate(withDuration: 0.2, animations: {
+                self.LocationButtonOutlet.transform = CGAffineTransform(scaleX: 0.77, y: 0.77)
+            }) { _ in
+                // Animation to scale the button back up
+                UIView.animate(withDuration: 0.2) {
+                    self.LocationButtonOutlet.transform = CGAffineTransform.identity
+                }
+            }
 
         // Use the user's current location
            guard let currentLocation = locationManager.location?.coordinate else {
@@ -760,7 +769,18 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     //MARK: - SAVE AND NEW NOTE CREATION
     //Save Name Button
     @IBAction func SaveNote(_ sender: UIButton) {
-        saveNote()
+        // Animation to scale down the button
+           UIView.animate(withDuration: 0.2, animations: {
+               self.SaveButtonLook.transform = CGAffineTransform(scaleX: 0.77, y: 0.77)
+           }) { [weak self] _ in
+               // Animation to scale the button back up
+               UIView.animate(withDuration: 0.2) {
+                   self?.SaveButtonLook.transform = CGAffineTransform.identity
+               } completion: { _ in
+                   // Perform the save action after the animation
+                   self?.saveNote()
+               }
+           }
     }
     
     func lookupCoordinate(for locationName: String) -> CLLocationCoordinate2D? {
@@ -776,29 +796,38 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
     //Create New Name
     @IBAction func NewNote(_ sender: UIButton) {
-            if let currentLocation = self.currentLocation {
-                let emptyURL = URL(string: "")
-                let userDefinedLocationName = currentLocationName ?? ""  // Fetch user-defined location name
-                let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: userDefinedLocationName, imageURL: emptyURL)  // Use currentLocation and userDefinedLocationName
-                notes.append(newNote)
-                selectedNote = newNote
+        // Animation to scale down the button
+           UIView.animate(withDuration: 0.2, animations: {
+               self.NewNameLook.transform = CGAffineTransform(scaleX: 0.77, y: 0.77)
+           }) { [weak self] _ in
+               // Animation to scale the button back up
+               UIView.animate(withDuration: 0.2) {
+                   self?.NewNameLook.transform = CGAffineTransform.identity
+               } completion: { _ in
+                   // Perform the new note action after the animation
+                   if let self = self, let currentLocation = self.currentLocation {
+                       let emptyURL = URL(string: "")
+                       let userDefinedLocationName = self.currentLocationName ?? ""  // Fetch user-defined location name
+                       let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: userDefinedLocationName, imageURL: emptyURL)  // Use currentLocation and userDefinedLocationName
+                       self.notes.append(newNote)
+                       self.selectedNote = newNote
 
-                DispatchQueue.main.async {
-                    self.tableView.beginUpdates()
-                    self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                    self.tableView.endUpdates()
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                        guard let self = self else { return }
-                        if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                           let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                            newCell.noteTextField.becomeFirstResponder()
-                        }
-                    }
-                }
-            }
-        }
-
+                       DispatchQueue.main.async {
+                           self.tableView.beginUpdates()
+                           self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                           self.tableView.endUpdates()
+                           
+                           DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                               if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                                  let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                                   newCell.noteTextField.becomeFirstResponder()
+                               }
+                           }
+                       }
+                   }
+               }
+           }
+       }
     // textFieldShouldReturn method
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
