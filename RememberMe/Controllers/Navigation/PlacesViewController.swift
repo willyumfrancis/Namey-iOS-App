@@ -356,7 +356,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         return filteredLocations.count
      }
     
-    let placeholderImage = UIImage(named: "jellydev")
+    let placeholderImage = UIImage(named: "default_image")
      
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath) as! LocationCell

@@ -30,10 +30,10 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "681"
-            endingLineNumber = "681"
-            landmarkName = "HomeViewController"
-            landmarkType = "3">
+            startingLineNumber = "677"
+            endingLineNumber = "677"
+            landmarkName = "aibutton(_:)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -46,9 +46,9 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1100"
-            endingLineNumber = "1100"
-            landmarkName = "setupRoundedProgressBar()"
+            startingLineNumber = "1096"
+            endingLineNumber = "1096"
+            landmarkName = "viewWillAppear(_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
