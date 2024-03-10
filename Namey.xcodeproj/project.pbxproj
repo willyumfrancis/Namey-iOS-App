@@ -34,6 +34,7 @@
 		75EC7DE32A93FF8200A8EB75 /* APIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EC7DE22A93FF8200A8EB75 /* APIManager.swift */; };
 		75F5D89529C63D2A00272A2F /* MenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F5D89429C63D2A00272A2F /* MenuController.swift */; };
 		75FCF1D32B9D1DAA0029BFD8 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FCF1D22B9D1DAA0029BFD8 /* HomeViewController.swift */; };
+		75FCF1D52B9D5F9D0029BFD8 /* info2.plist in Resources */ = {isa = PBXBuildFile; fileRef = 75FCF1D42B9D5F9D0029BFD8 /* info2.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -59,7 +60,7 @@
 		75B69CDE29BFEEE40049D4F5 /* RememberMe.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = RememberMe.xcdatamodel; sourceTree = "<group>"; };
 		75B69CE029BFEEE50049D4F5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		75B69CE329BFEEE50049D4F5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		75B69CE529BFEEE50049D4F5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		75B69CE529BFEEE50049D4F5 /* info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = info.plist; sourceTree = "<group>"; };
 		75B69CEC29BFF5120049D4F5 /* WelcomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewController.swift; sourceTree = "<group>"; };
 		75B69CEE29BFF5200049D4F5 /* RegisterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterViewController.swift; sourceTree = "<group>"; };
 		75C91A6C2AFCD23D002FD99B /* silent.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = silent.wav; sourceTree = "<group>"; };
@@ -68,6 +69,7 @@
 		75EC7DE22A93FF8200A8EB75 /* APIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIManager.swift; sourceTree = "<group>"; };
 		75F5D89429C63D2A00272A2F /* MenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuController.swift; sourceTree = "<group>"; };
 		75FCF1D22B9D1DAA0029BFD8 /* HomeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
+		75FCF1D42B9D5F9D0029BFD8 /* info2.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = info2.plist; sourceTree = "<group>"; };
 		9CEC1B239EFD2CE1DAEA4441 /* Pods_Namey.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Namey.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C61B636FCDA26CB4C0C103B5 /* Pods-Namey.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Namey.release.xcconfig"; path = "Target Support Files/Pods-Namey/Pods-Namey.release.xcconfig"; sourceTree = "<group>"; };
 		D52F56AC43D9BDF3ECF77AD1 /* Pods-RememberMe.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RememberMe.release.xcconfig"; path = "Target Support Files/Pods-RememberMe/Pods-RememberMe.release.xcconfig"; sourceTree = "<group>"; };
@@ -170,7 +172,8 @@
 				7516ED2129D215CB00801960 /* K.swift */,
 				755AE47829C5095A00FA55B0 /* Fonts */,
 				75B69CE229BFEEE50049D4F5 /* LaunchScreen.storyboard */,
-				75B69CE529BFEEE50049D4F5 /* Info.plist */,
+				75FCF1D42B9D5F9D0029BFD8 /* info2.plist */,
+				75B69CE529BFEEE50049D4F5 /* info.plist */,
 				750933F92B85E060006DB77F /* GoogleService-Info.plist */,
 				75B69CDD29BFEEE40049D4F5 /* RememberMe.xcdatamodeld */,
 			);
@@ -259,6 +262,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75FCF1D52B9D5F9D0029BFD8 /* info2.plist in Resources */,
 				75DAE7192A9F22B700929388 /* .gitignore in Resources */,
 				7579D8D029F1F6A7003FEBA3 /* LocationCell.xib in Resources */,
 				75A2589629D2380000A8D509 /* NoteCell.xib in Resources */,
