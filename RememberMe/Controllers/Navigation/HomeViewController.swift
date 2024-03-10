@@ -19,6 +19,7 @@ import SDWebImage
 import UserNotifications
 import AVFoundation
 import OpenAI
+import CoreImage
 
 struct Geofence {
     let location: CLLocationCoordinate2D
@@ -275,12 +276,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
 
            
-           
-    //MARK: - END NOTIES
-    
-    
-    
-    
+     
     
     
     //MARK: - OUTLETS
@@ -395,7 +391,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     
-    //MARK: - Whisper API
+    //MARK: - APPLE MIC
     
     var isRecording = false // Add this property to keep track of recording state
     
@@ -1394,6 +1390,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
 //MARK: - UPLOAD PHOTO CODE
     
+    
     @objc func dismissFullscreenImage(_ sender: UITapGestureRecognizer) {
         self.navigationController?.isNavigationBarHidden = false
         self.tabBarController?.tabBar.isHidden = false
@@ -1623,94 +1620,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         // If code reaches here, no existing note was found to update
         // You can decide whether to create a new note or not
     }
-
-
-    
-    
-    
-    
-    //MARK: - IMPORTANT UPDATE L NAME FUNCTION
-    
-    
-    //Updates the locationName of the notes that are within a certain distance.
-    func updateNotesLocationName(location: CLLocationCoordinate2D, newLocationName: String, completion: @escaping ([Note]) -> Void) {
-        let maxDistance: CLLocationDistance = 15 // Adjust this value according to your requirements
-        _ = GeoPoint(latitude: location.latitude, longitude: location.longitude)
-        
-        let actualLocation = selectedLocation ?? location  // Use the selected location if it exists, otherwise use the given location.
-
-        if let userEmail = Auth.auth().currentUser?.email {
-            db.collection("notes")
-                .whereField("user", isEqualTo: userEmail)
-                .getDocuments { querySnapshot, error in
-                    if let e = error {
-                        print("There was an issue retrieving data from Firestore: \(e)")
-                        completion([])
-                    } else {
-                        if let snapshotDocuments = querySnapshot?.documents {
-                            var updatedNotes: [Note] = []
-                            var locationExistsInNotes = false
-                            
-                            for doc in snapshotDocuments {
-                                let data = doc.data()
-                                if let locationData = data["location"] as? GeoPoint {
-                                    let noteLocation = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
-                                    let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
-                                    let distance = noteLocation.distance(from: userCurrentLocation)
-                                    
-
-                                    if distance <= maxDistance {
-                                        locationExistsInNotes = true
-                                        let noteId = doc.documentID
-                                        // Update Firestore document with the new location name
-                                        self.db.collection("notes").document(noteId).updateData([
-                                            "locationName": newLocationName
-                                        ]) { err in
-                                            if let err = err {
-                                                print("Error updating document: \(err)")
-                                            } else {
-                                                print("Document successfully updated")
-                                            }
-                                        }
-                                    }
-
-                                }
-                            }
-
-                            if !locationExistsInNotes {
-                                // No note found within maxDistance, create new note with empty details
-                                let newNoteRef = self.db.collection("notes").document()
-                                newNoteRef.setData([
-                                    "user": userEmail,
-                                    "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
-                                    "locationName": newLocationName,
-                                    "note": "",
-                                    "imageURL": "",
-                                    "timestamp": Timestamp(date: Date())
-                                ]) { error in
-                                    if let error = error {
-                                        print("Error creating new note: \(error)")
-                                    } else {
-                                        let newNote = Note(id: newNoteRef.documentID, text: "", location: location, locationName: newLocationName, imageURL: nil)
-                                        updatedNotes.append(newNote)
-                                    }
-                                }
-                            }
-                            
-                            completion(updatedNotes)
-                        }
-                    }
-                }
-        } else {
-            print("User email not found")
-            completion([])
-        }
-    }
-
-    
-    
-    //MARK: - DISPLAY IMAGE FUNCTIONS
-    
     
     func displayImage(location: CLLocationCoordinate2D? = nil, locationName: String? = nil) {
         // Clear the image view
@@ -1860,76 +1769,78 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
        }
     
-    // Image Picker Delegate - Selection and Saving
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-        if let image = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
-            print("Image captured from camera: \(image)")
-            CurrentPlace.image = image
-            picker.dismiss(animated: true)
-            
-            // Determine which location to use: selectedLocation or userLocation
-            var locationToUse: CLLocationCoordinate2D? = selectedLocation
-            if locationToUse == nil {
-                guard let userLocation = self.locationManager.location?.coordinate else {
-                    print("User location not available yet")
-                    return
-                }
-                locationToUse = userLocation
-            }
-            
-            // Ensure locationToUse is not nil before proceeding
-            guard let location = locationToUse else {
-                print("Neither selected location nor user location is available.")
-                return
-            }
-            
-            if let locationName = currentLocationName {
-                // Save the image and update the notes
-                self.saveImageToFirestore(image: image, location: location, locationName: locationName)
-                DispatchQueue.main.async {
-                    self.currentLocationName = locationName
-                    self.locationNameLabel.text = locationName
-                }
-                
-                // Update notes with the new locationName
-                self.updateNotesLocationName(location: location, newLocationName: locationName) { updatedNotes in
-                    // Perform any required operations with the updated notes here
-                }
-            } else {
-                // Show an alert to get the location name from the user
-                let alertController = UIAlertController(title: "Spot Name", message: "Please enter a name for this place:", preferredStyle: .alert)
-                alertController.addTextField()
-                
-                let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
-                    guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
-                        print("Location name is empty.")
-                        return
-                    }
-                    
-                    self.currentLocationName = locationName
-                    self.updateNotesCountLabel()
-                    
-                    // Save the image and update the notes
-                    self.saveImageToFirestore(image: image, location: location, locationName: locationName)
-                    
-                    // Update notes with the new locationName
-                    self.updateNotesLocationName(location: location, newLocationName: locationName) { updatedNotes in
-                        // Perform any required operations with the updated notes here
-                    }
-                }
-                alertController.addAction(saveAction)
-                
-                let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-                alertController.addAction(cancelAction)
-                
-                picker.dismiss(animated: true) {
-                    self.present(alertController, animated: true)
-                }
-            }
-        } else {
+        guard let originalImage = info[UIImagePickerController.InfoKey.originalImage] as? UIImage else {
             print("No image selected.")
+            picker.dismiss(animated: true)
+            return
+        }
+
+        print("Original Image captured from camera/library.")
+        let vividImage = applyVividEffect(to: originalImage) ?? originalImage // Ensure vivid effect or use original
+
+        // Assuming you have determined the location and locationName here, just as placeholders
+        guard let locationToUse = selectedLocation ?? locationManager.location?.coordinate,
+              let locationName = currentLocationName else {
+            print("Location data not available")
+            picker.dismiss(animated: true)
+            return
+        }
+
+        uploadImage(image: vividImage, location: locationToUse, locationName: locationName) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let uploadedImageUrl):
+                    print("Vivid Image successfully uploaded to Firestore.")
+                    self?.updateImageURLForNotesWithSameLocation(location: locationToUse, locationName: locationName, newImageURL: uploadedImageUrl)
+                    self?.CurrentPlace.image = vividImage // Display the edited image
+                case .failure(let error):
+                    print("Failed to upload vivid image: \(error)")
+                    self?.CurrentPlace.image = originalImage // Display the original image if upload failed
+                }
+                picker.dismiss(animated: true)
+            }
         }
     }
+
+
+
+    func applyVividEffect(to inputImage: UIImage) -> UIImage? {
+        // Convert UIImage to CIImage while retaining the original orientation
+        guard let ciImage = CIImage(image: inputImage) else {
+            print("Failed to create CIImage from input.")
+            return nil
+        }
+
+        // Create and configure the controls filter for saturation, brightness, and contrast adjustments
+        let controlsFilter = CIFilter(name: "CIColorControls")
+        controlsFilter?.setValue(ciImage, forKey: kCIInputImageKey)
+        controlsFilter?.setValue(1.3, forKey: "inputSaturation") // Increase saturation for more vivid colors
+        controlsFilter?.setValue(0.10, forKey: "inputBrightness") // Adjust brightness slightly
+        controlsFilter?.setValue(1.1, forKey: "inputContrast") // Increase contrast slightly
+
+        // Create and configure the vibrance filter to enhance muted colors
+        let vibranceFilter = CIFilter(name: "CIVibrance")
+        vibranceFilter?.setValue(controlsFilter?.outputImage, forKey: kCIInputImageKey)
+        vibranceFilter?.setValue(0.90, forKey: "inputAmount") // Adjust the vibrance
+
+        // Get the output CIImage from the vibrance filter
+        guard let outputCIImage = vibranceFilter?.outputImage else {
+            print("Failed to get output CIImage.")
+            return nil
+        }
+
+        // Create a context and create a CGImage from the CIImage
+        let context = CIContext()
+        guard let cgImage = context.createCGImage(outputCIImage, from: outputCIImage.extent) else {
+            print("Failed to create CGImage from CIImage.")
+            return nil
+        }
+
+        // Convert the CGImage back to a UIImage while respecting the original image's orientation
+        return UIImage(cgImage: cgImage, scale: inputImage.scale, orientation: inputImage.imageOrientation)
+    }
+
 
     
     
@@ -2328,8 +2239,85 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 }
             }
     }
+    
+    
+    //Updates the locationName of the notes that are within a certain distance.
+    func updateNotesLocationName(location: CLLocationCoordinate2D, newLocationName: String, completion: @escaping ([Note]) -> Void) {
+        let maxDistance: CLLocationDistance = 15 // Adjust this value according to your requirements
+        _ = GeoPoint(latitude: location.latitude, longitude: location.longitude)
+        
+        let actualLocation = selectedLocation ?? location  // Use the selected location if it exists, otherwise use the given location.
 
+        if let userEmail = Auth.auth().currentUser?.email {
+            db.collection("notes")
+                .whereField("user", isEqualTo: userEmail)
+                .getDocuments { querySnapshot, error in
+                    if let e = error {
+                        print("There was an issue retrieving data from Firestore: \(e)")
+                        completion([])
+                    } else {
+                        if let snapshotDocuments = querySnapshot?.documents {
+                            var updatedNotes: [Note] = []
+                            var locationExistsInNotes = false
+                            
+                            for doc in snapshotDocuments {
+                                let data = doc.data()
+                                if let locationData = data["location"] as? GeoPoint {
+                                    let noteLocation = CLLocation(latitude: locationData.latitude, longitude: locationData.longitude)
+                                    let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+                                    let distance = noteLocation.distance(from: userCurrentLocation)
+                                    
 
+                                    if distance <= maxDistance {
+                                        locationExistsInNotes = true
+                                        let noteId = doc.documentID
+                                        // Update Firestore document with the new location name
+                                        self.db.collection("notes").document(noteId).updateData([
+                                            "locationName": newLocationName
+                                        ]) { err in
+                                            if let err = err {
+                                                print("Error updating document: \(err)")
+                                            } else {
+                                                print("Document successfully updated")
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+
+                            if !locationExistsInNotes {
+                                // No note found within maxDistance, create new note with empty details
+                                let newNoteRef = self.db.collection("notes").document()
+                                newNoteRef.setData([
+                                    "user": userEmail,
+                                    "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
+                                    "locationName": newLocationName,
+                                    "note": "",
+                                    "imageURL": "",
+                                    "timestamp": Timestamp(date: Date())
+                                ]) { error in
+                                    if let error = error {
+                                        print("Error creating new note: \(error)")
+                                    } else {
+                                        let newNote = Note(id: newNoteRef.documentID, text: "", location: location, locationName: newLocationName, imageURL: nil)
+                                        updatedNotes.append(newNote)
+                                    }
+                                }
+                            }
+                            
+                            completion(updatedNotes)
+                        }
+                    }
+                }
+        } else {
+            print("User email not found")
+            completion([])
+        }
+    }
+
+    
+    
 
     func updateViewWithNote(_ note: Note) {
         // Set current location
