@@ -1104,6 +1104,46 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 
         LocationButton(UIButton())
         
+        // Other initialization code...
+
+          // Check if app has permissions to record audio
+          checkAudioRecordingPermission { [weak self] hasPermission in
+              if hasPermission {
+                  // Start recording
+                  DispatchQueue.main.async { // Ensure UI updates are on the main thread
+                      self?.startRecordingAutomatically()
+                  }
+              } else {
+                  // Handle the case where permission is not granted
+                  print("Audio recording permission not granted")
+                  // You can show an alert here asking the user to enable permissions
+              }
+          }
+      }
+
+      func checkAudioRecordingPermission(completion: @escaping (Bool) -> Void) {
+          switch AVAudioSession.sharedInstance().recordPermission {
+          case .granted:
+              completion(true)
+          case .denied:
+              completion(false)
+          case .undetermined:
+              AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                  completion(granted)
+              }
+          @unknown default:
+              completion(false)
+          }
+      }
+
+      func startRecordingAutomatically() {
+          // Assuming 'toggleRecording' is correctly set up for starting/stopping recording
+          if !isRecording {
+              print("Automatically starting recording...")
+              toggleRecording(UIButton()) // Simulate button press
+          }
+      
+        
         
         // Load notifiedRegions from UserDefaults
                if let savedRegions = UserDefaults.standard.array(forKey: "notifiedRegions") as? [String] {
