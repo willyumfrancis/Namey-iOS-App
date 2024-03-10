@@ -289,6 +289,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     @IBOutlet weak var CurrentPlace: UIImageView!
     @IBOutlet weak var Progressbar: UIProgressView!
     @IBOutlet weak var SaveButtonLook: UIButton!
+    
+    @IBOutlet weak var ImageLook: UIButton!
+    
+    @IBOutlet weak var MicLook: UIButton!
+    
     @IBOutlet weak var NewNameLook: UIButton!
     @IBOutlet weak var Header: UILabel!
     @IBOutlet weak var LocationButtonOutlet: UIButton!
@@ -397,16 +402,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     @IBAction func toggleRecording(_ sender: UIButton) {
         if isRecording {
-            print("Stopping recording...")
-            stopRecordingAndTranscribeAudio()
-            sender.setImage(UIImage(systemName: "mic"), for: .normal)
-        } else {
-            print("Starting recording...")
-            startRecording()
-            sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
-        }
-        isRecording.toggle()
-    }
+                   print("Stopping recording...")
+                   stopRecordingAndTranscribeAudio()
+                   sender.setImage(UIImage(systemName: "mic"), for: .normal)
+               } else {
+                   print("Starting recording...")
+                   startRecording()
+                   sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
+               }
+               isRecording.toggle()
+           }
     
     func stopRecordingAndTranscribeAudio() {
         print("Stopping recording.")
@@ -595,41 +600,49 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     @IBAction func uploadImageButton(_ sender: UIButton) {
-            print("Upload Image button pressed")
-            print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
-            print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
+        // Start jiggling
+          let animation = CAKeyframeAnimation(keyPath: "transform.rotation")
+          animation.values = [-0.3, 0.2, -0.3]  // radians to jiggle back and forth
+          animation.duration = 0.4  // duration of the jiggle
+          animation.repeatCount = 5  // number of jiggles
+          animation.isAdditive = true  // add rotation to the current state
+          ImageLook.layer.add(animation, forKey: "jiggle")
+          
+          // Continue with existing button functionality
+          print("Upload Image button pressed")
+          print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
+          print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
 
-            let alertController = UIAlertController(title: "Location Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
-            alertController.addTextField()
+          let alertController = UIAlertController(title: "Location Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
+          alertController.addTextField()
 
-            let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
-                guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
-                    print("Location name is empty.")  // Debugging
-                    return
-                }
-                
-                self.locationNameLabel.text = locationName  // Update current location name
-                self.processLocationNameAndPresentImagePicker(locationName: locationName)
-            }
-            
-            let skipAction = UIAlertAction(title: "Skip", style: .default) { _ in
-                if let currentLocationName = self.locationNameLabel.text, !currentLocationName.isEmpty {
-                    print("Skipping new name. Using current location name: \(currentLocationName)")  // Debugging
-                    self.processLocationNameAndPresentImagePicker(locationName: currentLocationName)
-                } else {
-                    print("No current location name to skip to.")  // Debugging
-                }
-            }
-            
-            alertController.addAction(saveAction)
-            alertController.addAction(skipAction)
+          let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self] _ in
+              guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
+                  print("Location name is empty.")  // Debugging
+                  return
+              }
+              
+              self?.locationNameLabel.text = locationName  // Update current location name
+              self?.processLocationNameAndPresentImagePicker(locationName: locationName)
+          }
+          
+          let skipAction = UIAlertAction(title: "Skip", style: .default) { [weak self] _ in
+              if let currentLocationName = self?.locationNameLabel.text, !currentLocationName.isEmpty {
+                  print("Skipping new name. Using current location name: \(currentLocationName)")  // Debugging
+                  self?.processLocationNameAndPresentImagePicker(locationName: currentLocationName)
+              } else {
+                  print("No current location name to skip to.")  // Debugging
+              }
+          }
+          
+          alertController.addAction(saveAction)
+          alertController.addAction(skipAction)
 
-            let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-            alertController.addAction(cancelAction)
-            
-            self.present(alertController, animated: true)
-        }
-
+          let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+          alertController.addAction(cancelAction)
+          
+          self.present(alertController, animated: true)
+      }
 
         func processLocationNameAndPresentImagePicker(locationName: String) {
             if let selectedLocation = self.selectedLocation {

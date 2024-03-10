@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="22505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="63x-Gy-3Gn">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="63x-Gy-3Gn">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22504"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22684"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -225,7 +225,9 @@
                     <connections>
                         <outlet property="AdviceOutlet" destination="9az-fw-h3z" id="R5C-jh-iHa"/>
                         <outlet property="CurrentPlace" destination="E2I-xx-41M" id="t5P-hn-gIm"/>
+                        <outlet property="ImageLook" destination="nL5-cf-paW" id="UcP-s6-hpT"/>
                         <outlet property="LocationButtonOutlet" destination="2Qx-UH-TeP" id="i0o-wX-3sv"/>
+                        <outlet property="MicLook" destination="bcf-Hp-n1G" id="Zwe-Gg-IV6"/>
                         <outlet property="NewNameLook" destination="oX5-B4-FmA" id="0yV-Zh-UL1"/>
                         <outlet property="SaveButtonLook" destination="lmQ-DZ-jTj" id="Jta-fD-gzv"/>
                         <outlet property="locationNameLabel" destination="pBH-KN-QLt" id="lEw-nF-Qz4"/>
