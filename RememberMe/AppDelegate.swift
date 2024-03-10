@@ -13,7 +13,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     var geofenceManager: GeofenceManager!
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Firebase setup
+        // Configure Firebase
         FirebaseApp.configure()
 
         // Request notification authorization
@@ -25,8 +25,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         // Initialize GeofenceManager
         geofenceManager = GeofenceManager()
 
+        // Set AppDelegate as the UNUserNotificationCenter's delegate
+        UNUserNotificationCenter.current().delegate = self
+
         // Register for background refresh task
-        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.yourapp.refreshGeofences", using: nil) { task in
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: "misiaszek.RememberMe.refreshGeofences", using: nil) { task in
             self.handleGeofenceRefresh(task: task as! BGAppRefreshTask)
         }
 
@@ -36,12 +39,50 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         // Handling remote notification if the app is launched by tapping the notification
         if let notification = launchOptions?[.remoteNotification] as? [String: AnyObject],
            let locationName = notification["locationName"] as? String {
-            // Implement the navigation to HomeViewController and call LoadPlacesNotes
-            // This is a placeholder for your implementation
+            // Delay navigation until the HomeViewController is ready
+            DispatchQueue.main.async {
+                self.navigateToHomeViewController(with: locationName)
+            }
         }
 
         return true
     }
+
+
+         // MARK: UNUserNotificationCenterDelegate
+         
+         func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+             let userInfo = response.notification.request.content.userInfo
+             
+             if let locationName = userInfo["locationName"] as? String {
+                 navigateToHomeViewController(with: locationName)
+             }
+             
+             completionHandler()
+         }
+
+         // MARK: Navigation
+         
+         private func navigateToHomeViewController(with locationName: String) {
+             // Ensure that this is run on the main thread
+             DispatchQueue.main.async {
+                 if let rootViewController = self.window?.rootViewController as? UINavigationController,
+                    let homeViewController = rootViewController.viewControllers.first(where: { $0 is HomeViewController }) as? HomeViewController {
+                     // HomeViewController exists in navigation stack, pop to it
+                     rootViewController.popToViewController(homeViewController, animated: true)
+                     homeViewController.LoadPlacesNotes(for: locationName)
+                 } else {
+                     // HomeViewController is not in the stack (or the root is not a UINavigationController)
+                     let storyboard = UIStoryboard(name: "Main", bundle: nil)
+                     if let newHomeViewController = storyboard.instantiateViewController(withIdentifier: "HomeViewControllerID") as? HomeViewController {
+                         newHomeViewController.LoadPlacesNotes(for: locationName)
+                         self.window?.rootViewController = UINavigationController(rootViewController: newHomeViewController)
+                         self.window?.makeKeyAndVisible()
+                     }
+                 }
+             }
+         }
+
 
     // MARK: Background Tasks
 
@@ -65,7 +106,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     }
 
     private func scheduleGeofenceRefresh() {
-        let request = BGAppRefreshTaskRequest(identifier: "com.yourapp.refreshGeofences")
+        let request = BGAppRefreshTaskRequest(identifier: "misiaszek.RememberMe.refreshGeofences")
         request.earliestBeginDate = Date(timeIntervalSinceNow: 1 * 60 * 60) // Example: one hour from now
 
         do {

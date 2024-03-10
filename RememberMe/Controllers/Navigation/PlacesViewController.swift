@@ -524,63 +524,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         UserDefaults.standard.synchronize()
         delegate?.didSelectLocation(with: selectedLocation.name)
     }
-
-    
-    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        let locationName = region.identifier // Directly use identifier as it's non-optional
-        // Fetch last three notes for this location
-        let lastThreeNotes = notes.filter { $0.locationName == locationName }.suffix(3)
-        if !lastThreeNotes.isEmpty {
-            let noteDescriptions = lastThreeNotes.map { $0.text }.joined(separator: ", ")
-            sendNotificationForEnteringRegion(with: locationName, notes: noteDescriptions)
-        }
-    }
-
-    
-    func sendNotificationForEnteringRegion(with locationName: String, notes: String) {
-            let content = UNMutableNotificationContent()
-            content.title = "Welcome to \(locationName)!"
-            content.body = "Your last notes: \(notes)"
-            content.sound = .default
-
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-
-            UNUserNotificationCenter.current().add(request) { error in
-                if let error = error {
-                    print("Error scheduling notification: \(error.localizedDescription)")
-                }
-            }
-        }
-
-    // MARK: - Geofencing
-     func setupGeofencesForLocations() {
-         for location in locations {
-             let geofenceRegion = CLCircularRegion(center: location.location.coordinate, radius: 100, identifier: location.name)
-             geofenceRegion.notifyOnEntry = true
-             locationManager.startMonitoring(for: geofenceRegion)
-         }
-     }
-
-        func sendNotificationForLocation(_ location: LocationData) {
-            let content = UNMutableNotificationContent()
-            content.title = "Welcome to \(location.name)"
-            content.body = "Check out what's new here!"
-            content.sound = UNNotificationSound.default
-
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-
-            UNUserNotificationCenter.current().add(request) { error in
-                if let error = error {
-                    print("Error scheduling notification: \(error)")
-                }
-            }
-        }
-    }
-
-
-
+}
 
 
 //MARK: - Extensions + Protocols

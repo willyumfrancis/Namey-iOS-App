@@ -4,8 +4,7 @@
 <dict>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.example.app.database-cleanup</string>
-		<string>com.example.app.refresh</string>
+		<string>misiaszek.RememberMe.refreshGeofences</string>
 	</array>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app can run in the background to provide real-time navigation updates.</string>
@@ -50,9 +49,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
-		<string>location</string>
 		<string>processing</string>
-		<string>remote-notification</string>
 	</array>
 </dict>
 </plist>

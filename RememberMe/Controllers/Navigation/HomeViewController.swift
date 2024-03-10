@@ -69,8 +69,6 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
         super.init()
         self.locationManager = CLLocationManager()
          self.locationManager.delegate = self
-         self.locationManager.requestAlwaysAuthorization() // Request for always authorization
-         self.locationManager.allowsBackgroundLocationUpdates = true // Enable background updates
          self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
          print("Location manager initialized for background location updates.")  // Debugging line
      }
@@ -1517,12 +1515,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             let data = doc.data()
                             
                             guard let noteLocationData = data["location"] as? GeoPoint else {
-                                print("Missing location data for document ID: \(doc.documentID)")
                                 continue
                             }
                             
                             guard let noteLocationName = data["locationName"] as? String else {
-                                print("Missing locationName data for document ID: \(doc.documentID)")
                                 continue
                             }
                             
@@ -1568,7 +1564,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                 let data = doc.data()
                                 
                                 guard let locationData = data["location"] as? GeoPoint else {
-                                    print("Missing location data for document ID: \(doc.documentID)")
                                     continue
                                 }
                                 
