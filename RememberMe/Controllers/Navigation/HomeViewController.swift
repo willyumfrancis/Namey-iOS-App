@@ -35,114 +35,114 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
     var currentGeofenceRadius: CLLocationDistance = 30 // Default value or suitable initial value
     
     func refreshGeofences(currentLocation: CLLocation, completion: @escaping (Bool) -> Void) {
-          // Example async operation to simulate fetching notes or geofences from a remote server or complex local computation
-          DispatchQueue.global(qos: .background).async {
-              // Let's assume your actual refreshing logic goes here
-              // For now, we'll just replicate the logic you have in setupClosestFifteenGeofences
-              
-              let sortedNotes = self.notes.sorted {
-                  let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
-                  let location2 = CLLocation(latitude: $1.location.latitude, longitude: $1.location.longitude)
-                  return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
-              }
-
-              let closestNotes = Array(sortedNotes.prefix(15))
-
-              DispatchQueue.main.async {
-                  self.geofences.removeAll()
-
-                  for note in closestNotes {
-                      let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
-                      let geofence = Geofence(location: coordinate, radius: self.currentGeofenceRadius, identifier: note.locationName)
-                      self.geofences.append(geofence)
-                  }
-
-                  // Assuming the geofences setup does not require UI and is fast
-                  // In real scenario, replace below true with actual success status
-                  completion(true) // Call completion handler to indicate success or failure
-              }
-          }
-      }
-
+        // Example async operation to simulate fetching notes or geofences from a remote server or complex local computation
+        DispatchQueue.global(qos: .background).async {
+            // Let's assume your actual refreshing logic goes here
+            // For now, we'll just replicate the logic you have in setupClosestFifteenGeofences
+            
+            let sortedNotes = self.notes.sorted {
+                let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
+                let location2 = CLLocation(latitude: $1.location.latitude, longitude: $1.location.longitude)
+                return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
+            }
+            
+            let closestNotes = Array(sortedNotes.prefix(15))
+            
+            DispatchQueue.main.async {
+                self.geofences.removeAll()
+                
+                for note in closestNotes {
+                    let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
+                    let geofence = Geofence(location: coordinate, radius: self.currentGeofenceRadius, identifier: note.locationName)
+                    self.geofences.append(geofence)
+                }
+                
+                // Assuming the geofences setup does not require UI and is fast
+                // In real scenario, replace below true with actual success status
+                completion(true) // Call completion handler to indicate success or failure
+            }
+        }
+    }
+    
     
     override init() {
         super.init()
         self.locationManager = CLLocationManager()
-         self.locationManager.delegate = self
-         self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
-         print("Location manager initialized for background location updates.")  // Debugging line
-     }
+        self.locationManager.delegate = self
+        self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        print("Location manager initialized for background location updates.")  // Debugging line
     }
+}
 
-    
-    
+
+
 
 
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
     
-
-       // MARK: - NOTIFICATIONS
+    
+    // MARK: - NOTIFICATIONS
     
     func determineTransportationMode(from speed: CLLocationSpeed) -> String {
-           // Speed is in meters per second
-           switch speed {
-           case 0..<4: // Less than 4 m/s (~14.4 km/h)
-               return "walking"
-           case 4..<15: // Between 4 m/s and 15 m/s (~14.4 to ~54 km/h)
-               return "biking"
-           default: // Greater than 15 m/s (~54 km/h)
-               return "driving"
-           }
-       }
-
-       func shouldRefreshGeofences(for modeOfTransport: String, lastLocation: CLLocationCoordinate2D, currentLocation: CLLocationCoordinate2D) -> Bool {
-           let lastCLLocation = CLLocation(latitude: lastLocation.latitude, longitude: lastLocation.longitude)
-           let currentCLLocation = CLLocation(latitude: currentLocation.latitude, longitude: currentLocation.longitude)
-           let distance = currentCLLocation.distance(from: lastCLLocation)
-           
-           let thresholds: [String: CLLocationDistance] = [
-               "walking": 200, // meters
-               "biking": 500,
-               "driving": 1000
-           ]
-           
-           return distance > (thresholds[modeOfTransport] ?? 500) // Default to biking threshold if mode is unknown
-       }
-
-           
-        func setupLocationManager() {
-            locationManager.delegate = self
-            locationManager.desiredAccuracy = kCLLocationAccuracyBest
-            locationManager.requestAlwaysAuthorization()  // Changed from requestWhenInUseAuthorization
-            locationManager.startUpdatingLocation()
+        // Speed is in meters per second
+        switch speed {
+        case 0..<4: // Less than 4 m/s (~14.4 km/h)
+            return "walking"
+        case 4..<15: // Between 4 m/s and 15 m/s (~14.4 to ~54 km/h)
+            return "biking"
+        default: // Greater than 15 m/s (~54 km/h)
+            return "driving"
         }
-
-
-           var hasProcessedLocationUpdate = false
-
-           // Location Manager Delegate
-           var lastLocationUpdateTime: Date?
-
-           // Location Manager Delegate
-           var lastProcessedLocation: CLLocationCoordinate2D?
-
-           // Define a property to keep track of whether the location has been fetched
-           var hasFetchedLocation = false
-
+    }
+    
+    func shouldRefreshGeofences(for modeOfTransport: String, lastLocation: CLLocationCoordinate2D, currentLocation: CLLocationCoordinate2D) -> Bool {
+        let lastCLLocation = CLLocation(latitude: lastLocation.latitude, longitude: lastLocation.longitude)
+        let currentCLLocation = CLLocation(latitude: currentLocation.latitude, longitude: currentLocation.longitude)
+        let distance = currentCLLocation.distance(from: lastCLLocation)
+        
+        let thresholds: [String: CLLocationDistance] = [
+            "walking": 200, // meters
+            "biking": 500,
+            "driving": 1000
+        ]
+        
+        return distance > (thresholds[modeOfTransport] ?? 500) // Default to biking threshold if mode is unknown
+    }
+    
+    
+    func setupLocationManager() {
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.requestAlwaysAuthorization()  // Changed from requestWhenInUseAuthorization
+        locationManager.startUpdatingLocation()
+    }
+    
+    
+    var hasProcessedLocationUpdate = false
+    
+    // Location Manager Delegate
+    var lastLocationUpdateTime: Date?
+    
+    // Location Manager Delegate
+    var lastProcessedLocation: CLLocationCoordinate2D?
+    
+    // Define a property to keep track of whether the location has been fetched
+    var hasFetchedLocation = false
+    
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if hasFetchedLocation {
             return
         }
-
+        
         guard let newLocation = locations.last else { return }
-
+        
         self.userLocation = newLocation.coordinate
         self.currentLocation = newLocation.coordinate
         print("User's location: \(newLocation)")
-
+        
         updateLocationNameLabel(location: newLocation.coordinate)
         self.displayImage(location: self.currentLocation!)
-
+        
         if let coord = self.currentLocation {
             let locationObj = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
             loadAndFilterNotes(for: coord, goalRadius: 15.0) {
@@ -151,7 +151,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                     print("Called setupClosestFifteenGeofences completion block in didUpdateLocations")
                 }
             }
-
+            
             // Assuming lastProcessedLocation is stored as CLLocationCoordinate2D
             if let lastLocation = self.lastProcessedLocation {
                 // Determine the mode of transportation based on speed
@@ -168,83 +168,83 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 self.lastProcessedLocation = coord // Initialize last location if not set
             }
         }
-
+        
         hasFetchedLocation = true
     }
-
-
-
-           func setupClosestFifteenGeofences(currentLocation: CLLocation, completion: @escaping () -> Void) {
-               DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
-                   print("Setting up geofences for closest fifteen locations.")  // Debugging print statement
-
-                   let sortedNotes = self.notes.sorted {
-                       let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
-                       let location2 = CLLocation(latitude: $1.location.latitude, longitude: $1.location.longitude)
-                       return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
-                   }
-
-                   let closestNotes = Array(sortedNotes.prefix(15))
-                   print("Closest notes count: \(closestNotes.count)")  // Debugging print statement
-
-                   self.geofenceManager.geofences.removeAll()
-
-                   for note in closestNotes {
-                       let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
-                       let geofence = Geofence(location: coordinate, radius: 100, identifier: note.locationName)
-                       self.geofenceManager.geofences.append(geofence)
-                       self.setupGeoFence(location: geofence.location, identifier: geofence.identifier)
-                   }
-
-                   print("Geofences for closest fifteen locations set up.")  // Debugging print statement
-                   completion()
-               }
-           }
-
-               
-            // When exiting a region, remove it from the list of notified regions
-            func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-                print("Exited region: \(region.identifier)")  // Debugging line
-                
-                // Remove from notified regions
-                notifiedRegions.remove(region.identifier)
-
-                if let circularRegion = region as? CLCircularRegion {
-                    print("Exited circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")  // Debugging line
-                }
+    
+    
+    
+    func setupClosestFifteenGeofences(currentLocation: CLLocation, completion: @escaping () -> Void) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
+            print("Setting up geofences for closest fifteen locations.")  // Debugging print statement
+            
+            let sortedNotes = self.notes.sorted {
+                let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
+                let location2 = CLLocation(latitude: $1.location.latitude, longitude: $1.location.longitude)
+                return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
             }
-
-           var geofenceManager = GeofenceManager()  // Initialize GeofenceManager
-
-
-                func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
-                    let radius: CLLocationDistance = 25
-                    print("Setting up GeoFence at \(location) with radius \(radius)")  // Debugging line
-                    let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
-                    region.notifyOnEntry = true
-                    region.notifyOnExit = false
-                    
-                    if CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) {
-                        locationManager.startMonitoring(for: region)
-                        print("GeoFence setup complete.") // Debugging line
-                    } else {
-                        print("GeoFence monitoring is not available for this device.") // Debugging line
-                    }
-                }
-
-                func getLastThreeNotes(for locationName: String) -> [Note] {
-                    print("Fetching last three notes for location: \(locationName)") // Debugging line
-                    return Array(notes.filter { $0.locationName == locationName }.suffix(3))
-                }
-                
-          
+            
+            let closestNotes = Array(sortedNotes.prefix(15))
+            print("Closest notes count: \(closestNotes.count)")  // Debugging print statement
+            
+            self.geofenceManager.geofences.removeAll()
+            
+            for note in closestNotes {
+                let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
+                let geofence = Geofence(location: coordinate, radius: 100, identifier: note.locationName)
+                self.geofenceManager.geofences.append(geofence)
+                self.setupGeoFence(location: geofence.location, identifier: geofence.identifier)
+            }
+            
+            print("Geofences for closest fifteen locations set up.")  // Debugging print statement
+            completion()
+        }
+    }
+    
+    
+    // When exiting a region, remove it from the list of notified regions
+    func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
+        print("Exited region: \(region.identifier)")  // Debugging line
+        
+        // Remove from notified regions
+        notifiedRegions.remove(region.identifier)
+        
+        if let circularRegion = region as? CLCircularRegion {
+            print("Exited circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")  // Debugging line
+        }
+    }
+    
+    var geofenceManager = GeofenceManager()  // Initialize GeofenceManager
+    
+    
+    func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
+        let radius: CLLocationDistance = 25
+        print("Setting up GeoFence at \(location) with radius \(radius)")  // Debugging line
+        let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
+        region.notifyOnEntry = true
+        region.notifyOnExit = false
+        
+        if CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) {
+            locationManager.startMonitoring(for: region)
+            print("GeoFence setup complete.") // Debugging line
+        } else {
+            print("GeoFence monitoring is not available for this device.") // Debugging line
+        }
+    }
+    
+    func getLastThreeNotes(for locationName: String) -> [Note] {
+        print("Fetching last three notes for location: \(locationName)") // Debugging line
+        return Array(notes.filter { $0.locationName == locationName }.suffix(3))
+    }
+    
+    
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         print("Entered region: \(region.identifier)") // Debug statement to indicate region entry.
-
+        
         if let circularRegion = region as? CLCircularRegion {
             print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)") // Debugging details about the entered region.
         }
-
+        
         // Ensure execution in the main thread for UI updates and fetching notes.
         DispatchQueue.main.async {
             // Load notes for the region directly without waiting, as time is limited in the background.
@@ -252,7 +252,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 // After loading, fetch the last three notes.
                 let lastThreeNotes = self.getLastThreeNotes(for: region.identifier)
                 let lastThreeNotesText = lastThreeNotes.map { $0.text }
-
+                
                 if !lastThreeNotesText.isEmpty {
                     // Send notification if there are notes for the entered region.
                     self.sendNotification(locationName: region.identifier, lastThreeNotes: lastThreeNotesText)
@@ -263,88 +263,88 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
-                
-                func requestLocationAuthorization() {
-                    locationManager.requestWhenInUseAuthorization()
-                }
-
-                // Add a dictionary to keep track of last sent time for each location
-                var lastNotificationSentTime: [String: Date] = [:]
-
-           func sendNotification(locationName: String, lastThreeNotes: [String]) {
-                   DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                       print("Preparing to send notification for location: \(locationName)") // Debugging line
-                       
-                       
-                       // Check if locationName and lastThreeNotes are not empty
-                       if locationName.isEmpty || lastThreeNotes.isEmpty {
-                           print("Either the location name or the last three notes are empty. Skipping notification.") // Debugging line
-                           return
-                       }
-                       
-                       
-                       // Update the last sent time for this location
-                       self.geofenceManager.lastNotificationSentTime[locationName] = Date()
-                       
-                       print("Sending notification for location: \(locationName)") // Debugging line
-                       let content = UNMutableNotificationContent()
-                       content.title = "Near \(locationName)"
-                       let notesText = lastThreeNotes.joined(separator: ", ")
-                       content.body = "\(notesText)"
-                       content.categoryIdentifier = "notesCategory"
-                       content.sound = UNNotificationSound.default
-                       let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-                       let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-                       UNUserNotificationCenter.current().add(request) { error in
-                           if let error = error {
-                               print("Error adding notification: \(error)") // Debugging line
-                           } else {
-                               print("Notification added successfully") // Debugging line
-                           }
-                       }
-                   }
-               }
-
-                func requestNotificationAuthorization() {
-                    print("Requesting notification authorization") // Debugging line
-                    let center = UNUserNotificationCenter.current()
-                    center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
-                        if granted {
-                            print("Notification access granted") // Debugging line
-                        } else {
-                            print("Notification access denied") // Debugging line
-                            if let error = error {
-                                print("Error requesting authorization: \(error)") // Debugging line
-                            }
-                        }
-                    }
-                }
-
-                func setupNotificationCategory() {
-                    print("Setting up notification category") // Debugging line
-                    let viewLastThreeNotesAction = UNNotificationAction(identifier: "viewLastThreeNotes", title: "View last three notes", options: [.foreground])
-                    let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastThreeNotesAction], intentIdentifiers: [], options: [])
-                    UNUserNotificationCenter.current().setNotificationCategories([category])
-                    print("Notification category setup complete.") // Debugging line
-                }
-        
-        func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
-            let userInfo = response.notification.request.content.userInfo
-            if let locationName = userInfo["locationName"] as? String {
-                // Call your function to load notes for the specified location
-                self.LoadPlacesNotes(for: locationName) {
-                    // Any additional UI updates after loading the notes can be handled here
-                    // For example, scrolling to the top of the notes list
-                    self.tableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
-                    print("App Sending User to Place in ViewController") // Debugging line
+    
+    
+    func requestLocationAuthorization() {
+        locationManager.requestWhenInUseAuthorization()
+    }
+    
+    // Add a dictionary to keep track of last sent time for each location
+    var lastNotificationSentTime: [String: Date] = [:]
+    
+    func sendNotification(locationName: String, lastThreeNotes: [String]) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            print("Preparing to send notification for location: \(locationName)") // Debugging line
+            
+            
+            // Check if locationName and lastThreeNotes are not empty
+            if locationName.isEmpty || lastThreeNotes.isEmpty {
+                print("Either the location name or the last three notes are empty. Skipping notification.") // Debugging line
+                return
+            }
+            
+            
+            // Update the last sent time for this location
+            self.geofenceManager.lastNotificationSentTime[locationName] = Date()
+            
+            print("Sending notification for location: \(locationName)") // Debugging line
+            let content = UNMutableNotificationContent()
+            content.title = "Near \(locationName)"
+            let notesText = lastThreeNotes.joined(separator: ", ")
+            content.body = "\(notesText)"
+            content.categoryIdentifier = "notesCategory"
+            content.sound = UNNotificationSound.default
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+            UNUserNotificationCenter.current().add(request) { error in
+                if let error = error {
+                    print("Error adding notification: \(error)") // Debugging line
+                } else {
+                    print("Notification added successfully") // Debugging line
                 }
             }
-            completionHandler()
         }
-
-           
-           
+    }
+    
+    func requestNotificationAuthorization() {
+        print("Requesting notification authorization") // Debugging line
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
+            if granted {
+                print("Notification access granted") // Debugging line
+            } else {
+                print("Notification access denied") // Debugging line
+                if let error = error {
+                    print("Error requesting authorization: \(error)") // Debugging line
+                }
+            }
+        }
+    }
+    
+    func setupNotificationCategory() {
+        print("Setting up notification category") // Debugging line
+        let viewLastThreeNotesAction = UNNotificationAction(identifier: "viewLastThreeNotes", title: "View last three notes", options: [.foreground])
+        let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastThreeNotesAction], intentIdentifiers: [], options: [])
+        UNUserNotificationCenter.current().setNotificationCategories([category])
+        print("Notification category setup complete.") // Debugging line
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        let userInfo = response.notification.request.content.userInfo
+        if let locationName = userInfo["locationName"] as? String {
+            // Call your function to load notes for the specified location
+            self.LoadPlacesNotes(for: locationName) {
+                // Any additional UI updates after loading the notes can be handled here
+                // For example, scrolling to the top of the notes list
+                self.tableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
+                print("App Sending User to Place in ViewController") // Debugging line
+            }
+        }
+        completionHandler()
+    }
+    
+    
+    
     //MARK: - END NOTIES
     
     
@@ -471,16 +471,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     @IBAction func toggleRecording(_ sender: UIButton) {
         if isRecording {
-                   print("Stopping recording...")
-                   stopRecordingAndTranscribeAudio()
-                   sender.setImage(UIImage(systemName: "mic"), for: .normal)
-               } else {
-                   print("Starting recording...")
-                   startRecording()
-                   sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
-               }
-               isRecording.toggle()
-           }
+            print("Stopping recording...")
+            stopRecordingAndTranscribeAudio()
+            sender.setImage(UIImage(systemName: "mic"), for: .normal)
+        } else {
+            print("Starting recording...")
+            startRecording()
+            sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
+        }
+        isRecording.toggle()
+    }
     
     func stopRecordingAndTranscribeAudio() {
         print("Stopping recording.")
@@ -527,7 +527,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             case .failure(let error):
                 print("Error transcribing audio: \(error)") // Debugging line
                 DispatchQueue.main.async {
-      
+                    
                 }
             }
         }
@@ -597,16 +597,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     //Loading in Closest location variable true/false on entering placesviewcontroller.
     var hasEnteredPlacesViewController = false
-
-    
     var expandedNotes: Set<String> = []
     var selectedLocationName: String?
     var selectedLocation: CLLocationCoordinate2D?
     var notesFromAverageLocation: [Note] = []
     var isLocationNameManuallySet = false  // Add this variable to keep track of user's manual input
-
-    
-    
     var averageSelectedLocation: CLLocationCoordinate2D? {
         didSet {
             if !isLocationNameManuallySet {  // Only update if the name was not manually set
@@ -620,7 +615,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-    
     var averageSelectedLocationName: String? {
         didSet {
             if !isLocationNameManuallySet {  // Only update if the name was not manually set
@@ -630,10 +624,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-    
-    
-    
-    
     var currentLocationName: String?
     var currentLocationImageURL: URL?
     
@@ -645,135 +635,125 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     var maxPeople = 3
     var locationUpdateTimer: Timer?
-    
-    
+
     // Assuming you have other variables and initializers defined elsewhere
     var notes: [Note] = []  // Replace Note with your Note class
     var notifiedRegions: Set<String> = []
-    
-    
     var notesLoaded = false
-    
     var userLocation: CLLocationCoordinate2D?
-    
-    
-    
-    
     var authStateListenerHandle: AuthStateDidChangeListenerHandle?
     var sliderValueLabel: UILabel!
     var activeNoteCell: NoteCell?
-    
     var fetchedLocationKeys: Set<String> = []
     var notesFetched = false
     
-    
-    
     @IBAction func uploadImageButton(_ sender: UIButton) {
         // Start jiggling
-          let animation = CAKeyframeAnimation(keyPath: "transform.rotation")
-          animation.values = [-0.3, 0.2, -0.3]  // radians to jiggle back and forth
-          animation.duration = 0.4  // duration of the jiggle
-          animation.repeatCount = 5  // number of jiggles
-          animation.isAdditive = true  // add rotation to the current state
-          ImageLook.layer.add(animation, forKey: "jiggle")
-          
-          // Continue with existing button functionality
-          print("Upload Image button pressed")
-          print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
-          print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
-
-          let alertController = UIAlertController(title: "Location Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
-          alertController.addTextField()
-
-          let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self] _ in
-              guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
-                  print("Location name is empty.")  // Debugging
-                  return
-              }
-              
-              self?.locationNameLabel.text = locationName  // Update current location name
-              self?.processLocationNameAndPresentImagePicker(locationName: locationName)
-          }
-          
-          let skipAction = UIAlertAction(title: "Skip", style: .default) { [weak self] _ in
-              if let currentLocationName = self?.locationNameLabel.text, !currentLocationName.isEmpty {
-                  print("Skipping new name. Using current location name: \(currentLocationName)")  // Debugging
-                  self?.processLocationNameAndPresentImagePicker(locationName: currentLocationName)
-              } else {
-                  print("No current location name to skip to.")  // Debugging
-              }
-          }
-          
-          alertController.addAction(saveAction)
-          alertController.addAction(skipAction)
-
-          let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-          alertController.addAction(cancelAction)
-          
-          self.present(alertController, animated: true)
-      }
-
-        func processLocationNameAndPresentImagePicker(locationName: String) {
-            if let selectedLocation = self.selectedLocation {
-                // User had selected a location from PlacesViewController
-                print("Using selected location")  // Debugging
-                self.updateLocationNameLabel(location: selectedLocation)
-                self.presentImagePicker(locationName: locationName)
-            } else if let currentLocation = self.locationManager.location?.coordinate {
-                // No location was selected; use the current location
-                print("Using current location")  // Debugging
-                self.updateLocationNameLabel(location: currentLocation)
-                self.presentImagePicker(locationName: locationName)
-            } else if let currentLocationName = self.currentLocationName, !currentLocationName.isEmpty {
-                // Use the current location name if available
-                print("Using current location name: \(currentLocationName)")  // Debugging
-                self.presentImagePicker(locationName: currentLocationName)
+        let animation = CAKeyframeAnimation(keyPath: "transform.rotation")
+        animation.values = [-0.3, 0.2, -0.3]  // radians to jiggle back and forth
+        animation.duration = 0.4  // duration of the jiggle
+        animation.repeatCount = 5  // number of jiggles
+        animation.isAdditive = true  // add rotation to the current state
+        ImageLook.layer.add(animation, forKey: "jiggle")
+        
+        // Continue with existing button functionality
+        print("Upload Image button pressed")
+        print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
+        print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
+        
+        let alertController = UIAlertController(title: "Location Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
+        alertController.addTextField()
+        
+        let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self] _ in
+            guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
+                print("Location name is empty.")  // Debugging
+                return
             }
-
-            self.updateNotesCountLabel()
+            
+            self?.locationNameLabel.text = locationName  // Update current location name
+            self?.processLocationNameAndPresentImagePicker(locationName: locationName)
         }
-
-
+        
+        let skipAction = UIAlertAction(title: "Skip", style: .default) { [weak self] _ in
+            if let currentLocationName = self?.locationNameLabel.text, !currentLocationName.isEmpty {
+                print("Skipping new name. Using current location name: \(currentLocationName)")  // Debugging
+                self?.processLocationNameAndPresentImagePicker(locationName: currentLocationName)
+            } else {
+                print("No current location name to skip to.")  // Debugging
+            }
+        }
+        
+        alertController.addAction(saveAction)
+        alertController.addAction(skipAction)
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        alertController.addAction(cancelAction)
+        
+        self.present(alertController, animated: true)
+    }
     
+    func processLocationNameAndPresentImagePicker(locationName: String) {
+        if let selectedLocation = self.selectedLocation {
+            // User had selected a location from PlacesViewController
+            print("Using selected location")  // Debugging
+            self.updateLocationNameLabel(location: selectedLocation)
+            self.presentImagePicker(locationName: locationName)
+        } else if let currentLocation = self.locationManager.location?.coordinate {
+            // No location was selected; use the current location
+            print("Using current location")  // Debugging
+            self.updateLocationNameLabel(location: currentLocation)
+            self.presentImagePicker(locationName: locationName)
+        } else if let currentLocationName = self.currentLocationName, !currentLocationName.isEmpty {
+            // Use the current location name if available
+            print("Using current location name: \(currentLocationName)")  // Debugging
+            self.presentImagePicker(locationName: currentLocationName)
+        }
+        
+        self.updateNotesCountLabel()
+    }
     
     //AI Button
     @IBAction func aibutton(_ sender: UIButton) {
         print("AI button tapped") // Debugging print statement
-
-               // Fetch advice directly when the AI button is tapped
-               getAdvice { advice in
-                   DispatchQueue.main.async {
-                       self.AdviceOutlet.text = advice
-                   }
-               }
+        
+        // Fetch advice directly when the AI button is tapped
+        getAdvice { advice in
+            DispatchQueue.main.async {
+                self.AdviceOutlet.text = advice
+            }
+        }
         
     }
     
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton?) {
         // Animation to scale down the button
-            UIView.animate(withDuration: 0.2, animations: {
-                self.LocationButtonOutlet.transform = CGAffineTransform(scaleX: 0.77, y: 0.77)
-            }) { _ in
-                // Animation to scale the button back up
-                UIView.animate(withDuration: 0.2) {
-                    self.LocationButtonOutlet.transform = CGAffineTransform.identity
-                }
+        UIView.animate(withDuration: 0.2, animations: {
+            self.LocationButtonOutlet.transform = CGAffineTransform(scaleX: 0.77, y: 0.77)
+        }) { _ in
+            // Animation to scale the button back up
+            UIView.animate(withDuration: 0.2) {
+                self.LocationButtonOutlet.transform = CGAffineTransform.identity
             }
-
+        }
+        
+        self.refreshLocation()
+    }
+    
+    func refreshLocation() {
         // Use the user's current location
-           guard let currentLocation = locationManager.location?.coordinate else {
-                  print("User location not available yet")
-                  return
-               }
-
-               // Set the user's current location as the selected location
-               selectedLocation = currentLocation
-
-               // Update the current location information
-               updateLocation(location: currentLocation)
-           }
-       
+        guard let currentLocation = locationManager.location?.coordinate else {
+            print("User location not available yet")
+            return
+        }
+        
+        // Set the user's current location as the selected location
+        selectedLocation = currentLocation
+        
+        // Update the current location information
+        updateLocation(location: currentLocation)
+    }
+    
     func updateLocation(location: CLLocationCoordinate2D) {
         loadAndFilterNotes(for: location, goalRadius: 15.0) {
             print("Notes are loaded and filtered in updateLocation.")
@@ -782,7 +762,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         updateNotesCountLabel()
         averageSelectedLocation = location
     }
-
+    
     
     //MARK: - AI CODE
     func getAPIKey(named keyname: String, from plistName: String) -> String? {
@@ -794,75 +774,71 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     func getAdvice(completion: @escaping (String) -> Void) {
-           guard let apiKey = getAPIKey(named: "OpenAI_API_Key", from: "GoogleService-Info") else {
-               print("API Key not found") // Debugging print statement
-               return
-           }
-           
-           let prompt = "Tell me a historical fact with a max of 70 charecters and no quotation marks."
-           
-           let messages = [["role": "system", "content": "You are a Fun Historian"],
-                           ["role": "user", "content": prompt]]
-           
-           let json: [String: Any] = ["model": "gpt-3.5-turbo", "messages": messages]
-           let jsonData = try? JSONSerialization.data(withJSONObject: json)
-           
-           var request = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
-           request.httpMethod = "POST"
-           request.httpBody = jsonData
-           request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-           request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-           
-           let task = URLSession.shared.dataTask(with: request) { data, response, error in
-               print("Entered URLSession data task") // Debugging print statement
-               
-               if let error = error {
-                   print("Error fetching advice: \(error)") // Debugging print statement
-                   return
-               }
-               
-               if let data = data {
-                   do {
-                       if let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                          let choices = jsonResponse["choices"] as? [[String: Any]],
-                          let message = choices.first?["message"] as? [String: Any],
-                          let text = message["content"] as? String {
-                           
-                           let advice = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                           print("Advice: \(advice)") // Debugging print statement
-                           completion(advice)
-                       } else {
-                           print("Unexpected response: \(String(data: data, encoding: .utf8) ?? "N/A")") // Debugging print statement
-                       }
-                   } catch {
-                       print("JSON Serialization error: \(error)") // Debugging print statement
-                   }
-               } else {
-                   print("Data is nil") // Debugging print statement
-               }
-           }
-           task.resume()
-       }
-   
+        guard let apiKey = getAPIKey(named: "OpenAI_API_Key", from: "GoogleService-Info") else {
+            print("API Key not found") // Debugging print statement
+            return
+        }
+        
+        let prompt = "Tell me a historical fact with a max of 70 charecters and no quotation marks."
+        
+        let messages = [["role": "system", "content": "You are a Fun Historian"],
+                        ["role": "user", "content": prompt]]
+        
+        let json: [String: Any] = ["model": "gpt-3.5-turbo", "messages": messages]
+        let jsonData = try? JSONSerialization.data(withJSONObject: json)
+        
+        var request = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
+        request.httpMethod = "POST"
+        request.httpBody = jsonData
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            print("Entered URLSession data task") // Debugging print statement
+            
+            if let error = error {
+                print("Error fetching advice: \(error)") // Debugging print statement
+                return
+            }
+            
+            if let data = data {
+                do {
+                    if let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                       let choices = jsonResponse["choices"] as? [[String: Any]],
+                       let message = choices.first?["message"] as? [String: Any],
+                       let text = message["content"] as? String {
+                        
+                        let advice = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                        print("Advice: \(advice)") // Debugging print statement
+                        completion(advice)
+                    } else {
+                        print("Unexpected response: \(String(data: data, encoding: .utf8) ?? "N/A")") // Debugging print statement
+                    }
+                } catch {
+                    print("JSON Serialization error: \(error)") // Debugging print statement
+                }
+            } else {
+                print("Data is nil") // Debugging print statement
+            }
+        }
+        task.resume()
+    }
     
-    
-    
-
     //MARK: - SAVE AND NEW NOTE CREATION
     //Save Name Button
     @IBAction func SaveNote(_ sender: UIButton) {
         // Animation to scale down the button
-           UIView.animate(withDuration: 0.2, animations: {
-               self.SaveButtonLook.transform = CGAffineTransform(scaleX: 0.77, y: 0.77)
-           }) { [weak self] _ in
-               // Animation to scale the button back up
-               UIView.animate(withDuration: 0.2) {
-                   self?.SaveButtonLook.transform = CGAffineTransform.identity
-               } completion: { _ in
-                   // Perform the save action after the animation
-                   self?.saveNote()
-               }
-           }
+        UIView.animate(withDuration: 0.2, animations: {
+            self.SaveButtonLook.transform = CGAffineTransform(scaleX: 0.77, y: 0.77)
+        }) { [weak self] _ in
+            // Animation to scale the button back up
+            UIView.animate(withDuration: 0.2) {
+                self?.SaveButtonLook.transform = CGAffineTransform.identity
+            } completion: { _ in
+                // Perform the save action after the animation
+                self?.saveNote()
+            }
+        }
     }
     
     func lookupCoordinate(for locationName: String) -> CLLocationCoordinate2D? {
@@ -874,42 +850,40 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         return nil
     }
 
-    
-
     //Create New Name
     @IBAction func NewNote(_ sender: UIButton) {
         // Animation to scale down the button
-           UIView.animate(withDuration: 0.2, animations: {
-               self.NewNameLook.transform = CGAffineTransform(scaleX: 0.77, y: 0.77)
-           }) { [weak self] _ in
-               // Animation to scale the button back up
-               UIView.animate(withDuration: 0.2) {
-                   self?.NewNameLook.transform = CGAffineTransform.identity
-               } completion: { _ in
-                   // Perform the new note action after the animation
-                   if let self = self, let currentLocation = self.currentLocation {
-                       let emptyURL = URL(string: "")
-                       let userDefinedLocationName = self.currentLocationName ?? ""  // Fetch user-defined location name
-                       let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: userDefinedLocationName, imageURL: emptyURL)  // Use currentLocation and userDefinedLocationName
-                       self.notes.append(newNote)
-                       self.selectedNote = newNote
-
-                       DispatchQueue.main.async {
-                           self.tableView.beginUpdates()
-                           self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                           self.tableView.endUpdates()
-                           
-                           DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                               if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                                  let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                                   newCell.noteTextField.becomeFirstResponder()
-                               }
-                           }
-                       }
-                   }
-               }
-           }
-       }
+        UIView.animate(withDuration: 0.2, animations: {
+            self.NewNameLook.transform = CGAffineTransform(scaleX: 0.77, y: 0.77)
+        }) { [weak self] _ in
+            // Animation to scale the button back up
+            UIView.animate(withDuration: 0.2) {
+                self?.NewNameLook.transform = CGAffineTransform.identity
+            } completion: { _ in
+                // Perform the new note action after the animation
+                if let self = self, let currentLocation = self.currentLocation {
+                    let emptyURL = URL(string: "")
+                    let userDefinedLocationName = self.currentLocationName ?? ""  // Fetch user-defined location name
+                    let newNote = Note(id: UUID().uuidString, text: "", location: currentLocation, locationName: userDefinedLocationName, imageURL: emptyURL)  // Use currentLocation and userDefinedLocationName
+                    self.notes.append(newNote)
+                    self.selectedNote = newNote
+                    
+                    DispatchQueue.main.async {
+                        self.tableView.beginUpdates()
+                        self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                        self.tableView.endUpdates()
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                               let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                                newCell.noteTextField.becomeFirstResponder()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     // textFieldShouldReturn method
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
@@ -919,12 +893,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
         return true
     }
-
     
     func saveNote() {
         var locationToSave: CLLocationCoordinate2D?
         var locationNameForNote: String?
-
+        
         // Prioritize selectedLocation over currentLocation
         if let selectedLocation = selectedLocation {
             locationToSave = selectedLocation
@@ -938,7 +911,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("Failed to get user's current location or selected location")
             return // Exit if there is no location determined.
         }
-
+        
         guard let saveLocation = locationToSave,
               let activeCell = activeNoteCell,
               let noteText = activeCell.noteTextField.text,
@@ -947,12 +920,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("Failed to prepare data for saving")
             return
         }
-
+        
         // Use the fetched location name if available; otherwise, use "New Place".
         locationNameForNote = locationNameForNote ?? "New Place"
-
+        
         let noteId = activeCell.note?.id ?? UUID().uuidString
-
+        
         // Proceed to save the note with the determined location name and coordinates.
         saveNoteToFirestore(noteId: noteId, noteText: noteText, location: saveLocation, locationName: locationNameForNote!, imageURL: self.currentLocationImageURL?.absoluteString ?? "") { success in
             if success {
@@ -968,14 +941,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
-
-
+    
     func saveNoteHelper(userEmail: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, noteId: String?) {
         let noteId = noteId ?? UUID().uuidString
         print("Debug: Determined location name to save as '\(locationName)'.")
         let imageURLToSave = self.currentLocationImageURL?.absoluteString ?? ""
-
+        
         let noteData: [String: Any] = [
             "user": userEmail,
             "note": noteText,
@@ -984,7 +955,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             "imageURL": imageURLToSave,
             "timestamp": Timestamp(date: Date())
         ]
-
+        
         self.db.collection("notes").document(noteId).setData(noteData) { error in
             if let error = error {
                 print("Error saving note to Firestore: \(error)")
@@ -1002,9 +973,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
-
-
+    
     func determineLocationName(userChosenName: String?, autoGeneratedName: String?) -> String {
         if let userChosenName = userChosenName, !userChosenName.isEmpty {
             return userChosenName
@@ -1012,11 +981,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             return autoGeneratedName ?? "Unnamed Location"
         }
     }
-
+    
     func checkAndExpandRegionForNewNote(at location: CLLocationCoordinate2D) {
         let newNoteLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
         var maxDistance: CLLocationDistance = 0
-
+        
         for note in notes {
             let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
             let distance = newNoteLocation.distance(from: noteLocation)
@@ -1024,29 +993,28 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 maxDistance = distance
             }
         }
-
+        
         // Assuming geofenceManager is an instance of GeofenceManager accessible in this scope
         if maxDistance > geofenceManager.currentGeofenceRadius {
             adjustGeofenceRadius(to: maxDistance)
         }
     }
-
-
+    
     func adjustGeofenceRadius(to newRadius: CLLocationDistance) {
         geofenceManager.currentGeofenceRadius = newRadius
-
+        
         for (index, geofence) in geofenceManager.geofences.enumerated() {
             if geofence.radius < newRadius {
                 // Update the radius of the geofence
                 var updatedGeofence = geofence
                 updatedGeofence.radius = newRadius
                 geofenceManager.geofences[index] = updatedGeofence
-
+                
                 // Check if the geofence is being monitored and update it
                 if let region = geofenceManager.locationManager.monitoredRegions.first(where: { $0.identifier == geofence.identifier }) as? CLCircularRegion {
                     // Stop monitoring the old region
                     geofenceManager.locationManager.stopMonitoring(for: region)
-
+                    
                     // Create and start monitoring a new region with the updated radius
                     let updatedRegion = CLCircularRegion(center: region.center, radius: newRadius, identifier: region.identifier)
                     updatedRegion.notifyOnEntry = true
@@ -1055,17 +1023,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 }
             }
         }
-
-     
+        
+        
     }
-
-
-
-
+    
     func getLocationName(from location: CLLocationCoordinate2D, completion: @escaping (String?) -> Void) {
         let geocoder = CLGeocoder()
         let location = CLLocation(latitude: location.latitude, longitude: location.longitude)
-
+        
         geocoder.reverseGeocodeLocation(location) { (placemarks, error) in
             if let error = error {
                 print("There was an error reverse geocoding the location: \(error)")
@@ -1074,20 +1039,20 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 // Here you can choose how you want to format the location name
                 // This is just one example
                 var locationName = ""
-
+                
                 if let name = placemark.name {
                     locationName += name
                 }
-
+                
                 if let locality = placemark.locality {
                     locationName += ", \(locality)"
                 }
-
-
+                
+                
                 if locationName.isEmpty {
                     locationName = "Unnamed Location"
                 }
-
+                
                 completion(locationName)
             } else {
                 print("No placemarks found for location")
@@ -1095,64 +1060,58 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
-    
-    
-    
     
     //MARK: - Appearance
-  
-//    func updateProgressBar() {
-//        updateNotesCountLabel()
-//        let currentPeople = notes.count
-//        let progress = min(Float(currentPeople) / Float(maxPeople), 1.0)
-//
-//        Progressbar.setProgress(progress, animated: true)
-//
-//        if progress == 1.0 {
-//            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
-//
-//        } else {
-//            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
-//
-//        }
-//    }
-
     
+    //    func updateProgressBar() {
+    //        updateNotesCountLabel()
+    //        let currentPeople = notes.count
+    //        let progress = min(Float(currentPeople) / Float(maxPeople), 1.0)
+    //
+    //        Progressbar.setProgress(progress, animated: true)
+    //
+    //        if progress == 1.0 {
+    //            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
+    //
+    //        } else {
+    //            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
+    //
+    //        }
+    //    }
     
     private func setupRoundedProgressBar() {
         // Set the progress bar height
         let height: CGFloat = 22
-
+        
         // Apply corner radius
         Progressbar?.layer.cornerRadius = height / 7
         Progressbar?.clipsToBounds = true
-
+        
         // Customize the progress tint and track color
         let trackTintColor = #colorLiteral(red: 0.521568656, green: 0.1098039225, blue: 0.05098039284, alpha: 1)  // red colors
         Progressbar?.trackTintColor = trackTintColor
-
+        
         if let progressBarHeight = Progressbar?.frame.height {
             let transform = CGAffineTransform(scaleX: 1.0, y: height / progressBarHeight)
             Progressbar?.transform = transform
         }
-
+        
         // Add drop shadow
         Progressbar?.layer.shadowColor = UIColor.black.cgColor
         Progressbar?.layer.shadowOffset = CGSize(width: 3, height: 20)
         Progressbar?.layer.shadowRadius = 8
         Progressbar?.layer.shadowOpacity = 0.8
         
-
+        
         // Add a black border to the progress bar's layer
         let progressBarBorderLayer = CALayer()
         let progressBarWidth = (Progressbar?.bounds.width ?? 0) * 1.3 // Increase width by 30%
         progressBarBorderLayer.frame = CGRect(x: 0, y: 0, width: progressBarWidth, height: height)
         progressBarBorderLayer.cornerRadius = height / 2 // To make border circular
         progressBarBorderLayer.masksToBounds = true
-
+        
         Progressbar?.layer.addSublayer(progressBarBorderLayer)
-
+        
         // Increase the width of the progress bar's frame by 30%
         if let progressBarSuperview = Progressbar?.superview {
             let progressBarFrame = Progressbar?.frame ?? .zero
@@ -1160,23 +1119,22 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             Progressbar?.frame = CGRect(x: progressBarFrame.origin.x, y: progressBarFrame.origin.y, width: increasedWidth, height: progressBarFrame.height)
         }
     }
-
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
         navigationController?.setNavigationBarHidden(true, animated: false)
-
-
+        
+        
         if let locationData = UserDefaults.standard.object(forKey: "averageSelectedLocation") as? Data {
             averageSelectedLocation = NSKeyedUnarchiver.unarchiveObject(with: locationData) as? CLLocationCoordinate2D
         } else {
             averageSelectedLocation = nil
         }
-
+        
         averageSelectedLocationName = UserDefaults.standard.string(forKey: "averageSelectedLocationName")
     }
-
+    
     @objc func handleAppDidBecomeActive() {
         print("App became active, updating location.")
         
@@ -1185,12 +1143,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("User location not available yet")
             return
         }
-
+        
         // Set the user's current location as the selected location
         selectedLocation = userLocation
-
-            }
-    
+        
+    }
     
     // VIEWDIDLOAD BRO
     override func viewDidLoad() {
@@ -1201,82 +1158,103 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         NotificationCenter.default.addObserver(self, selector: #selector(handleAppDidBecomeActive), name: NSNotification.Name("appDidBecomeActive"), object: nil)
         
         // Retrieve the stored goal number from UserDefaults
-          let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
-          if storedValue != 0 {
-              maxPeople = storedValue
-          }
+        let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
+        if storedValue != 0 {
+            maxPeople = storedValue
+        }
         
         getAdvice { advice in
-                    DispatchQueue.main.async {
-                        self.AdviceOutlet.text = advice
-                        print("Advice updated in viewDidLoad")  // Debugging print statement
-                    }
-                }
-                
+            DispatchQueue.main.async {
+                self.AdviceOutlet.text = advice
+                print("Advice updated in viewDidLoad")  // Debugging print statement
+            }
+        }
+        
         LocationButton(UIButton())
         
         // Other initialization code...
+        
+        // Check if app has permissions to record audio
+        checkAudioRecordingPermission { [weak self] hasPermission in
+            if hasPermission {
+                // Start recording
+                DispatchQueue.main.async { // Ensure UI updates are on the main thread
+                    self?.startRecordingAutomatically()
+                }
+            } else {
+                // Handle the case where permission is not granted
+                print("Audio recording permission not granted")
+                // You can show an alert here asking the user to enable permissions
+            }
+        }
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        NotificationCenter.default.addObserver(
+              self,
+              selector: #selector(applicationWillEnterForeground(_:)),
+              name: UIApplication.willEnterForegroundNotification,
+              object: nil)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
 
-          // Check if app has permissions to record audio
-          checkAudioRecordingPermission { [weak self] hasPermission in
-              if hasPermission {
-                  // Start recording
-                  DispatchQueue.main.async { // Ensure UI updates are on the main thread
-                      self?.startRecordingAutomatically()
-                  }
-              } else {
-                  // Handle the case where permission is not granted
-                  print("Audio recording permission not granted")
-                  // You can show an alert here asking the user to enable permissions
-              }
-          }
-      }
-
-      func checkAudioRecordingPermission(completion: @escaping (Bool) -> Void) {
-          switch AVAudioSession.sharedInstance().recordPermission {
-          case .granted:
-              completion(true)
-          case .denied:
-              completion(false)
-          case .undetermined:
-              AVAudioSession.sharedInstance().requestRecordPermission { granted in
-                  completion(granted)
-              }
-          @unknown default:
-              completion(false)
-          }
-      }
-
-      func startRecordingAutomatically() {
-          // Assuming 'toggleRecording' is correctly set up for starting/stopping recording
-          if !isRecording {
-              print("Automatically starting recording...")
-              toggleRecording(UIButton()) // Simulate button press
-          }
-      
+            NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc func applicationWillEnterForeground(_ notification: NSNotification) {
+        // todo: fetch location and refresh the page
+        self.refreshLocation()
+    }
+    
+    func checkAudioRecordingPermission(completion: @escaping (Bool) -> Void) {
+        switch AVAudioSession.sharedInstance().recordPermission {
+        case .granted:
+            completion(true)
+        case .denied:
+            completion(false)
+        case .undetermined:
+            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                completion(granted)
+            }
+        @unknown default:
+            completion(false)
+        }
+    }
+    
+    func startRecordingAutomatically() {
+        // Assuming 'toggleRecording' is correctly set up for starting/stopping recording
+        if !isRecording {
+            print("Automatically starting recording...")
+            toggleRecording(UIButton()) // Simulate button press
+        }
+        
         
         
         // Load notifiedRegions from UserDefaults
-               if let savedRegions = UserDefaults.standard.array(forKey: "notifiedRegions") as? [String] {
-                   notifiedRegions = Set(savedRegions)
-               }
+        if let savedRegions = UserDefaults.standard.array(forKey: "notifiedRegions") as? [String] {
+            notifiedRegions = Set(savedRegions)
+        }
         
         // Setting up location manager
-            locationManager.delegate = self
-            locationManager.desiredAccuracy = kCLLocationAccuracyBest
-            locationManager.distanceFilter = kCLDistanceFilterNone
-            locationManager.requestAlwaysAuthorization()
-
-            // Setting up notification center
-            UNUserNotificationCenter.current().delegate = self
-            requestNotificationAuthorization()
-            setupNotificationCategory()
-
-//        // Update the progress bar according to the retrieved goal number
-//           updateProgressBar()
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.distanceFilter = kCLDistanceFilterNone
+        locationManager.requestAlwaysAuthorization()
+        
+        // Setting up notification center
+        UNUserNotificationCenter.current().delegate = self
+        requestNotificationAuthorization()
+        setupNotificationCategory()
+        
+        //        // Update the progress bar according to the retrieved goal number
+        //           updateProgressBar()
         
         
-                
+        
         tableView.dragDelegate = self
         tableView.dropDelegate = self
         tableView.dragInteractionEnabled = false
@@ -1306,7 +1284,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
         CurrentPlace.isUserInteractionEnabled = true
         CurrentPlace.addGestureRecognizer(tapGestureRecognizer)
-
+        
         
         
         let goalButton = UIBarButtonItem(title: "Set Goal", style: .plain, target: self, action: #selector(goalButtonTapped))
@@ -1317,7 +1295,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-
+    
     
     
     
@@ -1334,7 +1312,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         return attributedString
     }
-
+    
     
     func updateLocationNameLabel(location: CLLocationCoordinate2D) {
         let locationName = fetchLocationNameFor(location: location) ?? "New Place"
@@ -1348,7 +1326,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     func updateNotesCountLabel() {
         let currentPeople = notes.count
         let displayedLocationName = locationNameLabel.text ?? "Unknown Location"
-
+        
         if currentPeople == 0 {
             notesCountLabel.text = "Jot a name down!"
         } else if currentPeople == 1 {
@@ -1359,10 +1337,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             notesCountLabel.text = labelText
         }
     }
-
-
-
-
+    
+    
+    
+    
     
     //MARK: - POP-UPS
     
@@ -1376,7 +1354,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
+    
     
     func animateTableViewCells() {
         let cells = tableView.visibleCells
@@ -1432,7 +1410,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             // Save value to UserDefaults when Done is pressed
             UserDefaults.standard.set(self?.maxPeople, forKey: "GoalNumber")
             
-//            self?.updateProgressBar()
+            //            self?.updateProgressBar()
         }
         
         alertController.addAction(cancelAction)
@@ -1444,7 +1422,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         present(alertController, animated: true)
     }
-
+    
     
     
     
@@ -1460,41 +1438,41 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     
-
-//MARK: - UPLOAD PHOTO CODE
+    
+    //MARK: - UPLOAD PHOTO CODE
     
     @objc func dismissFullscreenImage(_ sender: UITapGestureRecognizer) {
         self.navigationController?.isNavigationBarHidden = false
         self.tabBarController?.tabBar.isHidden = false
         sender.view?.removeFromSuperview()
     }
-
+    
     @objc func imageTapped() {
         guard let image = CurrentPlace.image else { return }
-
+        
         let scrollView = UIScrollView(frame: UIScreen.main.bounds)
         scrollView.delegate = self
         scrollView.minimumZoomScale = 1.0
         scrollView.maximumZoomScale = 6.0
         scrollView.backgroundColor = .black
-
+        
         let imageView = UIImageView(image: image)
         imageView.frame = UIScreen.main.bounds
         imageView.contentMode = .scaleAspectFit
         imageView.isUserInteractionEnabled = true
-
+        
         scrollView.addSubview(imageView)
-
+        
         let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissFullscreenImage))
         scrollView.addGestureRecognizer(tapGestureRecognizer)
-
+        
         self.view.addSubview(scrollView)
         self.navigationController?.isNavigationBarHidden = true
         self.tabBarController?.tabBar.isHidden = true
     }
-
-
-
+    
+    
+    
     
     func updateImageURLForNotesWithSameLocation(location: CLLocationCoordinate2D, locationName: String, newImageURL: URL) {
         print("Attempting to update imageURL for notes at location: \(location), locationName: \(locationName)")
@@ -1543,55 +1521,55 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 }
             }
     }
-
-
+    
+    
     
     
     func updateNotesImageURLGeoLocation(imageURL: URL?) {
-            guard let userEmail = Auth.auth().currentUser?.email else {
-                print("User email not found")
-                return
-            }
-            
-            db.collection("notes")
-                .whereField("user", isEqualTo: userEmail)
-                .getDocuments { querySnapshot, error in
-                    if let e = error {
-                        print("There was an issue retrieving data from Firestore: \(e)")
-                    } else {
-                        if let snapshotDocuments = querySnapshot?.documents {
-                            for doc in snapshotDocuments {
-                                let data = doc.data()
-                                
-                                guard let locationData = data["location"] as? GeoPoint else {
-                                    continue
-                                }
-                                
-                                let noteLocation = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-                                
-                                if let currentLocation = self.locationManager.location { // Get user's location
-                                    if self.isWithinUpdateRadius(location: noteLocation, userCurrentLocation: currentLocation) {
-                                        if let validImageURL = imageURL {
-                                            self.updateImageURLForNote(doc.documentID, newImageURL: validImageURL) // Call updateImageURLForNote with imageURL
-                                        }
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            return
+        }
+        
+        db.collection("notes")
+            .whereField("user", isEqualTo: userEmail)
+            .getDocuments { querySnapshot, error in
+                if let e = error {
+                    print("There was an issue retrieving data from Firestore: \(e)")
+                } else {
+                    if let snapshotDocuments = querySnapshot?.documents {
+                        for doc in snapshotDocuments {
+                            let data = doc.data()
+                            
+                            guard let locationData = data["location"] as? GeoPoint else {
+                                continue
+                            }
+                            
+                            let noteLocation = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                            
+                            if let currentLocation = self.locationManager.location { // Get user's location
+                                if self.isWithinUpdateRadius(location: noteLocation, userCurrentLocation: currentLocation) {
+                                    if let validImageURL = imageURL {
+                                        self.updateImageURLForNote(doc.documentID, newImageURL: validImageURL) // Call updateImageURLForNote with imageURL
                                     }
                                 }
                             }
-                        } else {
-                            print("No snapshot documents found")
                         }
+                    } else {
+                        print("No snapshot documents found")
                     }
                 }
-        }
-
-
+            }
+    }
+    
+    
     func isWithinUpdateRadius(location: CLLocationCoordinate2D, userCurrentLocation: CLLocation) -> Bool {
         let updateRadius: CLLocationDistance = 100
         let noteLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
         let distance = noteLocation.distance(from: userCurrentLocation)
         return distance <= updateRadius
     }
-
+    
     //SAFEFILENAME
     func safeFileName(for locationName: String) -> String {
         return locationName.replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: "'", with: "")
@@ -1604,8 +1582,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             return
         }
         print("Updating imageURL for location: \(location.latitude), \(location.longitude)")
-
-
+        
+        
         db.collection("notes")
             .whereField("user", isEqualTo: userEmail)
             .whereField("location.latitude", isEqualTo: location.latitude)
@@ -1614,7 +1592,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 // Rest of the code as before
             }
     }
-
+    
     
     func updateImageURLForNote(_ documentID: String, newImageURL: URL) {
         // Update the imageURL for the note with the given document ID
@@ -1635,10 +1613,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     func saveImageToFirestore(image: UIImage, location: CLLocationCoordinate2D, locationName: String) {
         _ = selectedLocation ?? location  // Use the selected location if it exists, otherwise use the given location.
-
+        
         let safeFileName = self.safeFileName(for: locationName)
         let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
-
+        
         // Delete the old image from Firebase Storage
         storageRef.delete { [weak self] error in
             if let error = error {
@@ -1646,26 +1624,26 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             } else {
                 print("Old image deleted successfully")
             }
-
+            
             self?.uploadImage(image: image, location: location, locationName: locationName) { result in
-                    switch result {
-                    case .success(let imageURL):
-                        // Update all notes with the new imageURL and locationName
-                        self?.updateAllNotesInFirestore(location: location, newLocationName: locationName, newImageURL: imageURL) { success in
-                            if success {
-                                print("All notes successfully updated.")
-                            } else {
-                                print("Failed to update all notes.")
-                            }
+                switch result {
+                case .success(let imageURL):
+                    // Update all notes with the new imageURL and locationName
+                    self?.updateAllNotesInFirestore(location: location, newLocationName: locationName, newImageURL: imageURL) { success in
+                        if success {
+                            print("All notes successfully updated.")
+                        } else {
+                            print("Failed to update all notes.")
                         }
-
-                        // ... other code ...
-
-                    case .failure(let error):
-                        print("Error uploading image: \(error)")
                     }
+                    
+                    // ... other code ...
+                    
+                case .failure(let error):
+                    print("Error uploading image: \(error)")
                 }
             }
+        }
     }
     
     
@@ -1689,8 +1667,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         // If code reaches here, no existing note was found to update
         // You can decide whether to create a new note or not
     }
-
-
+    
+    
     
     
     
@@ -1704,7 +1682,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         _ = GeoPoint(latitude: location.latitude, longitude: location.longitude)
         
         let actualLocation = selectedLocation ?? location  // Use the selected location if it exists, otherwise use the given location.
-
+        
         if let userEmail = Auth.auth().currentUser?.email {
             db.collection("notes")
                 .whereField("user", isEqualTo: userEmail)
@@ -1724,7 +1702,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                     let userCurrentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
                                     let distance = noteLocation.distance(from: userCurrentLocation)
                                     
-
+                                    
                                     if distance <= maxDistance {
                                         locationExistsInNotes = true
                                         let noteId = doc.documentID
@@ -1739,10 +1717,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                             }
                                         }
                                     }
-
+                                    
                                 }
                             }
-
+                            
                             if !locationExistsInNotes {
                                 // No note found within maxDistance, create new note with empty details
                                 let newNoteRef = self.db.collection("notes").document()
@@ -1772,7 +1750,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             completion([])
         }
     }
-
+    
     
     
     //MARK: - DISPLAY IMAGE FUNCTIONS
@@ -1824,7 +1802,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
+    
     
     func setDefaultImageIfNil() {
         if self.CurrentPlace.image == nil {
@@ -1840,9 +1818,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             self.updateNotesCountLabel()
         }
     }
-
-
-
+    
+    
+    
     func handleNoteData(data: [String: Any]) {
         if let locationName = data["locationName"] as? String, !locationName.isEmpty {
             self.updateUI(withLocationName: locationName)
@@ -1853,7 +1831,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
+    
     
     func downloadAndDisplayImage(locationName: String) {
         let safeFileName = safeFileName(for: locationName)
@@ -1873,7 +1851,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
+    
     //Upload Image to Fire Storage
     func uploadImage(image: UIImage, location: CLLocationCoordinate2D, locationName: String, completion: @escaping (Result<URL, Error>) -> Void) {
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
@@ -1917,14 +1895,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 // Success: tell the completion handler
                 completion(.success(url))
                 self.updateImageURLForNotesWithSameLocation(location: location, locationName: locationName, newImageURL: url)
-
+                
                 DispatchQueue.main.async {
                     // reloadData is being called on main thread as UI update should be done on main thread.
                     self.tableView.reloadData()
                 }
             }
         }
-       }
+    }
     
     // Image Picker Delegate - Selection and Saving
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
@@ -1996,7 +1974,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("No image selected.")
         }
     }
-
+    
     
     
     
@@ -2015,7 +1993,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 imagePickerController.sourceType = .camera
                 self.present(imagePickerController, animated: true, completion: nil)
                 self.updateUI(withLocationName: locationName) // Update the UI
-
+                
                 
             }
         }
@@ -2024,32 +2002,32 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 imagePickerController.sourceType = .photoLibrary
                 self.present(imagePickerController, animated: true, completion: nil)
                 self.updateUI(withLocationName: locationName) // Update the UI
-
+                
             }
         }
         
         // Updated "Skip" action
-         let skipAction = UIAlertAction(title: "Skip", style: .default) { _ in
-             print("Skip action triggered.")
-             if let selectedLocation = self.selectedLocation {
-                 // Use the selected location if available
-                 self.updateNotesLocationName(location: selectedLocation, newLocationName: locationName) { updatedNotes in
-                     // Perform any required operations with the updated notes here
-                     self.updateUI(withLocationName: locationName) // Update the UI
-                     self.downloadAndDisplayImage(locationName: locationName) // Retain the associated image
-                 }
-             } else if let userLocation = self.locationManager.location?.coordinate {
-                 // Fallback to the user's current location
-                 self.updateNotesLocationName(location: userLocation, newLocationName: locationName) { updatedNotes in
-                     // Perform any required operations with the updated notes here
-                     self.updateUI(withLocationName: locationName) // Update the UI
-                     self.downloadAndDisplayImage(locationName: locationName) // Retain the associated image
-                 }
-             } else {
-                 print("Neither selected location nor user location is available.")
-             }
+        let skipAction = UIAlertAction(title: "Skip", style: .default) { _ in
+            print("Skip action triggered.")
+            if let selectedLocation = self.selectedLocation {
+                // Use the selected location if available
+                self.updateNotesLocationName(location: selectedLocation, newLocationName: locationName) { updatedNotes in
+                    // Perform any required operations with the updated notes here
+                    self.updateUI(withLocationName: locationName) // Update the UI
+                    self.downloadAndDisplayImage(locationName: locationName) // Retain the associated image
+                }
+            } else if let userLocation = self.locationManager.location?.coordinate {
+                // Fallback to the user's current location
+                self.updateNotesLocationName(location: userLocation, newLocationName: locationName) { updatedNotes in
+                    // Perform any required operations with the updated notes here
+                    self.updateUI(withLocationName: locationName) // Update the UI
+                    self.downloadAndDisplayImage(locationName: locationName) // Retain the associated image
+                }
+            } else {
+                print("Neither selected location nor user location is available.")
+            }
         }
-
+        
         
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
         
@@ -2064,14 +2042,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     
-
-
-
-
-
-
-
-
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -2092,7 +2070,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         // Set the content mode to ensure the image is scaled correctly in the UIImageView.
         CurrentPlace?.contentMode = .scaleAspectFill
     }
-
+    
     func resizeAndCrop(image: UIImage, targetSize: CGSize) -> UIImage {
         let size = image.size
         let widthRatio = targetSize.width / size.width
@@ -2120,7 +2098,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         return UIImage(cgImage: cgImage)
     }
-
+    
     
     
     //Phone Doc Function for Image Picker
@@ -2129,13 +2107,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         return paths[0]
     }
     
-  func updateAllNotesInFirestore(location: CLLocationCoordinate2D, newLocationName: String, newImageURL: URL, completion: @escaping (Bool) -> Void) {
+    func updateAllNotesInFirestore(location: CLLocationCoordinate2D, newLocationName: String, newImageURL: URL, completion: @escaping (Bool) -> Void) {
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
             completion(false)
             return
         }
-
+        
         // Fetch all notes for this user and location
         db.collection("notes")
             .whereField("user", isEqualTo: userEmail)
@@ -2147,16 +2125,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                     completion(false)
                     return
                 }
-
+                
                 for doc in querySnapshot!.documents {
                     let noteId = doc.documentID
                     let noteRef = self.db.collection("notes").document(noteId)
-
+                    
                     let noteData: [String: Any] = [
                         "locationName": newLocationName,
                         "imageURL": newImageURL.absoluteString
                     ]
-
+                    
                     // Update each note
                     noteRef.updateData(noteData) { err in
                         if let err = err {
@@ -2170,8 +2148,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 completion(true)
             }
     }
-
-
+    
+    
     
     func updateNoteInFirestore(noteID: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
         let noteRef = db.collection("notes").document(noteID)
@@ -2202,7 +2180,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             completion(false)
             return
         }
-
+        
         let noteData: [String: Any] = [
             "user": userEmail,
             "note": noteText,
@@ -2211,7 +2189,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             "imageURL": imageURL,
             "timestamp": Timestamp(date: Date())
         ]
-
+        
         db.collection("notes").document(noteId).setData(noteData) { error in
             if let error = error {
                 print("Error saving note to Firestore: \(error)")
@@ -2222,13 +2200,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-
-
+    
+    
     
     func fetchLocationNameFor(location: CLLocationCoordinate2D) -> String? {
         let radius: CLLocationDistance = 15 // The radius in meters to consider notes as nearby
         let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
-
+        
         for note in self.notes {
             let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
             if currentLocation.distance(from: noteLocation) <= radius {
@@ -2239,10 +2217,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
         return nil
     }
-
+    
     
     func loadAndFilterNotes(for location: CLLocationCoordinate2D, goalRadius: Double, completion: @escaping () -> Void) {
-
+        
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
             return
@@ -2270,36 +2248,36 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                 let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
                                 let emptyURL = URL(string: "")
                                 let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: emptyURL)
-                                                        
+                                
                                 let noteLocation = CLLocation(latitude: newNote.location.latitude, longitude: newNote.location.longitude)
                                 let distance = noteLocation.distance(from: currentLocation)
-                                                        
+                                
                                 if !self!.notesFromAverageLocation.contains(where: { $0.id == newNote.id }) {
                                     if distance <= goalRadius {
                                         self?.notes.append(newNote)
                                     }
                                 }
                             }
-
+                            
                         }
                         DispatchQueue.main.async {
                             print("Showing \(self?.notes.count ?? 0) notes based on location")
                             self?.tableView.reloadData()
                             
-//                            self?.updateProgressBar()
+                            //                            self?.updateProgressBar()
                             self?.updateLocationNameLabel(location: location) // Update the location name label
                         }
                     }
                 }
             }
         completion()
-
+        
     }
     
-
-
     
-//MARK: - LOAD PLACES VIEW CONTROLLER DATA
+    
+    
+    //MARK: - LOAD PLACES VIEW CONTROLLER DATA
     func LoadPlacesNotes(for locationName: String, completion: (() -> Void)? = nil) {
         print("loadPlacesNotes called")
         
@@ -2339,7 +2317,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                 self?.notes.append(newNote)
                             }
                         }
-
+                        
                         DispatchQueue.main.async {
                             print("Showing \(self?.notes.count ?? 0) notes based on location")
                             self?.tableView.reloadData()
@@ -2347,7 +2325,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             self?.currentLocationName = locationName
                             // Call completion here if not dependent on the image URL fetching
                             completion?()
-//                            self?.updateProgressBar()
+                            //                            self?.updateProgressBar()
                             // Update the location name label
                             self?.locationNameLabel.text = "\(locationName)"
                             self?.currentLocationName = locationName
@@ -2360,11 +2338,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 }
             }
     }
-
-
-
-
-
+    
+    
+    
+    
+    
     func fetchImageURLFor(locationName: String, completion: @escaping (URL?) -> Void) {
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
@@ -2394,28 +2372,28 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 }
             }
     }
-
-
-
+    
+    
+    
     func updateViewWithNote(_ note: Note) {
         // Set current location
         self.currentLocation = note.location
-
+        
         // Call the functions to update the image view, location name label, and notes count label
         displayImage(location: note.location)
         updateLocationNameLabel(location: note.location)
         updateNotesCountLabel()
-
+        
         // Update the table view
         self.tableView.reloadData()
     }
-
-
-
-
-
-}
     
+    
+    
+    
+    
+}
+
 
 //MARK: - EXTENSIONS
 
@@ -2572,7 +2550,7 @@ extension HomeViewController: NoteCellDelegate {
         }
         cell.saveButtonPressed = false
     }
-
+    
 }
 
 extension HomeViewController: UIScrollViewDelegate {

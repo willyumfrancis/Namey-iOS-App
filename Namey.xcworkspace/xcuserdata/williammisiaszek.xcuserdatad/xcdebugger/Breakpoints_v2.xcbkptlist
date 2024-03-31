@@ -23,22 +23,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "50831080-46FE-4F6B-845D-BDE30292C446"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "746"
-            endingLineNumber = "746"
-            landmarkName = "aibutton(_:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "703F7146-1049-44C4-A359-4E144234B3C2"
             shouldBeEnabled = "No"
             ignoreCount = "0"
@@ -46,9 +30,25 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1165"
-            endingLineNumber = "1165"
-            landmarkName = "viewWillAppear(_:)"
+            startingLineNumber = "1116"
+            endingLineNumber = "1116"
+            landmarkName = "setupRoundedProgressBar()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "34B7970E-B2A3-4E7D-A2B3-9095C4ABC837"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "744"
+            endingLineNumber = "744"
+            landmarkName = "refreshLocation()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
