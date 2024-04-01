@@ -38,8 +38,10 @@ class LocationCell: UITableViewCell {
     
     override func prepareForReuse() {
         super.prepareForReuse()
-        locationImageView.image = nil
-        isHidden = false
+               // Cancel current image loading
+               locationImageView.sd_cancelCurrentImageLoad()
+               locationImageView.image = nil
+                isHidden = false
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {
