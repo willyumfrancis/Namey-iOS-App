@@ -65,6 +65,31 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate {
 
 
     @objc func refreshNames() {
+        
+        // Start keyframe animation
+          UIView.animateKeyframes(withDuration: 0.5, delay: 0, options: [], animations: {
+              // Add keyframes
+              UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.25) {
+                  self.refreshButton.transform = CGAffineTransform(rotationAngle: CGFloat.pi / 2) // 90 degrees
+              }
+              UIView.addKeyframe(withRelativeStartTime: 0.25, relativeDuration: 0.25) {
+                  self.refreshButton.transform = CGAffineTransform(rotationAngle: CGFloat.pi) // 180 degrees
+              }
+              UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.25) {
+                  self.refreshButton.transform = CGAffineTransform(rotationAngle: 3 * CGFloat.pi / 2) // 270 degrees
+              }
+              UIView.addKeyframe(withRelativeStartTime: 0.75, relativeDuration: 0.25) {
+                  self.refreshButton.transform = CGAffineTransform(rotationAngle: 2 * CGFloat.pi) // 360 degrees, back to original
+              }
+          }) { finished in
+              if finished {
+                  // Reset transform to avoid accumulation of rotation effect
+                  self.refreshButton.transform = CGAffineTransform.identity
+              }
+          }
+          
+        
+        
         names = allNames
         NameList.reloadData()
     }

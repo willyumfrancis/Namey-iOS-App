@@ -712,19 +712,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         self.updateNotesCountLabel()
     }
     
-    //AI Button
-    @IBAction func aibutton(_ sender: UIButton) {
-        print("AI button tapped") // Debugging print statement
-        
-        // Fetch advice directly when the AI button is tapped
-        getAdvice { advice in
-            DispatchQueue.main.async {
-                self.AdviceOutlet.text = advice
-            }
-        }
-        
-    }
-    
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton?) {
         // Animation to scale down the button
@@ -779,7 +766,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             return
         }
         
-        let prompt = "Tell me a historical fact with a max of 70 charecters and no quotation marks."
+        let prompt = "Tell me a unique historical fact with a max of 70 charecters and no quotation marks."
         
         let messages = [["role": "system", "content": "You are a Fun Historian"],
                         ["role": "user", "content": prompt]]
@@ -794,7 +781,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            print("Entered URLSession data task") // Debugging print statement
             
             if let error = error {
                 print("Error fetching advice: \(error)") // Debugging print statement
