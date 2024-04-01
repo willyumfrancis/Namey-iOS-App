@@ -37,8 +37,6 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
     func refreshGeofences(currentLocation: CLLocation, completion: @escaping (Bool) -> Void) {
         // Example async operation to simulate fetching notes or geofences from a remote server or complex local computation
         DispatchQueue.global(qos: .background).async {
-            // Let's assume your actual refreshing logic goes here
-            // For now, we'll just replicate the logic you have in setupClosestFifteenGeofences
             
             let sortedNotes = self.notes.sorted {
                 let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
@@ -56,15 +54,12 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
                     let geofence = Geofence(location: coordinate, radius: self.currentGeofenceRadius, identifier: note.locationName)
                     self.geofences.append(geofence)
                 }
-                
-                // Assuming the geofences setup does not require UI and is fast
-                // In real scenario, replace below true with actual success status
+            
                 completion(true) // Call completion handler to indicate success or failure
             }
         }
     }
-    
-    
+
     override init() {
         super.init()
         self.locationManager = CLLocationManager()
@@ -73,10 +68,6 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
         print("Location manager initialized for background location updates.")  // Debugging line
     }
 }
-
-
-
-
 
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
     
@@ -2544,7 +2535,6 @@ extension HomeViewController: UIScrollViewDelegate {
         return scrollView.subviews.first
     }
 }
-
 
 extension HomeViewController: PlacesViewControllerDelegate {
     

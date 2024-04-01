@@ -30,8 +30,8 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1102"
-            endingLineNumber = "1102"
+            startingLineNumber = "1093"
+            endingLineNumber = "1093"
             landmarkName = "setupRoundedProgressBar()"
             landmarkType = "7">
          </BreakpointContent>
@@ -46,8 +46,8 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "731"
-            endingLineNumber = "731"
+            startingLineNumber = "722"
+            endingLineNumber = "722"
             landmarkName = "refreshLocation()"
             landmarkType = "7">
          </BreakpointContent>
