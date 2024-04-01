@@ -1272,23 +1272,28 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-    
-    
-    
-    
+
     func createAttributedString(from noteText: String) -> NSAttributedString {
         let attributedString = NSMutableAttributedString(string: noteText)
+        let regularFont = UIFont.systemFont(ofSize: 19) // Define the regular font
+        let boldFont = UIFont.boldSystemFont(ofSize: 19) // Define the bold font
         
+        // Define a full range for the regular font to ensure the entire text is initially set to regular
+        let fullRange = NSRange(noteText.startIndex..<noteText.endIndex, in: noteText)
+        attributedString.addAttribute(.font, value: regularFont, range: fullRange)
+        
+        // Find the range for the text before the dash or colon and apply the bold font
         if let dashRange = noteText.range(of: " - ") {
             let boldRange = NSRange(noteText.startIndex..<dashRange.lowerBound, in: noteText)
-            attributedString.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 19), range: boldRange)
+            attributedString.addAttribute(.font, value: boldFont, range: boldRange)
         } else if let colonRange = noteText.range(of: ": ") {
             let boldRange = NSRange(noteText.startIndex..<colonRange.lowerBound, in: noteText)
-            attributedString.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 19), range: boldRange)
+            attributedString.addAttribute(.font, value: boldFont, range: boldRange)
         }
         
         return attributedString
     }
+
     
     
     func updateLocationNameLabel(location: CLLocationCoordinate2D) {
