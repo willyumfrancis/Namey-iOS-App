@@ -635,7 +635,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     var maxPeople = 3
     var locationUpdateTimer: Timer?
-
+    
     // Assuming you have other variables and initializers defined elsewhere
     var notes: [Note] = []  // Replace Note with your Note class
     var notifiedRegions: Set<String> = []
@@ -835,7 +835,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
         return nil
     }
-
+    
     //Create New Name
     @IBAction func NewNote(_ sender: UIButton) {
         // Animation to scale down the button
@@ -1179,16 +1179,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         super.viewDidAppear(animated)
         
         NotificationCenter.default.addObserver(
-              self,
-              selector: #selector(applicationWillEnterForeground(_:)),
-              name: UIApplication.willEnterForegroundNotification,
-              object: nil)
+            self,
+            selector: #selector(applicationWillEnterForeground(_:)),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil)
     }
     
     override func viewWillDisappear(_ animated: Bool) {
-            super.viewWillDisappear(animated)
-
-            NotificationCenter.default.removeObserver(self)
+        super.viewWillDisappear(animated)
+        
+        NotificationCenter.default.removeObserver(self)
     }
     
     @objc func applicationWillEnterForeground(_ notification: NSNotification) {
