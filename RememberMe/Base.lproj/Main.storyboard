@@ -304,6 +304,7 @@
                     <connections>
                         <outlet property="AlphaPlaces" destination="92p-Qa-OSv" id="KyB-rb-xgw"/>
                         <outlet property="AlphaScrollView" destination="GJ1-Mp-NRq" id="t42-Uu-Doi"/>
+                        <outlet property="ResetBOutlet" destination="U7S-EC-ToH" id="Pd0-hf-9ep"/>
                         <outlet property="tableView" destination="flH-qH-l4W" id="fsi-Ql-Hhy"/>
                     </connections>
                 </viewController>

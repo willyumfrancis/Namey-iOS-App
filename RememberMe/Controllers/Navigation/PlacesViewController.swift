@@ -75,12 +75,37 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     
     
     @IBAction func ResetButton(_ sender: Any) {
+        // Start keyframe animation
+          UIView.animateKeyframes(withDuration: 0.5, delay: 0, options: [], animations: {
+              // Add keyframes
+              UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.25) {
+                  self.ResetBOutlet.transform = CGAffineTransform(rotationAngle: CGFloat.pi / 2) // 90 degrees
+              }
+              UIView.addKeyframe(withRelativeStartTime: 0.25, relativeDuration: 0.25) {
+                  self.ResetBOutlet.transform = CGAffineTransform(rotationAngle: CGFloat.pi) // 180 degrees
+              }
+              UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.25) {
+                  self.ResetBOutlet.transform = CGAffineTransform(rotationAngle: 3 * CGFloat.pi / 2) // 270 degrees
+              }
+              UIView.addKeyframe(withRelativeStartTime: 0.75, relativeDuration: 0.25) {
+                  self.ResetBOutlet.transform = CGAffineTransform(rotationAngle: 2 * CGFloat.pi) // 360 degrees, back to original
+              }
+          }) { finished in
+              if finished {
+                  // Reset transform to avoid accumulation of rotation effect
+                  self.ResetBOutlet.transform = CGAffineTransform.identity
+              }
+          }
+          
+          // Perform
         resetFilter()
+        loadLocationData()
 
     }
     @IBOutlet weak var AlphaScrollView: UIScrollView!
     @IBOutlet weak var AlphaPlaces: UIStackView!
     
+    @IBOutlet weak var ResetBOutlet: UIButton!
     
     let db = Firestore.firestore()
     let auth = Auth.auth()
@@ -103,6 +128,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             tableView.delegate = self
             UNUserNotificationCenter.current().delegate = self
             loadLocationData()
+        NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: NSNotification.Name("AppDidBecomeActive"), object: nil)
+
         
         setupAlphabetScrollView()
         
@@ -137,6 +164,15 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                 }
             }
         }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc func appDidBecomeActive() {
+        print("App became active - reloading location data.")
+        locationManager.startUpdatingLocation() // This will trigger location update and eventually reload data
+    }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
