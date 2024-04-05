@@ -97,11 +97,17 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             }
         }
         
-        // Perform
-        resetFilter()
-        loadLocationData()
-        
-    }
+        // Animation and transform reset code remains unchanged...
+
+           // Ensure the location manager is actively updating the location.
+           locationManager.startUpdatingLocation()
+
+           // Perform the reset filter logic and load location data.
+           // Note: The actual sorting will occur in the locationManager(_:didUpdateLocations:) delegate method
+           // once the new location is fetched.
+           resetFilter()
+       }
+
     @IBOutlet weak var AlphaScrollView: UIScrollView!
     @IBOutlet weak var AlphaPlaces: UIStackView!
     
@@ -233,9 +239,13 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let currentLocation = locations.last {
             userLocation = currentLocation
-            locationManager.stopUpdatingLocation()
+            locationManager.stopUpdatingLocation() // Stop updating location to conserve battery
             
-            loadLocationData()
+            // Print statement for debugging
+            print("Updated user location: \(currentLocation.coordinate.latitude), \(currentLocation.coordinate.longitude)")
+
+            // Now that we have the updated location, load and sort the data
+            loadLocationData() // This function should already sort locations by distance if not filtering by letter
         }
     }
     
@@ -319,12 +329,13 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         delegate?.didUpdateClosestLocation(locations.first)
     }
     
-    func resetFilter() {
-        isFilteringByLetter = false
-        filteredLocations = locations // Assuming 'locations' is already sorted by proximity
-        tableView.reloadData()
-    }
-    
+    // Update your existing resetFilter method to include sorting by distance:
+       func resetFilter() {
+           print("Resetting filter and sorting locations by user's current proximity.")
+           isFilteringByLetter = false
+           sortLocationsByDistance() // Ensure locations are sorted by proximity after reset.
+           tableView.reloadData()
+       }
     
     
     func loadNotes(completion: @escaping ([Note]) -> Void) {

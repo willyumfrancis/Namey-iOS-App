@@ -1039,64 +1039,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     //MARK: - Appearance
-    
-    //    func updateProgressBar() {
-    //        updateNotesCountLabel()
-    //        let currentPeople = notes.count
-    //        let progress = min(Float(currentPeople) / Float(maxPeople), 1.0)
-    //
-    //        Progressbar.setProgress(progress, animated: true)
-    //
-    //        if progress == 1.0 {
-    //            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
-    //
-    //        } else {
-    //            Progressbar.progressTintColor = #colorLiteral(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
-    //
-    //        }
-    //    }
-    
-    private func setupRoundedProgressBar() {
-        // Set the progress bar height
-        let height: CGFloat = 22
-        
-        // Apply corner radius
-        Progressbar?.layer.cornerRadius = height / 7
-        Progressbar?.clipsToBounds = true
-        
-        // Customize the progress tint and track color
-        let trackTintColor = #colorLiteral(red: 0.521568656, green: 0.1098039225, blue: 0.05098039284, alpha: 1)  // red colors
-        Progressbar?.trackTintColor = trackTintColor
-        
-        if let progressBarHeight = Progressbar?.frame.height {
-            let transform = CGAffineTransform(scaleX: 1.0, y: height / progressBarHeight)
-            Progressbar?.transform = transform
-        }
-        
-        // Add drop shadow
-        Progressbar?.layer.shadowColor = UIColor.black.cgColor
-        Progressbar?.layer.shadowOffset = CGSize(width: 3, height: 20)
-        Progressbar?.layer.shadowRadius = 8
-        Progressbar?.layer.shadowOpacity = 0.8
-        
-        
-        // Add a black border to the progress bar's layer
-        let progressBarBorderLayer = CALayer()
-        let progressBarWidth = (Progressbar?.bounds.width ?? 0) * 1.3 // Increase width by 30%
-        progressBarBorderLayer.frame = CGRect(x: 0, y: 0, width: progressBarWidth, height: height)
-        progressBarBorderLayer.cornerRadius = height / 2 // To make border circular
-        progressBarBorderLayer.masksToBounds = true
-        
-        Progressbar?.layer.addSublayer(progressBarBorderLayer)
-        
-        // Increase the width of the progress bar's frame by 30%
-        if let progressBarSuperview = Progressbar?.superview {
-            let progressBarFrame = Progressbar?.frame ?? .zero
-            let increasedWidth = progressBarFrame.width * 1.3
-            Progressbar?.frame = CGRect(x: progressBarFrame.origin.x, y: progressBarFrame.origin.y, width: increasedWidth, height: progressBarFrame.height)
-        }
-    }
-    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
@@ -1148,9 +1090,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
         
         LocationButton(UIButton())
-        
-        // Other initialization code...
-        
+                
         // Check if app has permissions to record audio
         checkAudioRecordingPermission { [weak self] hasPermission in
             if hasPermission {
@@ -1208,9 +1148,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("Automatically starting recording...")
             toggleRecording(UIButton()) // Simulate button press
         }
-        
-        
-        
+    
         // Load notifiedRegions from UserDefaults
         if let savedRegions = UserDefaults.standard.array(forKey: "notifiedRegions") as? [String] {
             notifiedRegions = Set(savedRegions)
@@ -1226,19 +1164,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         UNUserNotificationCenter.current().delegate = self
         requestNotificationAuthorization()
         setupNotificationCategory()
-        
         //        // Update the progress bar according to the retrieved goal number
         //           updateProgressBar()
-        
-        
-        
         tableView.dragDelegate = self
         tableView.dropDelegate = self
         tableView.dragInteractionEnabled = false
         
-        
         //Apparance of App//
-        
         NewNameLook.layer.cornerRadius = 12
         NewNameLook.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
         NewNameLook.layer.borderWidth = 3
@@ -1256,7 +1188,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         setupLocationManager()
         setupRoundedImageView()
-        setupRoundedProgressBar()
         
         let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
         CurrentPlace.isUserInteractionEnabled = true
@@ -1294,15 +1225,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         return attributedString
     }
 
-    
-    
     func updateLocationNameLabel(location: CLLocationCoordinate2D) {
         let locationName = fetchLocationNameFor(location: location) ?? "New Place"
         locationNameLabel.text = "\(locationName)"
         print("Location name is \(locationName)")
         
     }
-    
     
     //Update Name Goal
     func updateNotesCountLabel() {
@@ -1320,10 +1248,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
     
-    
-    
-    
-    
     //MARK: - POP-UPS
     
     func checkNotificationSettings() {
@@ -1336,7 +1260,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-    
     
     func animateTableViewCells() {
         let cells = tableView.visibleCells
@@ -1360,9 +1283,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             delayCounter += 1
         }
     }
-    
-    
-    
+
     @objc func goalButtonTapped() {
         let alertController = UIAlertController(title: "Set Goal", message: "\n\n\n\n\n", preferredStyle: .alert)
         
@@ -1404,22 +1325,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         present(alertController, animated: true)
     }
-    
-    
-    
-    
-    
+
     @objc func sliderValueChanged(_ sender: UISlider) {
         let value = Int(sender.value)
         sliderValueLabel.text = "\(value)"
     }
-    
-    
-    
-    
-    
-    
-    
     
     //MARK: - UPLOAD PHOTO CODE
     
@@ -1452,9 +1362,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         self.navigationController?.isNavigationBarHidden = true
         self.tabBarController?.tabBar.isHidden = true
     }
-    
-    
-    
     
     func updateImageURLForNotesWithSameLocation(location: CLLocationCoordinate2D, locationName: String, newImageURL: URL) {
         print("Attempting to update imageURL for notes at location: \(location), locationName: \(locationName)")
@@ -1503,9 +1410,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 }
             }
     }
-    
-    
-    
     
     func updateNotesImageURLGeoLocation(imageURL: URL?) {
         guard let userEmail = Auth.auth().currentUser?.email else {
@@ -1650,11 +1554,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         // You can decide whether to create a new note or not
     }
     
-    
-    
-    
-    
-    
     //MARK: - IMPORTANT UPDATE L NAME FUNCTION
     
     
@@ -1733,8 +1632,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
     
-    
-    
     //MARK: - DISPLAY IMAGE FUNCTIONS
     
     
@@ -1801,8 +1698,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
     
-    
-    
     func handleNoteData(data: [String: Any]) {
         if let locationName = data["locationName"] as? String, !locationName.isEmpty {
             self.updateUI(withLocationName: locationName)
@@ -1813,7 +1708,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-    
     
     func downloadAndDisplayImage(locationName: String) {
         let safeFileName = safeFileName(for: locationName)
@@ -1956,10 +1850,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("No image selected.")
         }
     }
-    
-    
-    
-    
+
     // Image Picker iOS
     func presentImagePicker(locationName: String) {
         // Store the location name for later use
@@ -2020,21 +1911,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         present(alertController, animated: true, completion: nil)
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     //END LOCATION STUFF
     private func setupRoundedImageView() {
@@ -2131,8 +2007,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
     }
     
-    
-    
     func updateNoteInFirestore(noteID: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
         let noteRef = db.collection("notes").document(noteID)
         
@@ -2182,8 +2056,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-    
-    
     
     func fetchLocationNameFor(location: CLLocationCoordinate2D) -> String? {
         let radius: CLLocationDistance = 15 // The radius in meters to consider notes as nearby
@@ -2255,10 +2127,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         completion()
         
     }
-    
-    
-    
-    
+
     //MARK: - LOAD PLACES VIEW CONTROLLER DATA
     func LoadPlacesNotes(for locationName: String, completion: (() -> Void)? = nil) {
         print("loadPlacesNotes called")
@@ -2320,11 +2189,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 }
             }
     }
-    
-    
-    
-    
-    
+
     func fetchImageURLFor(locationName: String, completion: @escaping (URL?) -> Void) {
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
@@ -2355,8 +2220,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
     }
     
-    
-    
     func updateViewWithNote(_ note: Note) {
         // Set current location
         self.currentLocation = note.location
@@ -2369,11 +2232,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         // Update the table view
         self.tableView.reloadData()
     }
-    
-    
-    
-    
-    
+
 }
 
 
@@ -2480,8 +2339,6 @@ extension HomeViewController: UITableViewDataSource {
     }
 }
 
-
-
 extension HomeViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
@@ -2498,8 +2355,6 @@ extension HomeViewController: NoteCellDelegate {
         }
         return true
     }
-    
-    
     
     func noteCell(_ cell: NoteCell, didUpdateNote note: Note) {
         if let indexPath = tableView.indexPath(for: cell) {
