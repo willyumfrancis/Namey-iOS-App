@@ -31,6 +31,30 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
            return button
        }()
        
+    
+    func addLocationPins() {
+        let db = Firestore.firestore()
+        db.collection("notes").getDocuments { (querySnapshot, error) in
+            guard let documents = querySnapshot?.documents else {
+                print("Error fetching documents: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+            
+            for document in documents {
+                let data = document.data()
+                if let locationGeoPoint = data["location"] as? GeoPoint,
+                   let locationName = data["locationName"] as? String {
+                    
+                    let location = CLLocationCoordinate2D(latitude: locationGeoPoint.latitude, longitude: locationGeoPoint.longitude)
+                    
+                    let annotation = MKPointAnnotation()
+                    annotation.coordinate = location
+                    annotation.title = locationName
+                    self.mapView.addAnnotation(annotation)
+                }
+            }
+        }
+    }
 
 
 
@@ -39,7 +63,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         setupLocationManager()
         setupMapView()
         mapView.showsUserLocation = false  // Show the user's location on the map
-        
+        addLocationPins()
         setupLocationButton()
 
     }
