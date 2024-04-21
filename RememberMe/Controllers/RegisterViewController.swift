@@ -19,37 +19,30 @@ class RegisterViewController: UIViewController, CLLocationManagerDelegate {
     let locationManager = CLLocationManager()
     
     @IBAction func RegisterButton(_ sender: Any) {
-            if let email = EmailTextField.text, let password = PasswordTextField.text {
-                Auth.auth().createUser(withEmail: email, password: password) { [weak self] authResult, error in
-                    guard let strongSelf = self else { return }
-                    if let e = error {
-                        print(e)
-                        // Show error as an alert
-                        let errorMessage = e.localizedDescription
-                        let alertController = UIAlertController(title: "Error", message: errorMessage, preferredStyle: .alert)
-                        alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-                        strongSelf.present(alertController, animated: true, completion: nil)
-                    } else {
-                        // Create a user document in Firestore
-                        if let userID = authResult?.user.uid {
-                            let db = Firestore.firestore()
-                            db.collection("users").document(userID).setData([
-                                "email": email
-                            ]) { error in
-                                if let error = error {
-                                    print("Error writing document: \(error)")
-                                } else {
-                                    print("Document successfully written!")
-                                    strongSelf.locationManager.requestWhenInUseAuthorization()
-                                    strongSelf.performSegue(withIdentifier: "RegisterSegue", sender: strongSelf)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
+        if let email = EmailTextField.text, let password = PasswordTextField.text {
+               Auth.auth().createUser(withEmail: email, password: password) { [weak self] authResult, error in
+                   guard let strongSelf = self else { return }
+                   if let e = error {
+                       // Handle error with alert...
+                   } else {
+                       // Use email to create a user document
+                       let db = Firestore.firestore()
+                       let emailKey = email.replacingOccurrences(of: ".", with: ",") // Replace '.' with ',' as Firebase keys cannot contain '.'
+                       db.collection("users").document(emailKey).setData([
+                           "email": email
+                       ]) { error in
+                           if let error = error {
+                               print("Error writing document: \(error)")
+                           } else {
+                               print("Document successfully written!")
+                               strongSelf.locationManager.requestWhenInUseAuthorization()
+                               strongSelf.performSegue(withIdentifier: "RegisterSegue", sender: strongSelf)
+                           }
+                       }
+                   }
+               }
+           }
+       }
        
        override func viewDidLoad() {
            super.viewDidLoad()
