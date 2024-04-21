@@ -22,6 +22,30 @@ class AppState {
 
 
 class SettingsViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return friendRequests.count + acceptedFriends.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "FriendRequestCell", for: indexPath)
+
+        // Determine whether the cell is for a friend request or an accepted friend
+        if indexPath.row < friendRequests.count {
+            cell.textLabel?.text = friendRequests[indexPath.row]
+            // Customize the cell to indicate it's a friend request
+        } else {
+            let acceptedFriendIndex = indexPath.row - friendRequests.count
+            cell.textLabel?.text = acceptedFriends[acceptedFriendIndex]
+            // Customize the cell to indicate it's an accepted friend
+        }
+        return cell
+    }
+
+    
+    var allUserEmails: [String] = []
+
+    var acceptedFriends: [String] = []
+
     
     var friendRequests: [String] = []
      
@@ -66,7 +90,6 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     
     @IBOutlet weak var catImage: UIImageView!
     
-    @IBOutlet weak var audioControlButton: UIButton!
     
     @IBAction func LogOutButton(_ sender: UIBarButtonItem) {
         let firebaseAuth = Auth.auth()
@@ -82,19 +105,34 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     }
     
     
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
-        
-        
         
         // Create a background view
         let backgroundView = UIView(frame: view.bounds)
         backgroundView.backgroundColor = UIColor(patternImage: UIImage(named: "starry_night")!) // Replace "starry_night" with your image file name
         view.insertSubview(backgroundView, at: 0)
         
+        // Load the friend requests and accepted friends from Firestore
+        loadFriendRequests()
+        loadAcceptedFriends()
     }
+    
+    // Function to load accepted friends
+      private func loadAcceptedFriends() {
+          guard let currentUserEmail = Auth.auth().currentUser?.email else { return }
+          let db = Firestore.firestore()
+          let userRef = db.collection("users").document(currentUserEmail)
+          userRef.getDocument { [weak self] (document, error) in
+              if let document = document, document.exists, let friends = document.data()?["friends"] as? [String] {
+                  self?.acceptedFriends = friends
+                  self?.friendRequestsTableView.reloadData()
+              } else {
+                  print("Error loading accepted friends: \(error?.localizedDescription ?? "Unknown error")")
+              }
+          }
+      }
     
     
     override func viewDidLoad() {
@@ -119,6 +157,8 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         } else {
             print("Could not find audio file.")
         }
+        
+        
         
         
         // Add UITapGestureRecognizer to catImage
@@ -181,44 +221,254 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
            }
        }
     
-    // Add IBOutlet for the email text field and the button in your storyboard
-    @IBOutlet weak var friendEmailTextField: UITextField!
+    // Load all user emails from the Firestore users collection.
+        private func loadAllUserEmailsFromUsersCollection() {
+            let db = Firestore.firestore()
+            db.collection("users").getDocuments { [weak self] (querySnapshot, error) in
+                if let e = error {
+                    print("Error getting documents: \(e)")
+                } else {
+                    self?.allUserEmails = querySnapshot?.documents.compactMap {
+                        $0.get("email") as? String
+                    } ?? []
+                    print("Loaded all user emails: \(self?.allUserEmails ?? [])")
+                }
+            }
+        }
+  
 
     @IBAction func addFriendButtonTapped(_ sender: UIButton) {
-        let alertController = UIAlertController(title: "Add Friend", message: "Enter your friend's email:", preferredStyle: .alert)
-        
-        alertController.addTextField { textField in
-            textField.placeholder = "Friend's email"
-        }
-        
-        let confirmAction = UIAlertAction(title: "OK", style: .default) { [weak self, weak alertController] _ in
-            guard let textField = alertController?.textFields?.first, let friendEmail = textField.text, !friendEmail.isEmpty else {
-                return // Optionally add error handling
-            }
-            self?.addFriend(friendEmail: friendEmail)
-        }
-        
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
-        
-        alertController.addAction(confirmAction)
-        alertController.addAction(cancelAction)
-        
-        present(alertController, animated: true)
-        
-        
-    }
+        loadAllUserEmailsFromUsersCollection()
+
+        // UIAlertController to send a friend request
+          let alertController = UIAlertController(title: "Add Friend", message: "Enter your friend's email:", preferredStyle: .alert)
+          
+          alertController.addTextField { textField in
+              textField.placeholder = "Friend's email"
+          }
+          
+          let confirmAction = UIAlertAction(title: "OK", style: .default) { [weak self, weak alertController] _ in
+              guard let textField = alertController?.textFields?.first,
+                    let friendEmail = textField.text, !friendEmail.isEmpty else {
+                  print("The email field was empty.")
+                  return
+              }
+              self?.sendFriendRequest(to: friendEmail)
+          }
+          
+          let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+          
+          alertController.addAction(confirmAction)
+          alertController.addAction(cancelAction)
+          
+          present(alertController, animated: true)
+      }
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-            return friendRequests.count
+    
+        // This function handles the logic for sending a friend request
+        private func sendFriendRequest(to recipientEmail: String) {
+                guard let currentUserEmail = Auth.auth().currentUser?.email else {
+                    print("User not logged in")
+                    return
+                }
+            // Ensure the recipient's email exists in allUserEmails before proceeding.
+                   guard allUserEmails.contains(recipientEmail) else {
+                       print("User with email \(recipientEmail) does not exist in all users' emails.")
+                       return
+                   }
+            
+            let db = Firestore.firestore()
+            let usersRef = db.collection("users")
+            
+            usersRef.whereField("email", isEqualTo: recipientEmail).getDocuments { [weak self] (querySnapshot, error) in
+                if let error = error {
+                    print("Error finding user: \(error)")
+                } else if let documents = querySnapshot?.documents, !documents.isEmpty {
+                    let recipientRef = usersRef.document(documents.first!.documentID)
+                    recipientRef.updateData([
+                        "friendRequests": FieldValue.arrayUnion([currentUserEmail])
+                    ]) { error in
+                        if let error = error {
+                            print("Error sending friend request: \(error)")
+                        } else {
+                            print("Friend request sent to \(recipientEmail)")
+                            // Optionally, you may call loadFriendRequests() here if needed
+                        }
+                    }
+                } else {
+                    print("User with email \(recipientEmail) does not exist")
+                }
+            }
+        }
+    
+    private func loadAllUserEmailsFromNotes() {
+        let db = Firestore.firestore()
+        db.collection("notes").getDocuments { [weak self] (querySnapshot, error) in
+            if let e = error {
+                print("Error getting documents: \(e)")
+            } else {
+                for document in querySnapshot!.documents {
+                    let noteRef = db.collection("notes").document(document.documentID).collection("yourSubcollectionName")
+                    noteRef.getDocuments { (subQuerySnapshot, subError) in
+                        if let subError = subError {
+                            print("Error getting subdocuments: \(subError)")
+                        } else {
+                            // Now you have access to each subcollection
+                            // Use subQuerySnapshot to extract data
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    
+    func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        if indexPath.row < friendRequests.count {
+            let acceptAction = UIContextualAction(style: .normal, title: "Accept") { [weak self] (action, view, completionHandler) in
+                self?.acceptFriendRequest(at: indexPath.row)
+                completionHandler(true)
+            }
+            acceptAction.backgroundColor = .green
+            return UISwipeActionsConfiguration(actions: [acceptAction])
+        } else {
+            // No action for accepted friends in leading swipe
+            return nil
+        }
+    }
+
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let deleteAction = UIContextualAction(style: .destructive, title: "Remove") { [weak self] (action, view, completionHandler) in
+            if indexPath.row < self?.friendRequests.count ?? 0 {
+                self?.rejectFriendRequest(at: indexPath.row)
+            } else {
+                self?.removeAcceptedFriend(at: indexPath.row - (self?.friendRequests.count ?? 0))
+            }
+            completionHandler(true)
+        }
+        return UISwipeActionsConfiguration(actions: [deleteAction])
+    }
+
+    // New function to handle the removal of an accepted friend
+    private func removeAcceptedFriend(at index: Int) {
+        guard let currentUserEmail = Auth.auth().currentUser?.email else {
+            print("Current user email not found.")
+            return
         }
         
-        func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "FriendRequestCell", for: indexPath)
-            cell.textLabel?.text = friendRequests[indexPath.row]
-            return cell
+        let friendEmail = acceptedFriends[index]
+        let db = Firestore.firestore()
+        let currentUserRef = db.collection("users").document(currentUserEmail)
+
+        // Update the current user's friends array to remove the friend
+        currentUserRef.updateData([
+            "friends": FieldValue.arrayRemove([friendEmail])
+        ]) { [weak self] error in
+            if let error = error {
+                print("Error removing friend: \(error)")
+            } else {
+                print("Friend removed successfully.")
+                self?.acceptedFriends.remove(at: index)
+                self?.friendRequestsTableView.reloadData()
+            }
         }
+    }
 
+    
+   
+    // Logic to accept a friend request.
+    private func acceptFriendRequest(at index: Int) {
+        guard let currentUserEmail = Auth.auth().currentUser?.email else {
+            print("Current user email not found.")
+            return
+        }
+        
+        let friendEmail = friendRequests[index]
+        let db = Firestore.firestore()
+        let currentUserRef = db.collection("users").document(currentUserEmail)
+        
+        // Start a batch to perform multiple write operations as one transaction
+        let batch = db.batch()
+        
+        // Remove the friend's email from the current user's friendRequests array
+        batch.updateData([
+            "friendRequests": FieldValue.arrayRemove([friendEmail])
+        ], forDocument: currentUserRef)
+        
+        // Add the friend's email to the current user's friends array
+        batch.updateData([
+            "friends": FieldValue.arrayUnion([friendEmail])
+        ], forDocument: currentUserRef)
+        
+        batch.commit() { [weak self] error in
+              if let error = error {
+                  print("Error accepting friend request: \(error)")
+              } else {
+                  print("Friend request accepted.")
+                  guard let strongSelf = self else { return }
+                  let friendEmail = strongSelf.friendRequests[index] // friendEmail is directly used here without 'if let'
+                  strongSelf.acceptedFriends.append(friendEmail)
+                  strongSelf.friendRequests.remove(at: index)
 
+                  let indexPath = IndexPath(row: strongSelf.acceptedFriends.count - 1, section: 0) // Assuming you have a separate section for accepted friends
+                  strongSelf.friendRequestsTableView.insertRows(at: [indexPath], with: .none)
+                  if let cell = strongSelf.friendRequestsTableView.cellForRow(at: indexPath) {
+                      strongSelf.animateCellBounce(cell)
+                  }
+              }
+          }
+      }
+
+      private func animateCellBounce(_ cell: UITableViewCell) {
+          let animationDuration = 0.5
+          let animationDelay = 0.0
+          let animationSpringDamping: CGFloat = 0.6
+          let animationInitialSpringVelocity: CGFloat = 0.1
+
+          // Start with the cell frame 30 points above its final resting place
+          cell.transform = CGAffineTransform(translationX: 0, y: -30)
+          cell.alpha = 0
+
+          // Animate with a bounce effect
+          UIView.animate(
+              withDuration: animationDuration,
+              delay: animationDelay,
+              usingSpringWithDamping: animationSpringDamping,
+              initialSpringVelocity: animationInitialSpringVelocity,
+              options: [],
+              animations: {
+                  // End at a transform identity to be in the final position
+                  cell.transform = CGAffineTransform.identity
+                  cell.alpha = 1
+              },
+              completion: nil
+          )
+      }
+    // Logic to reject a friend request.
+    private func rejectFriendRequest(at index: Int) {
+        guard let currentUserEmail = Auth.auth().currentUser?.email else {
+            print("Current user email not found.")
+            return
+        }
+        
+        let friendEmail = friendRequests[index]
+        let db = Firestore.firestore()
+        let currentUserRef = db.collection("users").document(currentUserEmail)
+        
+        // Remove the friend's email from the current user's friendRequests array
+        currentUserRef.updateData([
+            "friendRequests": FieldValue.arrayRemove([friendEmail])
+        ]) { [weak self] error in
+            if let error = error {
+                print("Error rejecting friend request: \(error)")
+            } else {
+                print("Friend request rejected.")
+                self?.friendRequests.remove(at: index)
+                self?.friendRequestsTableView.reloadData()
+            }
+        }
+    }
     
     func addFriend(friendEmail: String) {
         guard let currentUserEmail = Auth.auth().currentUser?.email else {
@@ -247,44 +497,10 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
           loadFriendRequests()
       }
     
-
-
-    // This function handles sending a friend request
-    func sendFriendRequest(to friendEmail: String) {
-        guard let currentUserEmail = Auth.auth().currentUser?.email else {
-            // Handle case where current user is not logged in
-            return
-        }
-        
-        let db = Firestore.firestore()
-        let usersRef = db.collection("users")
-        
-        // Check if user with friendEmail exists
-        usersRef.whereField("email", isEqualTo: friendEmail).getDocuments { (querySnapshot, error) in
-            if let error = error {
-                // Handle any errors
-            } else if querySnapshot!.documents.isEmpty {
-                // Handle case where no user with friendEmail exists
-            } else {
-                // User with friendEmail exists, proceed to send friend request
-                // Add currentUserEmail to the friendRequests array of the user with friendEmail
-                let friendRef = usersRef.document(friendEmail)
-                friendRef.updateData([
-                    "friendRequests": FieldValue.arrayUnion([currentUserEmail])
-                ]) { error in
-                    if let error = error {
-                        // Handle any errors
-                    } else {
-                        // Friend request sent successfully
-                    }
-                }
-            }
-        }
-    }
-
-
     
     
+
+  
     @objc private func imageTapped() {
         
         rotationSpeed += 0.03

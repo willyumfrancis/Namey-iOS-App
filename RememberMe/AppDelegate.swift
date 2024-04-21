@@ -48,6 +48,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         return true
     }
 
+    func updateLocationInFirestore(location: CLLocation) {
+        guard let userEmail = Auth.auth().currentUser?.email else { return }
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(userEmail)
+        let locationData = ["latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude]
+        
+        userRef.updateData(["location": locationData]) { error in
+            if let error = error {
+                print("Error updating location: \(error.localizedDescription)")
+            } else {
+                print("Location updated successfully")
+            }
+        }
+    }
+
 
          // MARK: UNUserNotificationCenterDelegate
          
