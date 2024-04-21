@@ -44,13 +44,13 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         mapView.delegate = self
         mapView.translatesAutoresizingMaskIntoConstraints = false  // Use Auto Layout
         self.view.addSubview(mapView)
-        
-        NSLayoutConstraint.activate([
-            mapView.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
-            mapView.leftAnchor.constraint(equalTo: self.view.leftAnchor),
-            mapView.rightAnchor.constraint(equalTo: self.view.rightAnchor),
-            mapView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
-        ])
+        // Set up constraints to lay out the map view; this assumes you want the map to appear below the navigation bar.
+           NSLayoutConstraint.activate([
+               mapView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+               mapView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+               mapView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+               mapView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+           ])
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -108,20 +108,25 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         }
     }
     
+    
     @IBAction func LocationOnOff(_ sender: UIBarButtonItem) {
-            shouldCenterMapOnUserLocation = !shouldCenterMapOnUserLocation  // Toggle the centering behavior
-            if mapView.showsUserLocation {
-                sender.title = "Hide Location"
-            } else {
-                sender.title = "Show Location"
-            }
-            mapView.showsUserLocation = !mapView.showsUserLocation
-            if shouldCenterMapOnUserLocation, let location = locationManager.location {
-                let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
-                mapView.setRegion(region, animated: true)
-            }
-        }
+        mapView.showsUserLocation.toggle()  // Toggle the visibility of the user location
+          
+          // Change the button title based on the current visibility
+          sender.title = mapView.showsUserLocation ? "Hide Location" : "Show Location"
+          
+          // Show an alert with the current state
+          let message = mapView.showsUserLocation ? "Your location is now visible on the map." : "Your location is now hidden."
+          let alertController = UIAlertController(title: "Location Visibility", message: message, preferredStyle: .alert)
+          alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+          present(alertController, animated: true)
 
+          // Optionally center the map on the user's current location when shown
+          if mapView.showsUserLocation, let location = locationManager.location {
+              let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
+              mapView.setRegion(region, animated: true)
+          }
+      }
     
     
     func addAnnotation(for coordinate: CLLocationCoordinate2D, title: String) {
