@@ -674,6 +674,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             maxPeople = storedValue
         }
         
+        if let selectedLocationName = selectedLocationName {
+               LoadPlacesNotes(for: selectedLocationName)
+           }
+        
         getAdvice { advice in
             DispatchQueue.main.async {
                 self.AdviceOutlet.text = advice
@@ -2134,6 +2138,19 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         })
     }
     
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "PinSegue", // Replace with your actual segue identifier
+           let namesVC = segue.destination as? NamesViewController {
+            namesVC.delegate = self
+        }
+        if let homeViewController = segue.destination as? HomeViewController {
+            if let locationName = sender as? String {
+                homeViewController.selectedLocationName = locationName
+            }
+        }
+    }
+
+    
     func determineTransportationMode(from speed: CLLocationSpeed) -> String {
         // Speed is in meters per second
         switch speed {
@@ -2346,6 +2363,9 @@ extension HomeViewController: UIScrollViewDelegate {
         return scrollView.subviews.first
     }
 }
+// HomeViewController.swift
+
+
 
 extension HomeViewController: PlacesViewControllerDelegate {
     
@@ -2363,6 +2383,8 @@ extension HomeViewController: PlacesViewControllerDelegate {
         LoadPlacesNotes(for: locationName)
         displayImage(locationName: locationName)
     }
+    
+
     
     func didUpdateClosestLocation(_ closestLocation: LocationData?) {
         if !hasEnteredPlacesViewController {

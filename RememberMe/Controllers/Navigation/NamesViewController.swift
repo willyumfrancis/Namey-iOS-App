@@ -12,11 +12,24 @@ import CoreData
 import CoreLocation
 import MapKit
 
+
+protocol NamesViewControllerDelegate: AnyObject {
+    func didSelectLocation(with locationName: String)
+}
+
+
 class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate {
     var mapView: MKMapView!
     var locationManager = CLLocationManager()  // CLLocationManager instance
     var shouldCenterMapOnUserLocation = false
     var locationUpdateTimer: Timer?
+    
+    weak var delegate: PlacesViewControllerDelegate?
+    // HomeViewController.swift
+
+    
+
+
     
     let locationButton: UIButton = {
            let button = UIButton(type: .system)
@@ -33,28 +46,27 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
        
     
     func addLocationPins() {
-        let db = Firestore.firestore()
-        db.collection("notes").getDocuments { (querySnapshot, error) in
-            guard let documents = querySnapshot?.documents else {
-                print("Error fetching documents: \(error?.localizedDescription ?? "Unknown error")")
-                return
-            }
-            
-            for document in documents {
-                let data = document.data()
-                if let locationGeoPoint = data["location"] as? GeoPoint,
-                   let locationName = data["locationName"] as? String {
-                    
-                    let location = CLLocationCoordinate2D(latitude: locationGeoPoint.latitude, longitude: locationGeoPoint.longitude)
-                    
-                    let annotation = MKPointAnnotation()
-                    annotation.coordinate = location
-                    annotation.title = locationName
-                    self.mapView.addAnnotation(annotation)
+            let db = Firestore.firestore()
+            db.collection("notes").getDocuments { (querySnapshot, error) in
+                guard let documents = querySnapshot?.documents else {
+                    print("Error fetching documents: \(error?.localizedDescription ?? "Unknown error")")
+                    return
+                }
+                
+                for document in documents {
+                    let data = document.data()
+                    if let locationGeoPoint = data["location"] as? GeoPoint,
+                       let locationName = data["locationName"] as? String {
+                        
+                        let location = CLLocationCoordinate2D(latitude: locationGeoPoint.latitude, longitude: locationGeoPoint.longitude)
+                        
+                        let annotation = MKPointAnnotation(__coordinate: location, title: locationName, subtitle: nil)
+                        self.mapView.addAnnotation(annotation)
+                    }
                 }
             }
         }
-    }
+
 
 
 
@@ -66,6 +78,14 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         addLocationPins()
         setupLocationButton()
 
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if let userLocation = locationManager.location {
+            let region = MKCoordinateRegion(center: userLocation.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
+            mapView.setRegion(region, animated: true)
+        }
     }
     
     func setupLocationButton() {
@@ -124,7 +144,19 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
                 self?.locationManager.startUpdatingLocation()
             }
         }
+    
+    
 
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        if let locationName = view.annotation?.title ?? "" {
+            self.performSegue(withIdentifier: "PinSegue", sender: locationName)
+        }
+    }
+    
+
+
+       
+    
         func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
             if let location = locations.last {
                 // Update the user's location in Firestore
@@ -163,6 +195,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
             }
         }
     }
+    
 
 
     
@@ -182,10 +215,16 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
                 for friendEmail in friends {
                     let friendRef = db.collection("users").whereField("email", isEqualTo: friendEmail)
                     friendRef.getDocuments { (querySnapshot, error) in
-                        if let documents = querySnapshot?.documents, let locationData = documents.first?.data()["location"] as? [String: Double],
-                           let latitude = locationData["latitude"], let longitude = locationData["longitude"] {
-                            let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-                            self?.addAnnotation(for: coordinate, title: friendEmail)
+                        if let documents = querySnapshot?.documents {
+                            for document in documents {
+                                if let locationData = document.data()["location"] as? [String: Double],
+                                   let latitude = locationData["latitude"], let longitude = locationData["longitude"],
+                                   let imageURL = document.data()["imageURL"] as? String {
+                                    let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+                                    self?.addAnnotation(for: coordinate, title: friendEmail, imageURL: imageURL)
+                                
+                                }
+                            }
                         }
                     }
                 }
@@ -202,12 +241,75 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         mapView.showsUserLocation.toggle()  // Toggle the visibility of the user location
     }
     
+    class LocationAnnotation: MKPointAnnotation {
+        var imageURL: String?
+        var image: UIImage?
+    }
+    
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        if let annotation = annotation as? LocationAnnotation {
+            let identifier = "LocationAnnotation"
+            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? MKAnnotationView
+            
+            if annotationView == nil {
+                annotationView = MKAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+                annotationView?.canShowCallout = true
+            } else {
+                annotationView?.annotation = annotation
+            }
+            
+            if let imageURL = annotation.imageURL, let url = URL(string: imageURL) {
+                URLSession.shared.dataTask(with: url) { data, response, error in
+                    if let error = error {
+                        print("Error loading image: \(error.localizedDescription)")
+                    } else if let data = data, let image = UIImage(data: data) {
+                        let size = CGSize(width: 50, height: 50)
+                        UIGraphicsBeginImageContext(size)
+                        image.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+                        if let resizedImage = UIGraphicsGetImageFromCurrentImageContext() {
+                            UIGraphicsEndImageContext()
+
+                            // Create the annotation view on the main thread
+                            DispatchQueue.main.async {
+                                annotation.image = resizedImage
+                                // Update the existing annotation view if it's visible, otherwise, it will be used when the view is created
+                                if let annotationView = mapView.view(for: annotation) as? MKAnnotationView {
+                                    annotationView.image = resizedImage
+                                }
+                            }
+                        } else {
+                            UIGraphicsEndImageContext()
+                            print("Error resizing image")
+                        }
+                    }
+                }.resume()
+            } else {
+                print("Invalid URL or no image URL provided")
+                // Handle the case where the URL is not valid or no imageURL is provided
+            }
+
+            
+            return annotationView
+        }
+        
+        return nil
+    }
+    
     func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
         let gestureRecognizers = mapView.gestureRecognizers ?? []
         for gesture in gestureRecognizers {
             if gesture.state == .began || gesture.state == .ended {
                 shouldCenterMapOnUserLocation = false
                 break
+            }
+        }
+    }
+    
+    // In the view controller that's performing the segue (likely NamesViewController)
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if let homeViewController = segue.destination as? HomeViewController {
+            if let locationName = sender as? String {
+                homeViewController.selectedLocationName = locationName
             }
         }
     }
@@ -229,6 +331,9 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
        }
     
     
+    var locationImages: [String: UIImage] = [:]
+
+    
     @IBAction func LocationOnOff(_ sender: UIButton) {
         mapView.showsUserLocation.toggle()  // Toggle the visibility of the user location
           
@@ -249,19 +354,70 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
       }
     
     
-    func addAnnotation(for coordinate: CLLocationCoordinate2D, title: String) {
-        let annotation = MKPointAnnotation()
-        annotation.coordinate = coordinate
-        annotation.title = title
-        mapView.addAnnotation(annotation)
+    func addAnnotation(for coordinate: CLLocationCoordinate2D, title: String, imageURL: String?) {
+        // Create the annotation with the provided details
+        let annotation = LocationAnnotation(__coordinate: coordinate, title: title, subtitle: nil)
+        annotation.imageURL = imageURL
+
+        // Add the annotation to the map
+        self.mapView.addAnnotation(annotation)
+        
+        // Load the image asynchronously if it is not already in the cache
+        if let imageURL = imageURL, locationImages[title] == nil {
+            URLSession.shared.dataTask(with: URL(string: imageURL)!) { [weak self] data, response, error in
+                guard let self = self else { return }
+                if let error = error {
+                    print("Error loading image: \(error.localizedDescription)")
+                } else if let data = data, let image = UIImage(data: data) {
+                    let size = CGSize(width: 50, height: 50)
+                    UIGraphicsBeginImageContext(size)
+                    image.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+                    let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+                    UIGraphicsEndImageContext()
+                    
+                    // Cache the image
+                    self.locationImages[title] = resizedImage
+                    
+                    // Create the annotation view on the main thread
+                    DispatchQueue.main.async {
+                        // Find the annotation by title and update its image if it's visible
+                        if let annotations = self.mapView.annotations as? [LocationAnnotation] {
+                            for ann in annotations where ann.title == title {
+                                if let annotationView = self.mapView.view(for: ann) as? MKAnnotationView {
+                                    annotationView.image = resizedImage
+                                }
+                            }
+                        }
+                    }
+                }
+            }.resume()
+        } else if let cachedImage = locationImages[title] {
+            // If the image is already in the cache, find the annotation and update its image
+            if let annotations = self.mapView.annotations as? [LocationAnnotation] {
+                for ann in annotations where ann.title == title {
+                    if let annotationView = self.mapView.view(for: ann) as? MKAnnotationView {
+                        annotationView.image = cachedImage
+                    }
+                }
+            }
+        }
     }
+
     
+
+
     
     deinit {
         // Invalidate the timer when the view controller is deinitialized
         locationUpdateTimer?.invalidate()
     }
 }
+
+
+
+
+
+
     
     
 
