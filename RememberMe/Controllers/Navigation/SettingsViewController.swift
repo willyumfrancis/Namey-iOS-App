@@ -21,7 +21,34 @@ class AppState {
 }
 
 
-class SettingsViewController: UIViewController {
+class SettingsViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+    
+    var friendRequests: [String] = []
+     
+     // IBOutlet for the UITableView to display the friend requests
+     @IBOutlet weak var friendRequestsTableView: UITableView!
+  
+      
+      // Function to load friend requests from Firestore
+      private func loadFriendRequests() {
+          guard let currentUserEmail = Auth.auth().currentUser?.email else {
+              // Add error handling if needed
+              return
+          }
+          let db = Firestore.firestore()
+          let userRef = db.collection("users").document(currentUserEmail)
+          
+          userRef.getDocument { [weak self] (document, error) in
+              if let document = document, document.exists,
+                 let requests = document.data()?["friendRequests"] as? [String] {
+                  self?.friendRequests = requests
+                  self?.friendRequestsTableView.reloadData()
+              } else {
+                  // Handle the error or the case where the document does not exist
+              }
+          }
+      }
+    
     
     static var savedRotationSpeed: Double = 0.5 // Static property to save rotation speed
     static var wasPlaying: Bool = false // Static property to save audio state
@@ -54,17 +81,6 @@ class SettingsViewController: UIViewController {
         }
     }
     
-    //    @IBAction func audioControlButton(_ sender: UIButton) {
-    //        if audioPlayer?.isPlaying == true {
-    //            audioPlayer?.pause()
-    //            audioControlButton.setTitle("▶️", for: .normal) // Set to play symbol when paused
-    //            print("Paused the song.")
-    //        } else {
-    //            audioPlayer?.play()
-    //            audioControlButton.setTitle("⏸", for: .normal) // Set to pause symbol when playing
-    //            print("Resumed the song.")
-    //        }
-    //    }
     
     
     override func viewWillAppear(_ animated: Bool) {
@@ -84,6 +100,13 @@ class SettingsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        
+        // Set the delegate and data source for your friendRequestsTableView
+        friendRequestsTableView.delegate = self
+        friendRequestsTableView.dataSource = self
+        
+        // Load the friend requests from Firestore
+        loadFriendRequests()
         // Initialize audio player with the new path
         if let path = Bundle.main.path(forResource: "eastersong", ofType: "mp3") {
             let url = URL(fileURLWithPath: path)
@@ -186,14 +209,15 @@ class SettingsViewController: UIViewController {
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return friendRequests.count
-    }
+            return friendRequests.count
+        }
+        
+        func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "FriendRequestCell", for: indexPath)
+            cell.textLabel?.text = friendRequests[indexPath.row]
+            return cell
+        }
 
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "FriendRequestCell", for: indexPath)
-        cell.textLabel?.text = friendRequests[indexPath.row]
-        return cell
-    }
 
     
     func addFriend(friendEmail: String) {
@@ -215,7 +239,13 @@ class SettingsViewController: UIViewController {
             }
         }
     }
+
     
+      
+      private func updateFriendRequestsListView() {
+          // The function to refresh the list of friend requests
+          loadFriendRequests()
+      }
     
 
 
@@ -293,15 +323,5 @@ class SettingsViewController: UIViewController {
     }
     
     
-    
-    /*
-     // MARK: - Navigation
-     
-     // In a storyboard-based application, you will often want to do a little preparation before navigation
-     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-     // Get the new view controller using segue.destination.
-     // Pass the selected object to the new view controller.
-     }
-     */
     
 }
