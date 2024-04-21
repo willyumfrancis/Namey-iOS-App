@@ -15,7 +15,9 @@ import MapKit
 class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate {
     var mapView: MKMapView!
     var locationManager = CLLocationManager()  // CLLocationManager instance
-    var shouldCenterMapOnUserLocation = true
+    var shouldCenterMapOnUserLocation = false
+    var locationUpdateTimer: Timer?
+
 
 
     override func viewDidLoad() {
@@ -34,10 +36,16 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     
     func setupLocationManager() {
         locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestWhenInUseAuthorization()  // Request user's permission for location
-        locationManager.startUpdatingLocation()  // Start updating the location
-    }
+             locationManager.desiredAccuracy = kCLLocationAccuracyBest
+             locationManager.requestAlwaysAuthorization()  // Request "Always" authorization
+             locationManager.allowsBackgroundLocationUpdates = true  // Allow updates in the background
+             locationManager.pausesLocationUpdatesAutomatically = false  // Prevent the system from pausing updates
+             locationManager.startUpdatingLocation()  // Start updating the location
+             startLocationUpdateTimer()  // Start the timer to limit updates
+         }
+         
+    
+
     
     func setupMapView() {
         mapView = MKMapView()
@@ -53,13 +61,54 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
            ])
     }
     
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if let location = locations.last, shouldCenterMapOnUserLocation {
-            let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
-            mapView.setRegion(region, animated: true)
-            shouldCenterMapOnUserLocation = false  // Set to false after first location update
+    func startLocationUpdateTimer() {
+            // Invalidate the old timer if it exists
+            locationUpdateTimer?.invalidate()
+            // Schedule a timer to trigger every 2 minutes
+            locationUpdateTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { [weak self] _ in
+                self?.locationManager.startUpdatingLocation()
+            }
+        }
+
+        func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+            if let location = locations.last {
+                // Update the user's location in Firestore
+                updateUserLocationInFirestore(location)
+                // Stop further updates until the timer fires again
+                locationManager.stopUpdatingLocation()
+            }
+        }
+
+    func updateUserLocationInFirestore(_ location: CLLocation) {
+        guard let currentUserEmail = Auth.auth().currentUser?.email else {
+            print("User is not logged in")
+            return
+        }
+
+        // Define the location data
+        let locationData = [
+            "latitude": location.coordinate.latitude,
+            "longitude": location.coordinate.longitude
+        ]
+
+        // Reference to the user's document in Firestore
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").whereField("email", isEqualTo: currentUserEmail)
+
+        // Update the user's location
+        userRef.getDocuments { (querySnapshot, error) in
+            if let document = querySnapshot?.documents.first {
+                document.reference.updateData(["location": locationData]) { error in
+                    if let error = error {
+                        print("Error updating location: \(error.localizedDescription)")
+                    } else {
+                        print("User location updated to Firestore successfully.")
+                    }
+                }
+            }
         }
     }
+
 
     
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
@@ -137,4 +186,11 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     }
     
     
+    deinit {
+        // Invalidate the timer when the view controller is deinitialized
+        locationUpdateTimer?.invalidate()
+    }
 }
+    
+    
+

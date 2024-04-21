@@ -428,9 +428,9 @@
                         <viewLayoutGuide key="safeArea" id="cAv-iL-Nwz"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="s9C-uw-pl8" firstAttribute="leading" secondItem="r8P-73-Z5k" secondAttribute="leadingMargin" constant="-16" id="HVf-Td-kzW"/>
-                            <constraint firstItem="cAv-iL-Nwz" firstAttribute="bottom" secondItem="s9C-uw-pl8" secondAttribute="bottom" constant="666" id="Rse-Ef-Htq"/>
-                            <constraint firstItem="s9C-uw-pl8" firstAttribute="centerX" secondItem="r8P-73-Z5k" secondAttribute="centerX" id="pFl-Au-nr0"/>
+                            <constraint firstItem="s9C-uw-pl8" firstAttribute="bottom" secondItem="cAv-iL-Nwz" secondAttribute="top" id="4Fa-bQ-AwE"/>
+                            <constraint firstAttribute="trailing" secondItem="s9C-uw-pl8" secondAttribute="trailing" id="WDm-X7-43R"/>
+                            <constraint firstItem="s9C-uw-pl8" firstAttribute="leading" secondItem="r8P-73-Z5k" secondAttribute="leading" id="ZPe-ou-jhR"/>
                         </constraints>
                     </view>
                     <extendedEdge key="edgesForExtendedLayout" bottom="YES"/>

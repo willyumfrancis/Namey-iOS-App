@@ -151,6 +151,9 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        friendRequestsTableView.layer.cornerRadius = 10
+        friendRequestsTableView.layer.masksToBounds = true
+        
         
         // Set the delegate and data source for your friendRequestsTableView
         friendRequestsTableView.delegate = self
