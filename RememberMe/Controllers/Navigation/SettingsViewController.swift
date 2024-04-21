@@ -124,6 +124,137 @@ class SettingsViewController: UIViewController {
     }
     
     
+       
+       @IBAction func deleteAccountButtonTapped(_ sender: UIButton) {
+           let alert = UIAlertController(title: "Delete Account", message: "Please type 'delete' to confirm.", preferredStyle: .alert)
+           alert.addTextField { textField in
+               textField.placeholder = "Type 'delete' here"
+           }
+           let deleteAction = UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+               guard let textField = alert.textFields?.first, textField.text?.lowercased() == "delete" else {
+                   print("Deletion cancelled or incorrect confirmation text.")
+                   return
+               }
+               self?.deleteUserAccount()
+           }
+           let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { _ in
+               print("User cancelled deletion.")
+           }
+           alert.addAction(deleteAction)
+           alert.addAction(cancelAction)
+           present(alert, animated: true)
+       }
+       
+       func deleteUserAccount() {
+           let user = Auth.auth().currentUser
+           user?.delete { error in
+               if let error = error {
+                   print("Error deleting user account: \(error.localizedDescription)")
+               } else {
+                   print("Account deleted successfully.")
+                   // Optionally, navigate user to a different screen or logout
+                   NotificationCenter.default.post(name: .didSignOut, object: nil)
+               }
+           }
+       }
+    
+    // Add IBOutlet for the email text field and the button in your storyboard
+    @IBOutlet weak var friendEmailTextField: UITextField!
+
+    @IBAction func addFriendButtonTapped(_ sender: UIButton) {
+        let alertController = UIAlertController(title: "Add Friend", message: "Enter your friend's email:", preferredStyle: .alert)
+        
+        alertController.addTextField { textField in
+            textField.placeholder = "Friend's email"
+        }
+        
+        let confirmAction = UIAlertAction(title: "OK", style: .default) { [weak self, weak alertController] _ in
+            guard let textField = alertController?.textFields?.first, let friendEmail = textField.text, !friendEmail.isEmpty else {
+                return // Optionally add error handling
+            }
+            self?.addFriend(friendEmail: friendEmail)
+        }
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        
+        alertController.addAction(confirmAction)
+        alertController.addAction(cancelAction)
+        
+        present(alertController, animated: true)
+        
+        
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return friendRequests.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "FriendRequestCell", for: indexPath)
+        cell.textLabel?.text = friendRequests[indexPath.row]
+        return cell
+    }
+
+    
+    func addFriend(friendEmail: String) {
+        guard let currentUserEmail = Auth.auth().currentUser?.email else {
+            return // Optionally add error handling
+        }
+        
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(currentUserEmail)
+        
+        userRef.updateData([
+            "friendRequests": FieldValue.arrayUnion([friendEmail])
+        ]) { error in
+            if let error = error {
+                // Handle error
+            } else {
+                // Update the UI to reflect the friend request
+                self.updateFriendRequestsListView()
+            }
+        }
+    }
+    
+    
+
+
+    // This function handles sending a friend request
+    func sendFriendRequest(to friendEmail: String) {
+        guard let currentUserEmail = Auth.auth().currentUser?.email else {
+            // Handle case where current user is not logged in
+            return
+        }
+        
+        let db = Firestore.firestore()
+        let usersRef = db.collection("users")
+        
+        // Check if user with friendEmail exists
+        usersRef.whereField("email", isEqualTo: friendEmail).getDocuments { (querySnapshot, error) in
+            if let error = error {
+                // Handle any errors
+            } else if querySnapshot!.documents.isEmpty {
+                // Handle case where no user with friendEmail exists
+            } else {
+                // User with friendEmail exists, proceed to send friend request
+                // Add currentUserEmail to the friendRequests array of the user with friendEmail
+                let friendRef = usersRef.document(friendEmail)
+                friendRef.updateData([
+                    "friendRequests": FieldValue.arrayUnion([currentUserEmail])
+                ]) { error in
+                    if let error = error {
+                        // Handle any errors
+                    } else {
+                        // Friend request sent successfully
+                    }
+                }
+            }
+        }
+    }
+
+
+    
+    
     @objc private func imageTapped() {
         
         rotationSpeed += 0.03

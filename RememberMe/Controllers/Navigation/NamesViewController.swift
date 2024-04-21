@@ -11,240 +11,112 @@ import FirebaseFirestore
 import FirebaseAuth
 import CoreData
 import CoreLocation
+import MapKit
 
-class NamesViewController: UIViewController, CLLocationManagerDelegate {
-
-    //MARK: - OUTLETS
-    @IBOutlet weak var NameList: UITableView!
+class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate, UITableViewDelegate, UITableViewDataSource {
+    // UITableViewDataSource methods
+       func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+           return friendRequests.count
+       }
     
-    @IBOutlet weak var alphabetScrollView: UIScrollView!
-    @IBOutlet weak var refreshButton: UIButton!
-    @IBOutlet weak var alphabetStackView: UIStackView!
-    var names: [Note] = []
-    var allNames: [Note] = [] // Add this line
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+           let cell = tableView.dequeueReusableCell(withIdentifier: "FriendRequestCell", for: indexPath)
+           cell.textLabel?.text = friendRequests[indexPath.row]
+           return cell
+       }
+    
+    var mapView: MKMapView!
+    
+    // Add these properties
+      var friendRequests: [String] = []
+      
+      // Make sure you connect this IBOutlet from your TableView in the storyboard
+      @IBOutlet weak var friendRequestsTableView: UITableView!
+    
 
-
-      
-      //FireBase Cloud Storage
-      let db = Firestore.firestore()
-      
-      override func viewWillAppear(_ animated: Bool) {
-          super.viewWillAppear(animated)
-          
-          NameList.dataSource = self
-          NameList.delegate = self
-          NameList.register(UINib(nibName: "NoteCell", bundle: nil), forCellReuseIdentifier: "NoteCell")
-          
-          fetchNames()
-      }
-      
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Set border for the scrollView
-            alphabetScrollView.layer.borderColor = UIColor.black.cgColor
-            alphabetScrollView.layer.borderWidth = 2
-        alphabetScrollView.layer.cornerRadius = 10.0 // Add this line
-           alphabetScrollView.clipsToBounds = true
+        setupMapView()
         
-        // Remove vertical scroll indicator
-           NameList.showsVerticalScrollIndicator = false
         
-            
-        let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-        for letter in alphabet {
-            let button = UIButton()
-            button.setTitle(String(letter), for: .normal)
-            button.setTitleColor(.black, for: .normal)
-            button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 18)
+        // Set the delegate and data source for your TableView
+        friendRequestsTableView.delegate = self
+        friendRequestsTableView.dataSource = self
+        
+        // Rest of your viewDidLoad
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.navigationBar.isHidden = false
+        self.navigationController?.navigationBar.isTranslucent = false
+    }
 
-            button.addTarget(self, action: #selector(alphabetButtonTapped), for: .touchUpInside)
-            alphabetStackView.addArrangedSubview(button)
+
+    func setupMapView() {
+        mapView = MKMapView()
+        mapView.delegate = self
+        mapView.showsUserLocation = false
+        mapView.translatesAutoresizingMaskIntoConstraints = false  // Use Auto Layout
+        self.view.addSubview(mapView)
+        
+        if let navBar = self.navigationController?.navigationBar {
+            mapView.topAnchor.constraint(equalTo: navBar.bottomAnchor).isActive = true
+        } else {
+            mapView.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor).isActive = true
         }
-        refreshButton.addTarget(self, action: #selector(refreshNames), for: .touchUpInside)
-    }
-
-
-    @objc func refreshNames() {
         
-        // Start keyframe animation
-          UIView.animateKeyframes(withDuration: 0.5, delay: 0, options: [], animations: {
-              // Add keyframes
-              UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.25) {
-                  self.refreshButton.transform = CGAffineTransform(rotationAngle: CGFloat.pi / 2) // 90 degrees
-              }
-              UIView.addKeyframe(withRelativeStartTime: 0.25, relativeDuration: 0.25) {
-                  self.refreshButton.transform = CGAffineTransform(rotationAngle: CGFloat.pi) // 180 degrees
-              }
-              UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.25) {
-                  self.refreshButton.transform = CGAffineTransform(rotationAngle: 3 * CGFloat.pi / 2) // 270 degrees
-              }
-              UIView.addKeyframe(withRelativeStartTime: 0.75, relativeDuration: 0.25) {
-                  self.refreshButton.transform = CGAffineTransform(rotationAngle: 2 * CGFloat.pi) // 360 degrees, back to original
-              }
-          }) { finished in
-              if finished {
-                  // Reset transform to avoid accumulation of rotation effect
-                  self.refreshButton.transform = CGAffineTransform.identity
-              }
-          }
-          
-        
-        
-        names = allNames
-        NameList.reloadData()
-    }
-
-
-      
-    
-    @objc func alphabetButtonTapped(_ sender: UIButton) {
-        guard let letter = sender.titleLabel?.text else { return }
-        filterNames(startingWith: letter)
-    }
-    
-    func filterNames(startingWith letter: String) {
-        let filteredNames = allNames.filter { $0.text.uppercased().hasPrefix(letter) }
-        names = filteredNames
-        NameList.reloadData()
-    }
-
-
-
-    
-    func createAttributedString(from noteText: String) -> NSAttributedString {
-           let attributedString = NSMutableAttributedString(string: noteText)
-           if let range = noteText.range(of: "-") {
-               let boldRange = NSRange(noteText.startIndex..<range.lowerBound, in: noteText)
-               let regularRange = NSRange(range.upperBound..<noteText.endIndex, in: noteText)
-               attributedString.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 19), range: boldRange)
-               attributedString.addAttribute(.font, value: UIFont.systemFont(ofSize: 19), range: regularRange)
-           } else {
-               // If there's no hyphen, make sure the text appears as regular
-               let regularRange = NSRange(noteText.startIndex..<noteText.endIndex, in: noteText)
-               attributedString.addAttribute(.font, value: UIFont.systemFont(ofSize: 19), range: regularRange)
-           }
-           return attributedString
-       }
-
-      
-    func fetchNames() {
-        if let userEmail = Auth.auth().currentUser?.email {
-            db.collection("notes")
-                .whereField("user", isEqualTo: userEmail)
-                .getDocuments { querySnapshot, error in
-                    if let e = error {
-                        print("There was an issue retrieving data from Firestore: \(e)")
-                    } else {
-                        if let snapshotDocuments = querySnapshot?.documents {
-                            self.names = snapshotDocuments.compactMap { queryDocumentSnapshot -> Note? in
-                                let data = queryDocumentSnapshot.data()
-                                let noteText = data["note"] as? String ?? ""
-                                if let locationData = data["location"] as? GeoPoint {
-                                    let locationName = data["locationName"] as? String ?? ""
-                                    let noteID = queryDocumentSnapshot.documentID
-                                    
-                                    let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-                                    let emptyURL = URL(string: "")
-                                    return Note(id: noteID, text: noteText, location: location, locationName: locationName, imageURL: emptyURL)
-                                } else {
-                                    return nil
-                                }
-                            }
-                            
-                            // Sort notes alphabetically
-                            self.names.sort { $0.text.lowercased() < $1.text.lowercased() }
-                            self.allNames = self.names
-                            
-                            // Reload the table view
-                            DispatchQueue.main.async {
-                                self.NameList.reloadData()
-                            }
+        NSLayoutConstraint.activate([
+            mapView.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
+            mapView.leftAnchor.constraint(equalTo: self.func, constant: updateFriendRequestsListView() {
+                guard let currentUserEmail = Auth.auth().currentUser?.email else {
+                    return // Optionally add error handling
+                }
+                
+                let db = Firestore.firestore()
+                let userRef = db.collection("users").document(currentUserEmail)
+                
+                userRef.getDocument { (document, error) in
+                    if let error = error {
+                        // Handle error
+                    } else if let document = document, document.exists {
+                        // This will get the 'friendRequests' field, which is an array of strings
+                        if let requests = document.data()?["friendRequests"] as? [String] {
+                            self.friendRequests = requests
+                            self.friendRequestsTableView.reloadData()
                         }
                     }
                 }
-        }
-    }
-
-    
-    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-            if editingStyle == .delete {
-                let noteToDelete = names[indexPath.row]
-                names.remove(at: indexPath.row)
-                tableView.deleteRows(at: [indexPath], with: .fade)
-                let noteID = noteToDelete.id
-                db.collection("notes").document(noteID).delete { error in
-                    if let e = error {
-                        print("There was an issue deleting the note: \(e)")
-                    } else {
-                        print("Note deleted successfully.")
-                    }
-                }
             }
-        }
+
+            // Implement UITableViewDataSource methods
+            func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+                return friendRequests.count
+            }
+
+            func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+                let cell = tableView.dequeueReusableCell(withIdentifier: "FriendRequestCell", for: indexPath)
+                cell.textLabel?.text = friendRequests[indexPath.row]
+                return cell
+            };view.leftAnchor;),
+            mapView.rightAnchor.constraint(equalTo: self.view.rightAnchor),
+            mapView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
+        ])
     }
-
     
-  
 
 
-  // MARK: - UITableViewDataSource
-  extension NamesViewController: UITableViewDataSource {
-      func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-          return names.count
-      }
-      
-      func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-          let cell = tableView.dequeueReusableCell(withIdentifier: "NoteCell", for: indexPath) as! NoteCell
-          let name = names[indexPath.row]
-          
-          // Configure the cell with the name
-          cell.noteTextField.attributedText = createAttributedString(from: name.text) // Set the attributed text
-          cell.noteLocation = name.location
-          cell.delegate = self
-          cell.noteId = name.id // Set the noteId property
-          
-          return cell
-      }
 
-  }
-
-  // MARK: - UITableViewDelegate
-extension NamesViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
+    @objc func toggleUserLocation() {
+        mapView.showsUserLocation.toggle()  // Toggle the visibility of the user location
+    }
+    
+    
+    @IBAction func LocationOnOff(_ sender: UIBarButtonItem) {
         
-        // Perform any action when a name is selected, if needed
+        mapView.showsUserLocation.toggle()
+           sender.title = mapView.showsUserLocation ? "Hide Location" : "Show Location"  // Update the button title accordingly
+       }
     }
-}
-
-// In NamesViewController.swift
-extension NamesViewController: NoteCellDelegate {
-    func noteCellTextFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        return true
-    }
- 
-
-    func noteCell(_ cell: NoteCell, didUpdateNote note: Note) {
-        // Save the updated note to Firestore
-        if let userEmail = Auth.auth().currentUser?.email {
-            db.collection("notes").document(note.id).updateData([
-                "note": note.text,
-                "location": GeoPoint(latitude: note.location.latitude, longitude: note.location.longitude),
-                "locationName": note.locationName,
-                "user": userEmail
-            ]) { error in
-                if let error = error {
-                    print("Error updating note: \(error)")
-                } else {
-                    print("Note successfully updated")
-                }
-            }
-        }
-    }
-
-    func noteCellDidEndEditing(_ cell: NoteCell) {
-        // Perform any additional tasks when editing ends, if necessary
-    }
-}
+    
 

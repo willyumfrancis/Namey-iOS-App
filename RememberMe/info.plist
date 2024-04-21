@@ -6,6 +6,8 @@
 	<array>
 		<string>misiaszek.RememberMe.refreshGeofences</string>
 	</array>
+	<key></key>
+	<string></string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app can run in the background to provide real-time navigation updates.</string>
 	<key>NSCameraUsageDescription</key>

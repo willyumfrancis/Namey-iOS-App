@@ -54,12 +54,12 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
                     let geofence = Geofence(location: coordinate, radius: self.currentGeofenceRadius, identifier: note.locationName)
                     self.geofences.append(geofence)
                 }
-            
+                
                 completion(true) // Call completion handler to indicate success or failure
             }
         }
     }
-
+    
     override init() {
         super.init()
         self.locationManager = CLLocationManager()
@@ -74,52 +74,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     // MARK: - NOTIFICATIONS
     
-    func determineTransportationMode(from speed: CLLocationSpeed) -> String {
-        // Speed is in meters per second
-        switch speed {
-        case 0..<4: // Less than 4 m/s (~14.4 km/h)
-            return "walking"
-        case 4..<15: // Between 4 m/s and 15 m/s (~14.4 to ~54 km/h)
-            return "biking"
-        default: // Greater than 15 m/s (~54 km/h)
-            return "driving"
-        }
-    }
-    
-    func shouldRefreshGeofences(for modeOfTransport: String, lastLocation: CLLocationCoordinate2D, currentLocation: CLLocationCoordinate2D) -> Bool {
-        let lastCLLocation = CLLocation(latitude: lastLocation.latitude, longitude: lastLocation.longitude)
-        let currentCLLocation = CLLocation(latitude: currentLocation.latitude, longitude: currentLocation.longitude)
-        let distance = currentCLLocation.distance(from: lastCLLocation)
-        
-        let thresholds: [String: CLLocationDistance] = [
-            "walking": 200, // meters
-            "biking": 500,
-            "driving": 1000
-        ]
-        
-        return distance > (thresholds[modeOfTransport] ?? 500) // Default to biking threshold if mode is unknown
-    }
-    
-    
     func setupLocationManager() {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.requestAlwaysAuthorization()  // Changed from requestWhenInUseAuthorization
         locationManager.startUpdatingLocation()
     }
-    
-    
     var hasProcessedLocationUpdate = false
-    
-    // Location Manager Delegate
     var lastLocationUpdateTime: Date?
-    
-    // Location Manager Delegate
     var lastProcessedLocation: CLLocationCoordinate2D?
-    
-    // Define a property to keep track of whether the location has been fetched
     var hasFetchedLocation = false
-    
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if hasFetchedLocation {
             return
@@ -163,8 +127,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         hasFetchedLocation = true
     }
     
-    
-    
     func setupClosestFifteenGeofences(currentLocation: CLLocation, completion: @escaping () -> Void) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
             print("Setting up geofences for closest fifteen locations.")  // Debugging print statement
@@ -192,7 +154,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
     
-    
     // When exiting a region, remove it from the list of notified regions
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
         print("Exited region: \(region.identifier)")  // Debugging line
@@ -206,7 +167,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     var geofenceManager = GeofenceManager()  // Initialize GeofenceManager
-    
     
     func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
         let radius: CLLocationDistance = 25
@@ -227,8 +187,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         print("Fetching last three notes for location: \(locationName)") // Debugging line
         return Array(notes.filter { $0.locationName == locationName }.suffix(3))
     }
-    
-    
+
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         print("Entered region: \(region.identifier)") // Debug statement to indicate region entry.
         
@@ -255,12 +214,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
     
-    
     func requestLocationAuthorization() {
         locationManager.requestWhenInUseAuthorization()
     }
     
-    // Add a dictionary to keep track of last sent time for each location
     var lastNotificationSentTime: [String: Date] = [:]
     
     func sendNotification(locationName: String, lastThreeNotes: [String]) {
@@ -334,259 +291,23 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         completionHandler()
     }
     
-    
-    
-    //MARK: - END NOTIES
-    
-    
-    
-    
-    
-    
     //MARK: - OUTLETS
     @IBOutlet weak var tableView: UITableView!
-    //Current Place & Goal of People
     @IBOutlet weak var CurrentPlace: UIImageView!
     @IBOutlet weak var Progressbar: UIProgressView!
     @IBOutlet weak var SaveButtonLook: UIButton!
-    
     @IBOutlet weak var ImageLook: UIButton!
-    
     @IBOutlet weak var MicLook: UIButton!
-    
     @IBOutlet weak var NewNameLook: UIButton!
     @IBOutlet weak var Header: UILabel!
     @IBOutlet weak var LocationButtonOutlet: UIButton!
-    
     @IBOutlet weak var locationNameLabel: UILabel!
-    
     @IBOutlet weak var notesCountLabel: UILabel!
-    
     @IBOutlet weak var AdviceOutlet: UILabel!
-    
-    
-    //FireBase Cloud Storage
-    let db = Firestore.firestore()
-    
-    //MARK: - Swipe Right Expand Note
-    
-    func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let editAction = UIContextualAction(style: .normal, title: "Expand") { [weak self] (_, _, completionHandler) in
-            self?.editNoteAtIndexPath(indexPath)
-            completionHandler(true)
-        }
-        editAction.backgroundColor = #colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1) // Choose your color
-        let configuration = UISwipeActionsConfiguration(actions: [editAction])
-        return configuration
-    }
-    
-    func editNoteAtIndexPath(_ indexPath: IndexPath) {
-        let note = notes[indexPath.row]
-        
-        // Create the alert controller
-        let alertController = UIAlertController(title: "Edit Note", message: "\n\n\n\n\n\n\n\n\n", preferredStyle: .alert)
-        alertController.view.layer.cornerRadius = 15
-        
-        alertController.view.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1) // Set the background color
-        alertController.view.tintColor = UIColor.black  // Replace UIColor.red with your desired color
-        
-        
-        // Create the text field
-        let textField = UITextView(frame: CGRect(x: 15, y: 55, width: 240, height: 240))
-        textField.font = UIFont.systemFont(ofSize: 20)
-        textField.text = note.text
-        textField.backgroundColor = UIColor.clear // Set the background to clear
-        
-        alertController.view.addSubview(textField)
-        
-        // Create the actions
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-        
-        let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
-            if let updatedText = textField.text {
-                self.updateNoteAtIndexPath(indexPath, withText: updatedText)
-            }
-        }
-        
-        // Add the actions
-        alertController.addAction(cancelAction)
-        alertController.addAction(saveAction)
-        
-        // Present the alert controller
-        self.present(alertController, animated: true, completion: {
-            textField.becomeFirstResponder()
-        })
-    }
-    
-    
-    
-    
-    
-    func updateNoteAtIndexPath(_ indexPath: IndexPath, withText updatedText: String) {
-        let note = notes[indexPath.row]
-        let locationToSave = note.location // Use the existing location
-        
-        getLocationName(from: locationToSave) { locationName in
-            let locationNameToSave: String
-            
-            // Use the existing location name
-            locationNameToSave = note.locationName
-            
-            let imageURLToSave = note.imageURL?.absoluteString ?? ""
-            
-            self.saveNoteToFirestore(noteId: note.id, noteText: updatedText, location: locationToSave, locationName: locationNameToSave, imageURL: imageURLToSave) { [weak self] success in
-                if success {
-                    print("Note saved successfully")
-                    
-                    // Update the local notes array
-                    self?.notes[indexPath.row].text = updatedText
-                    
-                    // Reload the table view
-                    DispatchQueue.main.async {
-                        self?.tableView.reloadRows(at: [indexPath], with: .automatic)
-                    }
-                } else {
-                    print("Error saving note")
-                }
-            }
-        }
-    }
-    
-    
-    
-    
-    //MARK: - Whisper API
-    
-    var isRecording = false // Add this property to keep track of recording state
-    
-    
-    @IBAction func toggleRecording(_ sender: UIButton) {
-        if isRecording {
-            print("Stopping recording...")
-            stopRecordingAndTranscribeAudio()
-            sender.setImage(UIImage(systemName: "mic"), for: .normal)
-        } else {
-            print("Starting recording...")
-            startRecording()
-            sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
-        }
-        isRecording.toggle()
-    }
-    
-    func stopRecordingAndTranscribeAudio() {
-        print("Stopping recording.")
-        audioRecorder.stop()
-        
-        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav")
-        print("Audio file URL: \(audioFilename)")
-        
-        let fileManager = FileManager.default
-        if fileManager.fileExists(atPath: audioFilename.path) {
-            print("File exists")
-        } else {
-            print("File does not exist")
-        }
-        
-        print(audioFilename)
-        
-        APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
-            print("Inside transcribeAudio completion handler") // Debugging line
-            
-            switch result {
-            case .success(let transcription):
-                print("Transcription successful: \(transcription)") // Debugging line
-                
-                DispatchQueue.main.async {
-                    // Create a new note and add it to the notes array
-                    let newNote = Note(id: UUID().uuidString, text: transcription, location: self.selectedLocation ?? CLLocationCoordinate2D(), locationName: "", imageURL: URL(string: ""))
-                    self.notes.append(newNote)
-                    
-                    // Update the UI to insert the new note into the table view
-                    self.tableView.beginUpdates()
-                    self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                    self.tableView.endUpdates()
-                    
-                    // Find the newly added cell and set it as the active cell
-                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                        self.activeNoteCell = newCell
-                        self.activeNoteCell?.note = newNote
-                        self.activeNoteCell?.noteTextField.text = transcription
-                        self.saveNote()  // Call the function to save the note
-                    }
-                }
-            case .failure(let error):
-                print("Error transcribing audio: \(error)") // Debugging line
-                DispatchQueue.main.async {
-                    
-                }
-            }
-        }
-    }
-    
-    
-    
-    func showAlert(withTranscription text: String) {
-        let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:\n\n\(text)", preferredStyle: .alert)
-        let okAction = UIAlertAction(title: "OK", style: .default)
-        alertController.addAction(okAction)
-        self.present(alertController, animated: true, completion: nil)
-    }
-    
-    var audioRecorder: AVAudioRecorder!
-    
-    func startRecording() {
-        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
-        print("Starting recording. Audio filename: \(audioFilename)")
-        
-        let settings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: 44100,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 16,
-            AVLinearPCMIsBigEndianKey: false,
-            AVLinearPCMIsFloatKey: false
-        ]
-        
-        do {
-            audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
-            audioRecorder.record()
-        } catch let error {
-            print("Error starting recording: \(error)")
-        }
-    }
-    
-    
-    
-    
-    func createNewNoteWithTranscription(_ transcription: String) {
-        if let currentLocation = self.currentLocation {
-            let emptyURL = URL(string: "")
-            let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: "", imageURL: emptyURL)
-            notes.append(newNote)
-            selectedNote = newNote
-            
-            DispatchQueue.main.async {
-                self.tableView.beginUpdates()
-                self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                self.tableView.endUpdates()
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                    guard let self = self else { return }
-                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                        newCell.noteTextField.becomeFirstResponder()
-                    }
-                }
-            }
-        }
-    }
-    
-    
+
     //MARK: - VARIABLES & CONSTANTS
     
-    
-    //Loading in Closest location variable true/false on entering placesviewcontroller.
+    let db = Firestore.firestore()
     var hasEnteredPlacesViewController = false
     var expandedNotes: Set<String> = []
     var selectedLocationName: String?
@@ -617,17 +338,12 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     var currentLocationName: String?
     var currentLocationImageURL: URL?
-    
     private let locationManager = CLLocationManager()
     var currentLocation: CLLocationCoordinate2D?
     var selectedNote: Note?
-    
     let progressBar = UIProgressView(progressViewStyle: .default)
-    
     var maxPeople = 3
     var locationUpdateTimer: Timer?
-    
-    // Assuming you have other variables and initializers defined elsewhere
     var notes: [Note] = []  // Replace Note with your Note class
     var notifiedRegions: Set<String> = []
     var notesLoaded = false
@@ -638,71 +354,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     var fetchedLocationKeys: Set<String> = []
     var notesFetched = false
     
-    @IBAction func uploadImageButton(_ sender: UIButton) {
-        // Start jiggling
-        let animation = CAKeyframeAnimation(keyPath: "transform.rotation")
-        animation.values = [-0.3, 0.2, -0.3]  // radians to jiggle back and forth
-        animation.duration = 0.4  // duration of the jiggle
-        animation.repeatCount = 5  // number of jiggles
-        animation.isAdditive = true  // add rotation to the current state
-        ImageLook.layer.add(animation, forKey: "jiggle")
-        
-        // Continue with existing button functionality
-        print("Upload Image button pressed")
-        print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
-        print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
-        
-        let alertController = UIAlertController(title: "Location Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
-        alertController.addTextField()
-        
-        let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self] _ in
-            guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
-                print("Location name is empty.")  // Debugging
-                return
-            }
-            
-            self?.locationNameLabel.text = locationName  // Update current location name
-            self?.processLocationNameAndPresentImagePicker(locationName: locationName)
-        }
-        
-        let skipAction = UIAlertAction(title: "Skip", style: .default) { [weak self] _ in
-            if let currentLocationName = self?.locationNameLabel.text, !currentLocationName.isEmpty {
-                print("Skipping new name. Using current location name: \(currentLocationName)")  // Debugging
-                self?.processLocationNameAndPresentImagePicker(locationName: currentLocationName)
-            } else {
-                print("No current location name to skip to.")  // Debugging
-            }
-        }
-        
-        alertController.addAction(saveAction)
-        alertController.addAction(skipAction)
-        
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-        alertController.addAction(cancelAction)
-        
-        self.present(alertController, animated: true)
-    }
-    
-    func processLocationNameAndPresentImagePicker(locationName: String) {
-        if let selectedLocation = self.selectedLocation {
-            // User had selected a location from PlacesViewController
-            print("Using selected location")  // Debugging
-            self.updateLocationNameLabel(location: selectedLocation)
-            self.presentImagePicker(locationName: locationName)
-        } else if let currentLocation = self.locationManager.location?.coordinate {
-            // No location was selected; use the current location
-            print("Using current location")  // Debugging
-            self.updateLocationNameLabel(location: currentLocation)
-            self.presentImagePicker(locationName: locationName)
-        } else if let currentLocationName = self.currentLocationName, !currentLocationName.isEmpty {
-            // Use the current location name if available
-            print("Using current location name: \(currentLocationName)")  // Debugging
-            self.presentImagePicker(locationName: currentLocationName)
-        }
-        
-        self.updateNotesCountLabel()
-    }
-    
+  
     //Location Button
     @IBAction func LocationButton(_ sender: UIButton?) {
         // Animation to scale down the button
@@ -739,66 +391,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         displayImage(location: location)
         updateNotesCountLabel()
         averageSelectedLocation = location
-    }
-    
-    
-    //MARK: - AI CODE
-    func getAPIKey(named keyname: String, from plistName: String) -> String? {
-        var nsDictionary: NSDictionary?
-        if let path = Bundle.main.path(forResource: plistName, ofType: "plist") {
-            nsDictionary = NSDictionary(contentsOfFile: path)
-        }
-        return nsDictionary?[keyname] as? String
-    }
-    
-    func getAdvice(completion: @escaping (String) -> Void) {
-        guard let apiKey = getAPIKey(named: "OpenAI_API_Key", from: "GoogleService-Info") else {
-            print("API Key not found") // Debugging print statement
-            return
-        }
-        
-        let prompt = "Tell me a unique historical fact with a max of 70 charecters and no quotation marks."
-        
-        let messages = [["role": "system", "content": "You are a Fun Historian"],
-                        ["role": "user", "content": prompt]]
-        
-        let json: [String: Any] = ["model": "gpt-3.5-turbo", "messages": messages]
-        let jsonData = try? JSONSerialization.data(withJSONObject: json)
-        
-        var request = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
-        request.httpMethod = "POST"
-        request.httpBody = jsonData
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            
-            if let error = error {
-                print("Error fetching advice: \(error)") // Debugging print statement
-                return
-            }
-            
-            if let data = data {
-                do {
-                    if let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                       let choices = jsonResponse["choices"] as? [[String: Any]],
-                       let message = choices.first?["message"] as? [String: Any],
-                       let text = message["content"] as? String {
-                        
-                        let advice = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                        print("Advice: \(advice)") // Debugging print statement
-                        completion(advice)
-                    } else {
-                        print("Unexpected response: \(String(data: data, encoding: .utf8) ?? "N/A")") // Debugging print statement
-                    }
-                } catch {
-                    print("JSON Serialization error: \(error)") // Debugging print statement
-                }
-            } else {
-                print("Data is nil") // Debugging print statement
-            }
-        }
-        task.resume()
     }
     
     //MARK: - SAVE AND NEW NOTE CREATION
@@ -1090,7 +682,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
         
         LocationButton(UIButton())
-                
+        
         // Check if app has permissions to record audio
         checkAudioRecordingPermission { [weak self] hasPermission in
             if hasPermission {
@@ -1148,7 +740,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("Automatically starting recording...")
             toggleRecording(UIButton()) // Simulate button press
         }
-    
+        
         // Load notifiedRegions from UserDefaults
         if let savedRegions = UserDefaults.standard.array(forKey: "notifiedRegions") as? [String] {
             notifiedRegions = Set(savedRegions)
@@ -1203,28 +795,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-
-    func createAttributedString(from noteText: String) -> NSAttributedString {
-        let attributedString = NSMutableAttributedString(string: noteText)
-        let regularFont = UIFont.systemFont(ofSize: 19) // Define the regular font
-        let boldFont = UIFont.boldSystemFont(ofSize: 19) // Define the bold font
-        
-        // Define a full range for the regular font to ensure the entire text is initially set to regular
-        let fullRange = NSRange(noteText.startIndex..<noteText.endIndex, in: noteText)
-        attributedString.addAttribute(.font, value: regularFont, range: fullRange)
-        
-        // Find the range for the text before the dash or colon and apply the bold font
-        if let dashRange = noteText.range(of: " - ") {
-            let boldRange = NSRange(noteText.startIndex..<dashRange.lowerBound, in: noteText)
-            attributedString.addAttribute(.font, value: boldFont, range: boldRange)
-        } else if let colonRange = noteText.range(of: ": ") {
-            let boldRange = NSRange(noteText.startIndex..<colonRange.lowerBound, in: noteText)
-            attributedString.addAttribute(.font, value: boldFont, range: boldRange)
-        }
-        
-        return attributedString
-    }
-
+    
     func updateLocationNameLabel(location: CLLocationCoordinate2D) {
         let locationName = fetchLocationNameFor(location: location) ?? "New Place"
         locationNameLabel.text = "\(locationName)"
@@ -1247,7 +818,71 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             notesCountLabel.text = labelText
         }
     }
-    
+    @IBAction func uploadImageButton(_ sender: UIButton) {
+          // Start jiggling
+          let animation = CAKeyframeAnimation(keyPath: "transform.rotation")
+          animation.values = [-0.3, 0.2, -0.3]  // radians to jiggle back and forth
+          animation.duration = 0.4  // duration of the jiggle
+          animation.repeatCount = 5  // number of jiggles
+          animation.isAdditive = true  // add rotation to the current state
+          ImageLook.layer.add(animation, forKey: "jiggle")
+          
+          // Continue with existing button functionality
+          print("Upload Image button pressed")
+          print("Selected Location: \(String(describing: self.selectedLocation))")  // Debugging
+          print("Selected Location Name: \(String(describing: self.selectedLocationName))")  // Debugging
+          
+          let alertController = UIAlertController(title: "Location Name", message: "Please enter a new name for this place:", preferredStyle: .alert)
+          alertController.addTextField()
+          
+          let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self] _ in
+              guard let locationName = alertController.textFields?.first?.text, !locationName.isEmpty else {
+                  print("Location name is empty.")  // Debugging
+                  return
+              }
+              
+              self?.locationNameLabel.text = locationName  // Update current location name
+              self?.processLocationNameAndPresentImagePicker(locationName: locationName)
+          }
+          
+          let skipAction = UIAlertAction(title: "Skip", style: .default) { [weak self] _ in
+              if let currentLocationName = self?.locationNameLabel.text, !currentLocationName.isEmpty {
+                  print("Skipping new name. Using current location name: \(currentLocationName)")  // Debugging
+                  self?.processLocationNameAndPresentImagePicker(locationName: currentLocationName)
+              } else {
+                  print("No current location name to skip to.")  // Debugging
+              }
+          }
+          
+          alertController.addAction(saveAction)
+          alertController.addAction(skipAction)
+          
+          let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+          alertController.addAction(cancelAction)
+          
+          self.present(alertController, animated: true)
+      }
+      
+      func processLocationNameAndPresentImagePicker(locationName: String) {
+          if let selectedLocation = self.selectedLocation {
+              // User had selected a location from PlacesViewController
+              print("Using selected location")  // Debugging
+              self.updateLocationNameLabel(location: selectedLocation)
+              self.presentImagePicker(locationName: locationName)
+          } else if let currentLocation = self.locationManager.location?.coordinate {
+              // No location was selected; use the current location
+              print("Using current location")  // Debugging
+              self.updateLocationNameLabel(location: currentLocation)
+              self.presentImagePicker(locationName: locationName)
+          } else if let currentLocationName = self.currentLocationName, !currentLocationName.isEmpty {
+              // Use the current location name if available
+              print("Using current location name: \(currentLocationName)")  // Debugging
+              self.presentImagePicker(locationName: currentLocationName)
+          }
+          
+          self.updateNotesCountLabel()
+      }
+      
     //MARK: - POP-UPS
     
     func checkNotificationSettings() {
@@ -1283,53 +918,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             delayCounter += 1
         }
     }
-
-    @objc func goalButtonTapped() {
-        let alertController = UIAlertController(title: "Set Goal", message: "\n\n\n\n\n", preferredStyle: .alert)
-        
-        sliderValueLabel = UILabel(frame: CGRect(x: 10, y: 100, width: 250, height: 20)) // Increase y value to create space
-        sliderValueLabel.textAlignment = .center
-        sliderValueLabel.font = UIFont.systemFont(ofSize: 24) // Change font size here
-        
-        let slider = UISlider(frame: CGRect(x: 10, y: 60, width: 250, height: 20))
-        slider.minimumValue = 1
-        slider.maximumValue = 7
-        
-        // Retrieve value from UserDefaults
-        let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
-        slider.value = storedValue != 0 ? Float(storedValue) : Float(maxPeople)
-        
-        slider.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
-        
-        sliderValueLabel.text = "\(Int(slider.value))"
-        
-        alertController.view.addSubview(slider)
-        alertController.view.addSubview(sliderValueLabel)
-        
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
-        let doneAction = UIAlertAction(title: "Done", style: .default) { [weak self] _ in
-            self?.maxPeople = Int(slider.value)
-            
-            // Save value to UserDefaults when Done is pressed
-            UserDefaults.standard.set(self?.maxPeople, forKey: "GoalNumber")
-            
-            //            self?.updateProgressBar()
-        }
-        
-        alertController.addAction(cancelAction)
-        alertController.addAction(doneAction)
-        
-        // Change the size of the alert box
-        let height: NSLayoutConstraint = NSLayoutConstraint(item: alertController.view!, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 200)
-        alertController.view.addConstraint(height)
-        
-        present(alertController, animated: true)
-    }
-
-    @objc func sliderValueChanged(_ sender: UISlider) {
-        let value = Int(sender.value)
-        sliderValueLabel.text = "\(value)"
-    }
+    
     
     //MARK: - UPLOAD PHOTO CODE
     
@@ -1337,30 +926,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         self.navigationController?.isNavigationBarHidden = false
         self.tabBarController?.tabBar.isHidden = false
         sender.view?.removeFromSuperview()
-    }
-    
-    @objc func imageTapped() {
-        guard let image = CurrentPlace.image else { return }
-        
-        let scrollView = UIScrollView(frame: UIScreen.main.bounds)
-        scrollView.delegate = self
-        scrollView.minimumZoomScale = 1.0
-        scrollView.maximumZoomScale = 6.0
-        scrollView.backgroundColor = .black
-        
-        let imageView = UIImageView(image: image)
-        imageView.frame = UIScreen.main.bounds
-        imageView.contentMode = .scaleAspectFit
-        imageView.isUserInteractionEnabled = true
-        
-        scrollView.addSubview(imageView)
-        
-        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissFullscreenImage))
-        scrollView.addGestureRecognizer(tapGestureRecognizer)
-        
-        self.view.addSubview(scrollView)
-        self.navigationController?.isNavigationBarHidden = true
-        self.tabBarController?.tabBar.isHidden = true
     }
     
     func updateImageURLForNotesWithSameLocation(location: CLLocationCoordinate2D, locationName: String, newImageURL: URL) {
@@ -1532,7 +1097,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
     
-    
     func updateNotesWithImageURL(imageURL: URL?, selectedLocation: CLLocationCoordinate2D) {
         for i in 0..<notes.count {
             if notes[i].location.latitude == selectedLocation.latitude && notes[i].location.longitude == selectedLocation.longitude {
@@ -1555,8 +1119,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     //MARK: - IMPORTANT UPDATE L NAME FUNCTION
-    
-    
     //Updates the locationName of the notes that are within a certain distance.
     func updateNotesLocationName(location: CLLocationCoordinate2D, newLocationName: String, completion: @escaping ([Note]) -> Void) {
         let maxDistance: CLLocationDistance = 15 // Adjust this value according to your requirements
@@ -1633,8 +1195,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     //MARK: - DISPLAY IMAGE FUNCTIONS
-    
-    
     func displayImage(location: CLLocationCoordinate2D? = nil, locationName: String? = nil) {
         // Clear the image view
         self.CurrentPlace.image = nil
@@ -1682,6 +1242,558 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
     
+    
+    
+    func updateAllNotesInFirestore(location: CLLocationCoordinate2D, newLocationName: String, newImageURL: URL, completion: @escaping (Bool) -> Void) {
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            completion(false)
+            return
+        }
+        
+        // Fetch all notes for this user and location
+        db.collection("notes")
+            .whereField("user", isEqualTo: userEmail)
+            .whereField("location.latitude", isEqualTo: location.latitude)
+            .whereField("location.longitude", isEqualTo: location.longitude)
+            .getDocuments { querySnapshot, error in
+                if let e = error {
+                    print("There was an issue retrieving data from Firestore: \(e)")
+                    completion(false)
+                    return
+                }
+                
+                for doc in querySnapshot!.documents {
+                    let noteId = doc.documentID
+                    let noteRef = self.db.collection("notes").document(noteId)
+                    
+                    let noteData: [String: Any] = [
+                        "locationName": newLocationName,
+                        "imageURL": newImageURL.absoluteString
+                    ]
+                    
+                    // Update each note
+                    noteRef.updateData(noteData) { err in
+                        if let err = err {
+                            print("There was an issue updating the note in Firestore: \(err)")
+                            completion(false)
+                        } else {
+                            print("Note successfully updated in Firestore")
+                        }
+                    }
+                }
+                completion(true)
+            }
+    }
+    
+    func updateNoteInFirestore(noteID: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
+        let noteRef = db.collection("notes").document(noteID)
+        
+        let noteData: [String: Any] = [
+            "note": noteText,
+            "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
+            "locationName": locationName,
+            "imageURL": imageURL,
+            "timestamp": Timestamp(date: Date())
+        ]
+        
+        noteRef.updateData(noteData) { error in
+            if let error = error {
+                print("There was an issue updating the note in Firestore: \(error)")
+                completion(false)
+            } else {
+                print("Note successfully updated in Firestore")
+                completion(true)
+            }
+        }
+    }
+    
+    
+    func saveNoteToFirestore(noteId: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            completion(false)
+            return
+        }
+        
+        let noteData: [String: Any] = [
+            "user": userEmail,
+            "note": noteText,
+            "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
+            "locationName": locationName,
+            "imageURL": imageURL,
+            "timestamp": Timestamp(date: Date())
+        ]
+        
+        db.collection("notes").document(noteId).setData(noteData) { error in
+            if let error = error {
+                print("Error saving note to Firestore: \(error)")
+                completion(false)
+            } else {
+                print("Note successfully saved to Firestore")
+                completion(true)
+            }
+        }
+    }
+    
+    func fetchLocationNameFor(location: CLLocationCoordinate2D) -> String? {
+        let radius: CLLocationDistance = 15 // The radius in meters to consider notes as nearby
+        let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+        
+        for note in self.notes {
+            let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
+            if currentLocation.distance(from: noteLocation) <= radius {
+                if !note.locationName.isEmpty {
+                    return note.locationName
+                }
+            }
+        }
+        return nil
+    }
+    
+    
+    func loadAndFilterNotes(for location: CLLocationCoordinate2D, goalRadius: Double, completion: @escaping () -> Void) {
+        
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            return
+        }
+        
+        let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+        
+        print("Loading and filtering notes for user: \(userEmail)")
+        
+        db.collection("notes")
+            .whereField("user", isEqualTo: userEmail)
+            .order(by: "timestamp", descending: false)
+            .getDocuments { [weak self] querySnapshot, error in
+                if let e = error {
+                    print("There was an issue retrieving data from Firestore: \(e)")
+                } else {
+                    self?.notes = [] // Clear the existing notes array
+                    if let snapshotDocuments = querySnapshot?.documents {
+                        print("Found \(snapshotDocuments.count) notes")
+                        for doc in snapshotDocuments {
+                            let data = doc.data()
+                            if let noteText = data["note"] as? String,
+                               let locationData = data["location"] as? GeoPoint,
+                               let locationName = data["locationName"] as? String {
+                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                                let emptyURL = URL(string: "")
+                                let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: emptyURL)
+                                
+                                let noteLocation = CLLocation(latitude: newNote.location.latitude, longitude: newNote.location.longitude)
+                                let distance = noteLocation.distance(from: currentLocation)
+                                
+                                if !self!.notesFromAverageLocation.contains(where: { $0.id == newNote.id }) {
+                                    if distance <= goalRadius {
+                                        self?.notes.append(newNote)
+                                    }
+                                }
+                            }
+                            
+                        }
+                        DispatchQueue.main.async {
+                            print("Showing \(self?.notes.count ?? 0) notes based on location")
+                            self?.tableView.reloadData()
+                            
+                            //                            self?.updateProgressBar()
+                            self?.updateLocationNameLabel(location: location) // Update the location name label
+                        }
+                    }
+                }
+            }
+        completion()
+        
+    }
+    
+    //MARK: - LOAD PLACES VIEW CONTROLLER DATA
+    func LoadPlacesNotes(for locationName: String, completion: (() -> Void)? = nil) {
+        print("loadPlacesNotes called")
+        
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            return
+        }
+        
+        print("Loading notes for user: \(userEmail)")
+        
+        db.collection("notes")
+            .whereField("user", isEqualTo: userEmail)
+            .whereField("locationName", isEqualTo: locationName)
+            .order(by: "timestamp", descending: false)
+            .getDocuments { [weak self] querySnapshot, error in
+                if let e = error {
+                    print("There was an issue retrieving data from Firestore: \(e)")
+                } else {
+                    self?.notes = [] // Clear the existing notes array
+                    
+                    if let snapshotDocuments = querySnapshot?.documents {
+                        print("Found \(snapshotDocuments.count) notes")
+                        for doc in snapshotDocuments {
+                            let data = doc.data()
+                            if let noteText = data["note"] as? String,
+                               let locationData = data["location"] as? GeoPoint,
+                               let locationName = data["locationName"] as? String,
+                               !noteText.isEmpty {
+                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                                let imageURLString = data["imageURL"] as? String
+                                let imageURL = URL(string: imageURLString ?? "")
+                                let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: imageURL)
+                                
+                                // Store this location as the selected location
+                                self?.selectedLocation = location
+                                
+                                self?.notes.append(newNote)
+                            }
+                        }
+                        
+                        DispatchQueue.main.async {
+                            print("Showing \(self?.notes.count ?? 0) notes based on location")
+                            self?.tableView.reloadData()
+                            self?.locationNameLabel.text = "\(locationName)"
+                            self?.currentLocationName = locationName
+                            // Call completion here if not dependent on the image URL fetching
+                            completion?()
+                            //                            self?.updateProgressBar()
+                            // Update the location name label
+                            self?.locationNameLabel.text = "\(locationName)"
+                            self?.currentLocationName = locationName
+                            self?.fetchImageURLFor(locationName: locationName) { imageURL in
+                                self?.currentLocationImageURL = imageURL
+                                self?.updateNotesImageURLGeoLocation(imageURL: self?.currentLocationImageURL ?? nil)
+                            }
+                        }
+                    }
+                }
+            }
+    }
+    
+    func fetchImageURLFor(locationName: String, completion: @escaping (URL?) -> Void) {
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User email not found")
+            completion(nil)
+            return
+        }
+        
+        db.collection("notes")
+            .whereField("user", isEqualTo: userEmail)
+            .whereField("locationName", isEqualTo: locationName)
+            .getDocuments { querySnapshot, error in
+                if let e = error {
+                    print("There was an issue retrieving data from Firestore: \(e)")
+                    completion(nil)
+                } else {
+                    if let snapshotDocuments = querySnapshot?.documents {
+                        for doc in snapshotDocuments {
+                            let data = doc.data()
+                            if let imageURLString = data["imageURL"] as? String,
+                               let imageURL = URL(string: imageURLString) {
+                                completion(imageURL)
+                                return
+                            }
+                        }
+                    }
+                    completion(nil)
+                }
+            }
+    }
+    
+    func updateViewWithNote(_ note: Note) {
+        // Set current location
+        self.currentLocation = note.location
+        
+        // Call the functions to update the image view, location name label, and notes count label
+        displayImage(location: note.location)
+        updateLocationNameLabel(location: note.location)
+        updateNotesCountLabel()
+        
+        // Update the table view
+        self.tableView.reloadData()
+    }
+    
+    
+    
+    
+    func updateNoteAtIndexPath(_ indexPath: IndexPath, withText updatedText: String) {
+        let note = notes[indexPath.row]
+        let locationToSave = note.location // Use the existing location
+        
+        getLocationName(from: locationToSave) { locationName in
+            let locationNameToSave: String
+            
+            // Use the existing location name
+            locationNameToSave = note.locationName
+            
+            let imageURLToSave = note.imageURL?.absoluteString ?? ""
+            
+            self.saveNoteToFirestore(noteId: note.id, noteText: updatedText, location: locationToSave, locationName: locationNameToSave, imageURL: imageURLToSave) { [weak self] success in
+                if success {
+                    print("Note saved successfully")
+                    
+                    // Update the local notes array
+                    self?.notes[indexPath.row].text = updatedText
+                    
+                    // Reload the table view
+                    DispatchQueue.main.async {
+                        self?.tableView.reloadRows(at: [indexPath], with: .automatic)
+                    }
+                } else {
+                    print("Error saving note")
+                }
+            }
+        }
+    }
+    
+    
+    
+    
+    //MARK: - Whisper API
+    
+    var isRecording = false // Add this property to keep track of recording state
+    
+    
+    @IBAction func toggleRecording(_ sender: UIButton) {
+        if isRecording {
+            print("Stopping recording...")
+            stopRecordingAndTranscribeAudio()
+            sender.setImage(UIImage(systemName: "mic"), for: .normal)
+        } else {
+            print("Starting recording...")
+            startRecording()
+            sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
+        }
+        isRecording.toggle()
+    }
+    
+    func stopRecordingAndTranscribeAudio() {
+        print("Stopping recording.")
+        audioRecorder.stop()
+        
+        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav")
+        print("Audio file URL: \(audioFilename)")
+        
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: audioFilename.path) {
+            print("File exists")
+        } else {
+            print("File does not exist")
+        }
+        
+        print(audioFilename)
+        
+        APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
+            print("Inside transcribeAudio completion handler") // Debugging line
+            
+            switch result {
+            case .success(let transcription):
+                print("Transcription successful: \(transcription)") // Debugging line
+                
+                DispatchQueue.main.async {
+                    // Create a new note and add it to the notes array
+                    let newNote = Note(id: UUID().uuidString, text: transcription, location: self.selectedLocation ?? CLLocationCoordinate2D(), locationName: "", imageURL: URL(string: ""))
+                    self.notes.append(newNote)
+                    
+                    // Update the UI to insert the new note into the table view
+                    self.tableView.beginUpdates()
+                    self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                    self.tableView.endUpdates()
+                    
+                    // Find the newly added cell and set it as the active cell
+                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                        self.activeNoteCell = newCell
+                        self.activeNoteCell?.note = newNote
+                        self.activeNoteCell?.noteTextField.text = transcription
+                        self.saveNote()  // Call the function to save the note
+                    }
+                }
+            case .failure(let error):
+                print("Error transcribing audio: \(error)") // Debugging line
+                DispatchQueue.main.async {
+                    
+                }
+            }
+        }
+    }
+    
+    
+    
+    func showAlert(withTranscription text: String) {
+        let alertController = UIAlertController(title: "Transcription", message: "Here is the transcription of your audio:\n\n\(text)", preferredStyle: .alert)
+        let okAction = UIAlertAction(title: "OK", style: .default)
+        alertController.addAction(okAction)
+        self.present(alertController, animated: true, completion: nil)
+    }
+    
+    var audioRecorder: AVAudioRecorder!
+    
+    func startRecording() {
+        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
+        print("Starting recording. Audio filename: \(audioFilename)")
+        
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: 44100,
+            AVNumberOfChannelsKey: 1,
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsFloatKey: false
+        ]
+        
+        do {
+            audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
+            audioRecorder.record()
+        } catch let error {
+            print("Error starting recording: \(error)")
+        }
+    }
+    
+    func createNewNoteWithTranscription(_ transcription: String) {
+        if let currentLocation = self.currentLocation {
+            let emptyURL = URL(string: "")
+            let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: "", imageURL: emptyURL)
+            notes.append(newNote)
+            selectedNote = newNote
+            
+            DispatchQueue.main.async {
+                self.tableView.beginUpdates()
+                self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                self.tableView.endUpdates()
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                    guard let self = self else { return }
+                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                        newCell.noteTextField.becomeFirstResponder()
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    private func setupRoundedImageView() {
+        // Apply corner radius
+        CurrentPlace?.layer.cornerRadius = 12
+        CurrentPlace?.clipsToBounds = true
+        
+        // Apply border
+        CurrentPlace?.layer.borderWidth = 3
+        CurrentPlace?.layer.borderColor = UIColor.black.cgColor
+        
+        // Apply background color
+        CurrentPlace?.backgroundColor = UIColor.white.withAlphaComponent(0.5)
+        
+        // Set the content mode to ensure the image is scaled correctly in the UIImageView.
+        CurrentPlace?.contentMode = .scaleAspectFill
+    }
+    
+    func resizeAndCrop(image: UIImage, targetSize: CGSize) -> UIImage {
+        let size = image.size
+        let widthRatio = targetSize.width / size.width
+        let heightRatio = targetSize.height / size.height
+        
+        let ratio = max(widthRatio, heightRatio)
+        let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
+        let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
+        
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+        image.draw(in: rect)
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        guard let resized = resizedImage else { return image }
+        
+        let cropRect = CGRect(x: (resized.size.width - targetSize.width) / 2,
+                              y: (resized.size.height - targetSize.height) / 2,
+                              width: targetSize.width, height: targetSize.height)
+        
+        guard let cgImage = resized.cgImage?.cropping(to: cropRect) else { return image }
+        
+        // Set the image in the UIImageView.
+        CurrentPlace?.image = UIImage(cgImage: cgImage)
+        
+        return UIImage(cgImage: cgImage)
+    }
+    
+    
+    
+    //Phone Doc Function for Image Picker
+    func getDocumentsDirectory() -> URL {
+        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+        return paths[0]
+    }
+    
+    
+    
+    @objc func goalButtonTapped() {
+        let alertController = UIAlertController(title: "Set Goal", message: "\n\n\n\n\n", preferredStyle: .alert)
+        
+        sliderValueLabel = UILabel(frame: CGRect(x: 10, y: 100, width: 250, height: 20)) // Increase y value to create space
+        sliderValueLabel.textAlignment = .center
+        sliderValueLabel.font = UIFont.systemFont(ofSize: 24) // Change font size here
+        
+        let slider = UISlider(frame: CGRect(x: 10, y: 60, width: 250, height: 20))
+        slider.minimumValue = 1
+        slider.maximumValue = 7
+        
+        // Retrieve value from UserDefaults
+        let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
+        slider.value = storedValue != 0 ? Float(storedValue) : Float(maxPeople)
+        
+        slider.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
+        
+        sliderValueLabel.text = "\(Int(slider.value))"
+        
+        alertController.view.addSubview(slider)
+        alertController.view.addSubview(sliderValueLabel)
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        let doneAction = UIAlertAction(title: "Done", style: .default) { [weak self] _ in
+            self?.maxPeople = Int(slider.value)
+            
+            // Save value to UserDefaults when Done is pressed
+            UserDefaults.standard.set(self?.maxPeople, forKey: "GoalNumber")
+            
+            //            self?.updateProgressBar()
+        }
+        
+        alertController.addAction(cancelAction)
+        alertController.addAction(doneAction)
+        
+        // Change the size of the alert box
+        let height: NSLayoutConstraint = NSLayoutConstraint(item: alertController.view!, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 200)
+        alertController.view.addConstraint(height)
+        
+        present(alertController, animated: true)
+    }
+    
+    @objc func sliderValueChanged(_ sender: UISlider) {
+        let value = Int(sender.value)
+        sliderValueLabel.text = "\(value)"
+    }
+    
+    func createAttributedString(from noteText: String) -> NSAttributedString {
+        let attributedString = NSMutableAttributedString(string: noteText)
+        let regularFont = UIFont.systemFont(ofSize: 19) // Define the regular font
+        let boldFont = UIFont.boldSystemFont(ofSize: 19) // Define the bold font
+        
+        // Define a full range for the regular font to ensure the entire text is initially set to regular
+        let fullRange = NSRange(noteText.startIndex..<noteText.endIndex, in: noteText)
+        attributedString.addAttribute(.font, value: regularFont, range: fullRange)
+        
+        // Find the range for the text before the dash or colon and apply the bold font
+        if let dashRange = noteText.range(of: " - ") {
+            let boldRange = NSRange(noteText.startIndex..<dashRange.lowerBound, in: noteText)
+            attributedString.addAttribute(.font, value: boldFont, range: boldRange)
+        } else if let colonRange = noteText.range(of: ": ") {
+            let boldRange = NSRange(noteText.startIndex..<colonRange.lowerBound, in: noteText)
+            attributedString.addAttribute(.font, value: boldFont, range: boldRange)
+        }
+        
+        return attributedString
+    }
     
     func setDefaultImageIfNil() {
         if self.CurrentPlace.image == nil {
@@ -1850,7 +1962,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             print("No image selected.")
         }
     }
-
+    
     // Image Picker iOS
     func presentImagePicker(locationName: String) {
         // Store the location name for later use
@@ -1900,8 +2012,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 print("Neither selected location nor user location is available.")
             }
         }
-        
-        
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
         
         alertController.addAction(cameraAction)
@@ -1913,326 +2023,167 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     //END LOCATION STUFF
-    private func setupRoundedImageView() {
-        // Apply corner radius
-        CurrentPlace?.layer.cornerRadius = 12
-        CurrentPlace?.clipsToBounds = true
-        
-        // Apply border
-        CurrentPlace?.layer.borderWidth = 3
-        CurrentPlace?.layer.borderColor = UIColor.black.cgColor
-        
-        // Apply background color
-        CurrentPlace?.backgroundColor = UIColor.white.withAlphaComponent(0.5)
-        
-        // Set the content mode to ensure the image is scaled correctly in the UIImageView.
-        CurrentPlace?.contentMode = .scaleAspectFill
+    
+    //MARK: - AI CODE
+    func getAPIKey(named keyname: String, from plistName: String) -> String? {
+        var nsDictionary: NSDictionary?
+        if let path = Bundle.main.path(forResource: plistName, ofType: "plist") {
+            nsDictionary = NSDictionary(contentsOfFile: path)
+        }
+        return nsDictionary?[keyname] as? String
     }
     
-    func resizeAndCrop(image: UIImage, targetSize: CGSize) -> UIImage {
-        let size = image.size
-        let widthRatio = targetSize.width / size.width
-        let heightRatio = targetSize.height / size.height
-        
-        let ratio = max(widthRatio, heightRatio)
-        let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
-        let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
-        
-        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
-        image.draw(in: rect)
-        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        guard let resized = resizedImage else { return image }
-        
-        let cropRect = CGRect(x: (resized.size.width - targetSize.width) / 2,
-                              y: (resized.size.height - targetSize.height) / 2,
-                              width: targetSize.width, height: targetSize.height)
-        
-        guard let cgImage = resized.cgImage?.cropping(to: cropRect) else { return image }
-        
-        // Set the image in the UIImageView.
-        CurrentPlace?.image = UIImage(cgImage: cgImage)
-        
-        return UIImage(cgImage: cgImage)
-    }
-    
-    
-    
-    //Phone Doc Function for Image Picker
-    func getDocumentsDirectory() -> URL {
-        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        return paths[0]
-    }
-    
-    func updateAllNotesInFirestore(location: CLLocationCoordinate2D, newLocationName: String, newImageURL: URL, completion: @escaping (Bool) -> Void) {
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User email not found")
-            completion(false)
+    func getAdvice(completion: @escaping (String) -> Void) {
+        guard let apiKey = getAPIKey(named: "OpenAI_API_Key", from: "GoogleService-Info") else {
+            print("API Key not found") // Debugging print statement
             return
         }
         
-        // Fetch all notes for this user and location
-        db.collection("notes")
-            .whereField("user", isEqualTo: userEmail)
-            .whereField("location.latitude", isEqualTo: location.latitude)
-            .whereField("location.longitude", isEqualTo: location.longitude)
-            .getDocuments { querySnapshot, error in
-                if let e = error {
-                    print("There was an issue retrieving data from Firestore: \(e)")
-                    completion(false)
-                    return
-                }
-                
-                for doc in querySnapshot!.documents {
-                    let noteId = doc.documentID
-                    let noteRef = self.db.collection("notes").document(noteId)
-                    
-                    let noteData: [String: Any] = [
-                        "locationName": newLocationName,
-                        "imageURL": newImageURL.absoluteString
-                    ]
-                    
-                    // Update each note
-                    noteRef.updateData(noteData) { err in
-                        if let err = err {
-                            print("There was an issue updating the note in Firestore: \(err)")
-                            completion(false)
-                        } else {
-                            print("Note successfully updated in Firestore")
-                        }
-                    }
-                }
-                completion(true)
-            }
-    }
-    
-    func updateNoteInFirestore(noteID: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
-        let noteRef = db.collection("notes").document(noteID)
+        let prompt = "Tell me a unique historical fact with a max of 70 charecters and no quotation marks."
         
-        let noteData: [String: Any] = [
-            "note": noteText,
-            "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
-            "locationName": locationName,
-            "imageURL": imageURL,
-            "timestamp": Timestamp(date: Date())
-        ]
+        let messages = [["role": "system", "content": "You are a Fun Historian"],
+                        ["role": "user", "content": prompt]]
         
-        noteRef.updateData(noteData) { error in
+        let json: [String: Any] = ["model": "gpt-3.5-turbo", "messages": messages]
+        let jsonData = try? JSONSerialization.data(withJSONObject: json)
+        
+        var request = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
+        request.httpMethod = "POST"
+        request.httpBody = jsonData
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            
             if let error = error {
-                print("There was an issue updating the note in Firestore: \(error)")
-                completion(false)
-            } else {
-                print("Note successfully updated in Firestore")
-                completion(true)
+                print("Error fetching advice: \(error)") // Debugging print statement
+                return
             }
-        }
-    }
-    
-    
-    func saveNoteToFirestore(noteId: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, imageURL: String, completion: @escaping (Bool) -> Void) {
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User email not found")
-            completion(false)
-            return
-        }
-        
-        let noteData: [String: Any] = [
-            "user": userEmail,
-            "note": noteText,
-            "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
-            "locationName": locationName,
-            "imageURL": imageURL,
-            "timestamp": Timestamp(date: Date())
-        ]
-        
-        db.collection("notes").document(noteId).setData(noteData) { error in
-            if let error = error {
-                print("Error saving note to Firestore: \(error)")
-                completion(false)
-            } else {
-                print("Note successfully saved to Firestore")
-                completion(true)
-            }
-        }
-    }
-    
-    func fetchLocationNameFor(location: CLLocationCoordinate2D) -> String? {
-        let radius: CLLocationDistance = 15 // The radius in meters to consider notes as nearby
-        let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
-        
-        for note in self.notes {
-            let noteLocation = CLLocation(latitude: note.location.latitude, longitude: note.location.longitude)
-            if currentLocation.distance(from: noteLocation) <= radius {
-                if !note.locationName.isEmpty {
-                    return note.locationName
-                }
-            }
-        }
-        return nil
-    }
-    
-    
-    func loadAndFilterNotes(for location: CLLocationCoordinate2D, goalRadius: Double, completion: @escaping () -> Void) {
-        
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User email not found")
-            return
-        }
-        
-        let currentLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
-        
-        print("Loading and filtering notes for user: \(userEmail)")
-        
-        db.collection("notes")
-            .whereField("user", isEqualTo: userEmail)
-            .order(by: "timestamp", descending: false)
-            .getDocuments { [weak self] querySnapshot, error in
-                if let e = error {
-                    print("There was an issue retrieving data from Firestore: \(e)")
-                } else {
-                    self?.notes = [] // Clear the existing notes array
-                    if let snapshotDocuments = querySnapshot?.documents {
-                        print("Found \(snapshotDocuments.count) notes")
-                        for doc in snapshotDocuments {
-                            let data = doc.data()
-                            if let noteText = data["note"] as? String,
-                               let locationData = data["location"] as? GeoPoint,
-                               let locationName = data["locationName"] as? String {
-                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-                                let emptyURL = URL(string: "")
-                                let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: emptyURL)
-                                
-                                let noteLocation = CLLocation(latitude: newNote.location.latitude, longitude: newNote.location.longitude)
-                                let distance = noteLocation.distance(from: currentLocation)
-                                
-                                if !self!.notesFromAverageLocation.contains(where: { $0.id == newNote.id }) {
-                                    if distance <= goalRadius {
-                                        self?.notes.append(newNote)
-                                    }
-                                }
-                            }
-                            
-                        }
-                        DispatchQueue.main.async {
-                            print("Showing \(self?.notes.count ?? 0) notes based on location")
-                            self?.tableView.reloadData()
-                            
-                            //                            self?.updateProgressBar()
-                            self?.updateLocationNameLabel(location: location) // Update the location name label
-                        }
-                    }
-                }
-            }
-        completion()
-        
-    }
-
-    //MARK: - LOAD PLACES VIEW CONTROLLER DATA
-    func LoadPlacesNotes(for locationName: String, completion: (() -> Void)? = nil) {
-        print("loadPlacesNotes called")
-        
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User email not found")
-            return
-        }
-        
-        print("Loading notes for user: \(userEmail)")
-        
-        db.collection("notes")
-            .whereField("user", isEqualTo: userEmail)
-            .whereField("locationName", isEqualTo: locationName)
-            .order(by: "timestamp", descending: false)
-            .getDocuments { [weak self] querySnapshot, error in
-                if let e = error {
-                    print("There was an issue retrieving data from Firestore: \(e)")
-                } else {
-                    self?.notes = [] // Clear the existing notes array
-                    
-                    if let snapshotDocuments = querySnapshot?.documents {
-                        print("Found \(snapshotDocuments.count) notes")
-                        for doc in snapshotDocuments {
-                            let data = doc.data()
-                            if let noteText = data["note"] as? String,
-                               let locationData = data["location"] as? GeoPoint,
-                               let locationName = data["locationName"] as? String,
-                               !noteText.isEmpty {
-                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-                                let imageURLString = data["imageURL"] as? String
-                                let imageURL = URL(string: imageURLString ?? "")
-                                let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: imageURL)
-                                
-                                // Store this location as the selected location
-                                self?.selectedLocation = location
-                                
-                                self?.notes.append(newNote)
-                            }
-                        }
+            
+            if let data = data {
+                do {
+                    if let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                       let choices = jsonResponse["choices"] as? [[String: Any]],
+                       let message = choices.first?["message"] as? [String: Any],
+                       let text = message["content"] as? String {
                         
-                        DispatchQueue.main.async {
-                            print("Showing \(self?.notes.count ?? 0) notes based on location")
-                            self?.tableView.reloadData()
-                            self?.locationNameLabel.text = "\(locationName)"
-                            self?.currentLocationName = locationName
-                            // Call completion here if not dependent on the image URL fetching
-                            completion?()
-                            //                            self?.updateProgressBar()
-                            // Update the location name label
-                            self?.locationNameLabel.text = "\(locationName)"
-                            self?.currentLocationName = locationName
-                            self?.fetchImageURLFor(locationName: locationName) { imageURL in
-                                self?.currentLocationImageURL = imageURL
-                                self?.updateNotesImageURLGeoLocation(imageURL: self?.currentLocationImageURL ?? nil)
-                            }
-                        }
+                        let advice = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                        print("Advice: \(advice)") // Debugging print statement
+                        completion(advice)
+                    } else {
+                        print("Unexpected response: \(String(data: data, encoding: .utf8) ?? "N/A")") // Debugging print statement
                     }
+                } catch {
+                    print("JSON Serialization error: \(error)") // Debugging print statement
                 }
+            } else {
+                print("Data is nil") // Debugging print statement
             }
+        }
+        task.resume()
     }
 
-    func fetchImageURLFor(locationName: String, completion: @escaping (URL?) -> Void) {
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User email not found")
-            completion(nil)
-            return
+    
+    //MARK: - Swipe Right Expand Note
+    
+    func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let editAction = UIContextualAction(style: .normal, title: "Expand") { [weak self] (_, _, completionHandler) in
+            self?.editNoteAtIndexPath(indexPath)
+            completionHandler(true)
         }
-        
-        db.collection("notes")
-            .whereField("user", isEqualTo: userEmail)
-            .whereField("locationName", isEqualTo: locationName)
-            .getDocuments { querySnapshot, error in
-                if let e = error {
-                    print("There was an issue retrieving data from Firestore: \(e)")
-                    completion(nil)
-                } else {
-                    if let snapshotDocuments = querySnapshot?.documents {
-                        for doc in snapshotDocuments {
-                            let data = doc.data()
-                            if let imageURLString = data["imageURL"] as? String,
-                               let imageURL = URL(string: imageURLString) {
-                                completion(imageURL)
-                                return
-                            }
-                        }
-                    }
-                    completion(nil)
-                }
-            }
+        editAction.backgroundColor = #colorLiteral(red: 0.2196078449, green: 0.007843137719, blue: 0.8549019694, alpha: 1) // Choose your color
+        let configuration = UISwipeActionsConfiguration(actions: [editAction])
+        return configuration
     }
     
-    func updateViewWithNote(_ note: Note) {
-        // Set current location
-        self.currentLocation = note.location
+    func editNoteAtIndexPath(_ indexPath: IndexPath) {
+        let note = notes[indexPath.row]
         
-        // Call the functions to update the image view, location name label, and notes count label
-        displayImage(location: note.location)
-        updateLocationNameLabel(location: note.location)
-        updateNotesCountLabel()
+        // Create the alert controller
+        let alertController = UIAlertController(title: "Edit Note", message: "\n\n\n\n\n\n\n\n\n", preferredStyle: .alert)
+        alertController.view.layer.cornerRadius = 15
         
-        // Update the table view
-        self.tableView.reloadData()
+        alertController.view.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1) // Set the background color
+        alertController.view.tintColor = UIColor.black  // Replace UIColor.red with your desired color
+        
+        
+        // Create the text field
+        let textField = UITextView(frame: CGRect(x: 15, y: 55, width: 240, height: 240))
+        textField.font = UIFont.systemFont(ofSize: 20)
+        textField.text = note.text
+        textField.backgroundColor = UIColor.clear // Set the background to clear
+        
+        alertController.view.addSubview(textField)
+        
+        // Create the actions
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        
+        let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
+            if let updatedText = textField.text {
+                self.updateNoteAtIndexPath(indexPath, withText: updatedText)
+            }
+        }
+        
+        // Add the actions
+        alertController.addAction(cancelAction)
+        alertController.addAction(saveAction)
+        
+        // Present the alert controller
+        self.present(alertController, animated: true, completion: {
+            textField.becomeFirstResponder()
+        })
     }
-
+    
+    func determineTransportationMode(from speed: CLLocationSpeed) -> String {
+        // Speed is in meters per second
+        switch speed {
+        case 0..<4: // Less than 4 m/s (~14.4 km/h)
+            return "walking"
+        case 4..<15: // Between 4 m/s and 15 m/s (~14.4 to ~54 km/h)
+            return "biking"
+        default: // Greater than 15 m/s (~54 km/h)
+            return "driving"
+        }
+    }
+    
+    func shouldRefreshGeofences(for modeOfTransport: String, lastLocation: CLLocationCoordinate2D, currentLocation: CLLocationCoordinate2D) -> Bool {
+        let lastCLLocation = CLLocation(latitude: lastLocation.latitude, longitude: lastLocation.longitude)
+        let currentCLLocation = CLLocation(latitude: currentLocation.latitude, longitude: currentLocation.longitude)
+        let distance = currentCLLocation.distance(from: lastCLLocation)
+        
+        let thresholds: [String: CLLocationDistance] = [
+            "walking": 200, // meters
+            "biking": 500,
+            "driving": 1000
+        ]
+        
+        return distance > (thresholds[modeOfTransport] ?? 500) // Default to biking threshold if mode is unknown
+    }
+    
+    @objc func imageTapped() {
+        guard let image = CurrentPlace.image else { return }
+        
+        let scrollView = UIScrollView(frame: UIScreen.main.bounds)
+        scrollView.delegate = self
+        scrollView.minimumZoomScale = 1.0
+        scrollView.maximumZoomScale = 6.0
+        scrollView.backgroundColor = .black
+        
+        let imageView = UIImageView(image: image)
+        imageView.frame = UIScreen.main.bounds
+        imageView.contentMode = .scaleAspectFit
+        imageView.isUserInteractionEnabled = true
+        
+        scrollView.addSubview(imageView)
+        
+        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissFullscreenImage))
+        scrollView.addGestureRecognizer(tapGestureRecognizer)
+        
+        self.view.addSubview(scrollView)
+        self.navigationController?.isNavigationBarHidden = true
+        self.tabBarController?.tabBar.isHidden = true
+    }
+    
 }
 
 
