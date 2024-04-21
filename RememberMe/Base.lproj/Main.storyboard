@@ -404,34 +404,8 @@
                     <view key="view" contentMode="scaleToFill" id="r8P-73-Z5k">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <navigationBar opaque="NO" contentMode="scaleToFill" translucent="NO" translatesAutoresizingMaskIntoConstraints="NO" id="s9C-uw-pl8">
-                                <rect key="frame" x="0.0" y="59" width="393" height="44"/>
-                                <color key="barTintColor" red="0.074509803920000006" green="0.98039215690000003" blue="0.90196078430000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <items>
-                                    <navigationItem id="lCR-AK-GT4">
-                                        <centerItemGroups>
-                                            <barButtonItemGroup customizationDisposition="fixed" id="uXI-pj-3xi">
-                                                <barButtonItems>
-                                                    <barButtonItem title="Item" id="FH2-MB-UqA">
-                                                        <connections>
-                                                            <action selector="LocationOnOff:" destination="4YA-um-3Pa" id="dcS-v9-kAY"/>
-                                                        </connections>
-                                                    </barButtonItem>
-                                                </barButtonItems>
-                                            </barButtonItemGroup>
-                                        </centerItemGroups>
-                                    </navigationItem>
-                                </items>
-                            </navigationBar>
-                        </subviews>
                         <viewLayoutGuide key="safeArea" id="cAv-iL-Nwz"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                        <constraints>
-                            <constraint firstItem="s9C-uw-pl8" firstAttribute="bottom" secondItem="cAv-iL-Nwz" secondAttribute="top" id="4Fa-bQ-AwE"/>
-                            <constraint firstAttribute="trailing" secondItem="s9C-uw-pl8" secondAttribute="trailing" id="WDm-X7-43R"/>
-                            <constraint firstItem="s9C-uw-pl8" firstAttribute="leading" secondItem="r8P-73-Z5k" secondAttribute="leading" id="ZPe-ou-jhR"/>
-                        </constraints>
                     </view>
                     <extendedEdge key="edgesForExtendedLayout" bottom="YES"/>
                     <tabBarItem key="tabBarItem" title="Names" image="person.text.rectangle.fill" catalog="system" id="OSO-27-sYu"/>
@@ -448,32 +422,6 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <navigationBar opaque="NO" contentMode="scaleToFill" translucent="NO" translatesAutoresizingMaskIntoConstraints="NO" id="KLL-aq-4zM">
-                                <rect key="frame" x="-1" y="59" width="393" height="44"/>
-                                <color key="barTintColor" red="0.074509803920000006" green="0.98039215690000003" blue="0.90196078430000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <items>
-                                    <navigationItem id="c4o-Wk-9vH">
-                                        <barButtonItem key="leftBarButtonItem" style="plain" id="4xz-hE-Kdf">
-                                            <button key="customView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" id="1ob-Ql-SXz">
-                                                <rect key="frame" x="16" y="4.6666666666666679" width="74" height="35"/>
-                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                                <state key="normal" title="Button"/>
-                                                <buttonConfiguration key="configuration" style="plain" title="Delete"/>
-                                                <connections>
-                                                    <action selector="deleteAccountButtonTapped:" destination="xbb-iS-Kw8" eventType="touchUpInside" id="e89-Tb-q2X"/>
-                                                </connections>
-                                            </button>
-                                        </barButtonItem>
-                                        <barButtonItem key="rightBarButtonItem" title="Log Out" id="SJu-25-B3d">
-                                            <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                            <connections>
-                                                <action selector="LogOutButton:" destination="xbb-iS-Kw8" id="U0e-g0-Kld"/>
-                                            </connections>
-                                        </barButtonItem>
-                                    </navigationItem>
-                                </items>
-                            </navigationBar>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="jellydev" translatesAutoresizingMaskIntoConstraints="NO" id="eNI-Vd-Khi">
                                 <rect key="frame" x="63" y="103" width="265" height="370"/>
                                 <constraints>
@@ -506,19 +454,44 @@
                                             <rect key="frame" x="0.0" y="0.0" width="241" height="43.666667938232422"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </tableViewCellContentView>
-                                        <color key="backgroundColor" red="0.074509803920000006" green="0.98039215690000003" blue="0.90196078430000004" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                     </tableViewCell>
                                 </prototypes>
                             </tableView>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="UQm-ni-Ym6">
-                                <rect key="frame" x="327" y="481" width="50" height="35"/>
+                                <rect key="frame" x="327.33333333333331" y="481" width="49.666666666666686" height="35"/>
                                 <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" image="person.crop.circle.badge.plus.fill" catalog="system" title=""/>
+                                <buttonConfiguration key="configuration" style="plain" image="person.crop.circle.fill.badge.plus" catalog="system" title=""/>
                                 <connections>
                                     <action selector="addFriendButtonTapped:" destination="xbb-iS-Kw8" eventType="touchUpInside" id="wzj-ae-bap"/>
                                 </connections>
                             </button>
+                            <navigationBar opaque="NO" contentMode="scaleToFill" translucent="NO" translatesAutoresizingMaskIntoConstraints="NO" id="KLL-aq-4zM">
+                                <rect key="frame" x="-1" y="49" width="393" height="44"/>
+                                <color key="barTintColor" red="0.074509803920000006" green="0.98039215690000003" blue="0.90196078430000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <items>
+                                    <navigationItem id="c4o-Wk-9vH">
+                                        <barButtonItem key="leftBarButtonItem" style="plain" id="4xz-hE-Kdf">
+                                            <button key="customView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" id="1ob-Ql-SXz">
+                                                <rect key="frame" x="16" y="4.6666666666666679" width="74" height="35"/>
+                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                <state key="normal" title="Button"/>
+                                                <buttonConfiguration key="configuration" style="plain" title="Delete"/>
+                                                <connections>
+                                                    <action selector="deleteAccountButtonTapped:" destination="xbb-iS-Kw8" eventType="touchUpInside" id="e89-Tb-q2X"/>
+                                                </connections>
+                                            </button>
+                                        </barButtonItem>
+                                        <barButtonItem key="rightBarButtonItem" title="Log Out" id="SJu-25-B3d">
+                                            <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                            <connections>
+                                                <action selector="LogOutButton:" destination="xbb-iS-Kw8" id="U0e-g0-Kld"/>
+                                            </connections>
+                                        </barButtonItem>
+                                    </navigationItem>
+                                </items>
+                            </navigationBar>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="v78-BO-IR1"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -526,7 +499,7 @@
                             <constraint firstItem="6RE-an-yYf" firstAttribute="top" secondItem="eNI-Vd-Khi" secondAttribute="bottom" constant="8" id="7T8-1H-AX1"/>
                             <constraint firstItem="ZqA-Pk-kuH" firstAttribute="top" secondItem="UQm-ni-Ym6" secondAttribute="bottom" constant="19" id="AbE-yU-uTh"/>
                             <constraint firstItem="ZqA-Pk-kuH" firstAttribute="centerX" secondItem="KLL-aq-4zM" secondAttribute="centerX" id="C4b-RZ-STn"/>
-                            <constraint firstItem="eNI-Vd-Khi" firstAttribute="top" secondItem="KLL-aq-4zM" secondAttribute="bottom" id="L6X-aB-4qD"/>
+                            <constraint firstItem="eNI-Vd-Khi" firstAttribute="top" secondItem="KLL-aq-4zM" secondAttribute="bottom" constant="10" id="L6X-aB-4qD"/>
                             <constraint firstItem="UQm-ni-Ym6" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="v78-BO-IR1" secondAttribute="leading" symbolic="YES" id="Mie-RT-Q68"/>
                             <constraint firstItem="eNI-Vd-Khi" firstAttribute="leading" secondItem="v78-BO-IR1" secondAttribute="leading" constant="63" id="N0k-WR-dzC"/>
                             <constraint firstItem="v78-BO-IR1" firstAttribute="bottom" secondItem="6RE-an-yYf" secondAttribute="bottom" constant="193" id="O1k-gd-CP6"/>
@@ -671,7 +644,7 @@
         <image name="jellydev" width="2161" height="3260"/>
         <image name="location.square.fill" catalog="system" width="128" height="114"/>
         <image name="mic" catalog="system" width="110" height="128"/>
-        <image name="person.crop.circle.badge.plus.fill" catalog="system" width="128" height="114"/>
+        <image name="person.crop.circle.fill.badge.plus" catalog="system" width="128" height="114"/>
         <image name="person.text.rectangle.fill" catalog="system" width="128" height="93"/>
         <systemColor name="labelColor">
             <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>

@@ -17,6 +17,20 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     var locationManager = CLLocationManager()  // CLLocationManager instance
     var shouldCenterMapOnUserLocation = false
     var locationUpdateTimer: Timer?
+    
+    let locationButton: UIButton = {
+           let button = UIButton(type: .system)
+           button.translatesAutoresizingMaskIntoConstraints = false // Use Auto Layout
+           button.setTitle("My Location", for: .normal)
+           button.backgroundColor = .white
+           button.layer.cornerRadius = 8
+           button.layer.shadowOpacity = 0.3
+           button.layer.shadowRadius = 3
+           button.layer.shadowOffset = CGSize(width: 0, height: 3)
+           button.addTarget(self, action: #selector(locationButtonTapped), for: .touchUpInside)
+           return button
+       }()
+       
 
 
 
@@ -24,8 +38,23 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         super.viewDidLoad()
         setupLocationManager()
         setupMapView()
-        mapView.showsUserLocation = true  // Show the user's location on the map
+        mapView.showsUserLocation = false  // Show the user's location on the map
+        
+        setupLocationButton()
+
     }
+    
+    func setupLocationButton() {
+           view.addSubview(locationButton)
+           
+           // Set constraints for the button; e.g., position it at the top-right of the view
+           NSLayoutConstraint.activate([
+               locationButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+               locationButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+               locationButton.widthAnchor.constraint(equalToConstant: 100),
+               locationButton.heightAnchor.constraint(equalToConstant: 50)
+           ])
+       }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -46,20 +75,22 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
          
     
 
-    
     func setupMapView() {
         mapView = MKMapView()
         mapView.delegate = self
         mapView.translatesAutoresizingMaskIntoConstraints = false  // Use Auto Layout
-        self.view.addSubview(mapView)
-        // Set up constraints to lay out the map view; this assumes you want the map to appear below the navigation bar.
-           NSLayoutConstraint.activate([
-               mapView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-               mapView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-               mapView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-               mapView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-           ])
+        view.addSubview(mapView)
+        
+        // Set up constraints to make the map view extend to the top of the screen
+        NSLayoutConstraint.activate([
+            mapView.topAnchor.constraint(equalTo: view.topAnchor),
+            mapView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            mapView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            mapView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
     }
+
+
     
     func startLocationUpdateTimer() {
             // Invalidate the old timer if it exists
@@ -157,12 +188,28 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         }
     }
     
+    @objc func locationButtonTapped() {
+        mapView.showsUserLocation.toggle()  // Toggle the visibility of the user location
+        
+        // Show an alert with the current state
+        let message = mapView.showsUserLocation ? "Your location is now visible on the map for your friends!" : "Your location is now hidden."
+        let alertController = UIAlertController(title: "Location Visibility", message: message, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(alertController, animated: true)
+
+        // Optionally center the map on the user's current location when shown
+        if mapView.showsUserLocation, let location = locationManager.location {
+            let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
+            mapView.setRegion(region, animated: true)
+        }
+       }
     
-    @IBAction func LocationOnOff(_ sender: UIBarButtonItem) {
+    
+    @IBAction func LocationOnOff(_ sender: UIButton) {
         mapView.showsUserLocation.toggle()  // Toggle the visibility of the user location
           
           // Change the button title based on the current visibility
-          sender.title = mapView.showsUserLocation ? "Hide Location" : "Show Location"
+       
           
           // Show an alert with the current state
           let message = mapView.showsUserLocation ? "Your location is now visible on the map." : "Your location is now hidden."
