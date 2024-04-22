@@ -63,26 +63,51 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
        
     
     func addLocationPins() {
-            let db = Firestore.firestore()
-            db.collection("notes").getDocuments { (querySnapshot, error) in
-                guard let documents = querySnapshot?.documents else {
-                    print("Error fetching documents: \(error?.localizedDescription ?? "Unknown error")")
-                    return
-                }
-                
-                for document in documents {
-                    let data = document.data()
-                    if let locationGeoPoint = data["location"] as? GeoPoint,
-                       let locationName = data["locationName"] as? String {
-                        
-                        let location = CLLocationCoordinate2D(latitude: locationGeoPoint.latitude, longitude: locationGeoPoint.longitude)
-                        
-                        let annotation = MKPointAnnotation(__coordinate: location, title: locationName, subtitle: nil)
-                        self.mapView.addAnnotation(annotation)
-                    }
-                }
-            }
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User is not logged in")
+            return
         }
+        
+        let db = Firestore.firestore()
+        // Fetch the user's document to get the list of friends
+        db.collection("users").document(userEmail).getDocument { [weak self] (document, error) in
+            guard let self = self else { return }
+            if let error = error {
+                print("Error fetching user data: \(error.localizedDescription)")
+                return
+            }
+            
+            var userAndFriends = [userEmail]  // Start with the user's email
+            if let friends = document?.data()?["friends"] as? [String] {
+                userAndFriends.append(contentsOf: friends)  // Add friends' emails
+            }
+
+            // Now query for notes created by the user and their friends
+            db.collection("notes")
+              .whereField("user", in: userAndFriends)  // Use the correct field name 'user' to filter notes
+              .getDocuments { (querySnapshot, error) in
+                  guard let documents = querySnapshot?.documents else {
+                      print("Error fetching documents: \(error?.localizedDescription ?? "Unknown error")")
+                      return
+                  }
+                  
+                  for document in documents {
+                      let data = document.data()
+                      if let locationGeoPoint = data["location"] as? GeoPoint,
+                         let locationName = data["locationName"] as? String {
+                          
+                          let location = CLLocationCoordinate2D(latitude: locationGeoPoint.latitude, longitude: locationGeoPoint.longitude)
+                          
+                          let annotation = MKPointAnnotation()
+                          annotation.coordinate = location
+                          annotation.title = locationName
+                          self.mapView.addAnnotation(annotation)
+                      }
+                  }
+              }
+        }
+    }
+
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -340,7 +365,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
             // Load the image for the annotation
             if let image = UIImage(named: "jellydev") {
                 // Resize the image to be slightly larger than a pin
-                let size = CGSize(width: 20, height: 40) // Adjust the size as needed
+                let size = CGSize(width: 50, height: 70) // Adjust the size as needed
                 UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
                 image.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
                 let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
