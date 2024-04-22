@@ -674,10 +674,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             maxPeople = storedValue
         }
         
-        if let selectedLocationName = selectedLocationName {
-               LoadPlacesNotes(for: selectedLocationName)
-           }
-        
         getAdvice { advice in
             DispatchQueue.main.async {
                 self.AdviceOutlet.text = advice
@@ -2138,17 +2134,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         })
     }
     
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == "PinSegue", // Replace with your actual segue identifier
-           let namesVC = segue.destination as? NamesViewController {
-            namesVC.delegate = self
-        }
-        if let homeViewController = segue.destination as? HomeViewController {
-            if let locationName = sender as? String {
-                homeViewController.selectedLocationName = locationName
-            }
-        }
-    }
 
     
     func determineTransportationMode(from speed: CLLocationSpeed) -> String {
@@ -2236,6 +2221,18 @@ extension HomeViewController {
                     tableView.deleteRows(at: [sourceIndexPath], with: .automatic)
                     tableView.insertRows(at: [destinationIndexPath], with: .automatic)
                 }, completion: nil)
+            }
+        }
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "PinSegue", // Replace with your actual segue identifier
+           let namesVC = segue.destination as? NamesViewController {
+            namesVC.delegate = self
+        }
+        if let homeViewController = segue.destination as? HomeViewController {
+            if let locationName = sender as? String {
+                homeViewController.selectedLocationName = locationName
             }
         }
     }
@@ -2365,6 +2362,14 @@ extension HomeViewController: UIScrollViewDelegate {
 }
 // HomeViewController.swift
 
+extension HomeViewController: NamesViewControllerDelegate {
+    func pinSelected(with locationName: String) {
+        print("Attempting to load data for location: \(locationName)")
+        LoadPlacesNotes(for: locationName) {
+            print("Data loaded for location: \(locationName)")
+        }
+    }
+}
 
 
 extension HomeViewController: PlacesViewControllerDelegate {

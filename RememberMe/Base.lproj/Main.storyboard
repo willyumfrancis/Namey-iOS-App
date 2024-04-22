@@ -205,6 +205,7 @@
                         </constraints>
                     </view>
                     <tabBarItem key="tabBarItem" title="Home" image="house.fill" catalog="system" id="bzD-tb-h21"/>
+                    <navigationItem key="navigationItem" id="1un-K7-nO1"/>
                     <nil key="simulatedTopBarMetrics"/>
                     <connections>
                         <outlet property="AdviceOutlet" destination="9az-fw-h3z" id="R5C-jh-iHa"/>

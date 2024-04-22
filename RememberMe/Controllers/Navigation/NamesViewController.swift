@@ -12,10 +12,10 @@ import CoreData
 import CoreLocation
 import MapKit
 
-
-protocol NamesViewControllerDelegate: AnyObject {
-    func didSelectLocation(with locationName: String)
+public protocol NamesViewControllerDelegate: AnyObject {
+    func pinSelected(with locationName: String)
 }
+
 
 
 class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate {
@@ -24,25 +24,40 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     var shouldCenterMapOnUserLocation = false
     var locationUpdateTimer: Timer?
     
-    weak var delegate: PlacesViewControllerDelegate?
-    // HomeViewController.swift
-
-    
+    weak var delegate: NamesViewControllerDelegate?
 
 
     
     let locationButton: UIButton = {
-           let button = UIButton(type: .system)
-           button.translatesAutoresizingMaskIntoConstraints = false // Use Auto Layout
-           button.setTitle("My Location", for: .normal)
-           button.backgroundColor = .white
-           button.layer.cornerRadius = 8
-           button.layer.shadowOpacity = 0.3
-           button.layer.shadowRadius = 3
-           button.layer.shadowOffset = CGSize(width: 0, height: 3)
-           button.addTarget(self, action: #selector(locationButtonTapped), for: .touchUpInside)
-           return button
-       }()
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false // Use Auto Layout
+        button.setImage(UIImage(systemName: "location"), for: .normal)
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 8
+        button.layer.shadowOpacity = 0.3
+        button.layer.shadowRadius = 3
+        button.layer.shadowOffset = CGSize(width: 0, height: 3)
+        button.tintColor = .black // Set the color of the location icon
+        button.addTarget(self, action: #selector(locationButtonTapped), for: .touchUpInside)
+        
+        // Set the size of the button
+        button.widthAnchor.constraint(equalToConstant: 40).isActive = true
+        button.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        
+        return button
+    }()
+    
+//    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+//        if let locationName = view.annotation?.title {
+//            print("Pin selected with location name: \(locationName)")
+//            delegate?.pinSelected(with: locationName!)
+//            mapView.deselectAnnotation(view.annotation, animated: true)
+//            performSegue(withIdentifier: "PinSegue", sender: locationName)
+//        }
+//    }
+
+
+
        
     
     func addLocationPins() {
@@ -66,9 +81,6 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
                 }
             }
         }
-
-
-
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -146,16 +158,6 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         }
     
     
-
-    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        if let locationName = view.annotation?.title ?? "" {
-            self.performSegue(withIdentifier: "PinSegue", sender: locationName)
-        }
-    }
-    
-
-
-       
     
         func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
             if let location = locations.last {
@@ -234,7 +236,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         }
     }
     
-    
+
     
     
     @objc func toggleUserLocation() {
@@ -305,15 +307,17 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         }
     }
     
-    // In the view controller that's performing the segue (likely NamesViewController)
+    // In NamesViewController
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if let homeViewController = segue.destination as? HomeViewController {
+        if segue.identifier == "PinSegue", let homeVC = segue.destination as? HomeViewController {
             if let locationName = sender as? String {
-                homeViewController.selectedLocationName = locationName
+                homeVC.selectedLocationName = locationName
+                print("Location name set for HomeViewController: \(locationName)")
             }
         }
     }
-    
+
+
     @objc func locationButtonTapped() {
         mapView.showsUserLocation.toggle()  // Toggle the visibility of the user location
         

@@ -401,9 +401,6 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         }
     }
 
-    
-   
-    // Logic to accept a friend request.
     // Logic to accept a friend request.
     private func acceptFriendRequest(at index: Int) {
         guard let currentUserEmail = Auth.auth().currentUser?.email else {
@@ -476,6 +473,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
               completion: nil
           )
       }
+    
     // Logic to reject a friend request.
     private func rejectFriendRequest(at index: Int) {
         guard let currentUserEmail = Auth.auth().currentUser?.email else {
@@ -528,10 +526,6 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
           loadFriendRequests()
       }
     
-    
-    
-
-  
     @objc private func imageTapped() {
         
         rotationSpeed += 0.03
