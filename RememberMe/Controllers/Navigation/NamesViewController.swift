@@ -338,24 +338,6 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     var locationImages: [String: UIImage] = [:]
 
     
-    @IBAction func LocationOnOff(_ sender: UIButton) {
-        mapView.showsUserLocation.toggle()  // Toggle the visibility of the user location
-          
-          // Change the button title based on the current visibility
-       
-          
-          // Show an alert with the current state
-          let message = mapView.showsUserLocation ? "Your location is now visible on the map." : "Your location is now hidden."
-          let alertController = UIAlertController(title: "Location Visibility", message: message, preferredStyle: .alert)
-          alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-          present(alertController, animated: true)
-
-          // Optionally center the map on the user's current location when shown
-          if mapView.showsUserLocation, let location = locationManager.location {
-              let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
-              mapView.setRegion(region, animated: true)
-          }
-      }
     
     
     func addAnnotation(for coordinate: CLLocationCoordinate2D, title: String, imageURL: String?) {
