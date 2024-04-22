@@ -302,6 +302,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         }
         return nil
     }
+
     func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
         let gestureRecognizers = mapView.gestureRecognizers ?? []
         for gesture in gestureRecognizers {
