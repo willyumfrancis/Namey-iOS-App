@@ -53,7 +53,6 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
      @IBOutlet weak var friendRequestsTableView: UITableView!
   
       
-      // Function to load friend requests from Firestore
     // Function to load friend requests from Firestore
     private func loadFriendRequests() {
         guard let currentUserEmail = Auth.auth().currentUser?.email else {
@@ -61,7 +60,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             return
         }
         let db = Firestore.firestore()
-        let userRef = db.collection("users").document(currentUserEmail)
+        let userRef = db.collection("users").document(currentUserEmail.lowercased())  // Ensure lowercase is used if emails are stored in lowercase
         
         print("Attempting to load friend requests for user: \(currentUserEmail)")
         userRef.getDocument { [weak self] (document, error) in
@@ -70,9 +69,10 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
                 return
             }
             guard let document = document, document.exists else {
-                print("Document does not exist")
+                print("Document for user \(currentUserEmail) does not exist")
                 return
             }
+            print("Document data: \(document.data() ?? [:])")  // Print out the document data
             if let requests = document.data()?["friendRequests"] as? [String] {
                 print("Loaded friend requests: \(requests)")
                 self?.friendRequests = requests
@@ -84,6 +84,23 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             }
         }
     }
+
+
+    // Function to load accepted friends
+          private func loadAcceptedFriends() {
+              guard let currentUserEmail = Auth.auth().currentUser?.email else { return }
+              let db = Firestore.firestore()
+              let userRef = db.collection("users").document(currentUserEmail)
+              userRef.getDocument { [weak self] (document, error) in
+                  if let document = document, document.exists, let friends = document.data()?["friends"] as? [String] {
+                      self?.acceptedFriends = friends
+                      self?.friendRequestsTableView.reloadData()
+                  } else {
+                      print("Error loading accepted friends: \(error?.localizedDescription ?? "Unknown error")")
+                  }
+              }
+          }
+
 
     
     
@@ -132,20 +149,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         loadAcceptedFriends()
     }
     
-    // Function to load accepted friends
-      private func loadAcceptedFriends() {
-          guard let currentUserEmail = Auth.auth().currentUser?.email else { return }
-          let db = Firestore.firestore()
-          let userRef = db.collection("users").document(currentUserEmail)
-          userRef.getDocument { [weak self] (document, error) in
-              if let document = document, document.exists, let friends = document.data()?["friends"] as? [String] {
-                  self?.acceptedFriends = friends
-                  self?.friendRequestsTableView.reloadData()
-              } else {
-                  print("Error loading accepted friends: \(error?.localizedDescription ?? "Unknown error")")
-              }
-          }
-      }
+
     
     
     override func viewDidLoad() {
@@ -282,11 +286,15 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     
     
     // This function handles the logic for sending a friend request
+    // This function handles the logic for sending a friend request
     private func sendFriendRequest(to recipientEmail: String) {
-        guard let currentUserEmail = Auth.auth().currentUser?.email else {
+        guard let currentUserEmail = Auth.auth().currentUser?.email?.replacingOccurrences(of: ",", with: ".") else {
             print("User not logged in")
             return
         }
+
+        let formattedRecipientEmail = recipientEmail.replacingOccurrences(of: ",", with: ".")
+        
 
         // Ensure the recipient's email exists in allUserEmails before proceeding.
         guard allUserEmails.contains(recipientEmail) else {
@@ -415,38 +423,53 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         // Start a batch to perform multiple write operations as one transaction
         let batch = db.batch()
 
-        // Remove the friend's email from the current user's friendRequests array
+        // Add the current user's updates to the batch
         batch.updateData([
-            "friendRequests": FieldValue.arrayRemove([friendEmail])
-        ], forDocument: currentUserRef)
-
-        // Add the friend's email to the current user's friends array
-        batch.updateData([
+            "friendRequests": FieldValue.arrayRemove([friendEmail]),
             "friends": FieldValue.arrayUnion([friendEmail])
         ], forDocument: currentUserRef)
 
-        // Commit the batch
-        batch.commit() { [weak self] error in
+        // Find the friend's user document
+        let friendRef = db.collection("users").whereField("email", isEqualTo: friendEmail)
+        friendRef.getDocuments { [weak self] (querySnapshot, error) in
             if let error = error {
-                print("Error accepting friend request: \(error)")
+                print("Error finding user: \(error)")
+            } else if let friendDocument = querySnapshot?.documents.first {
+                // Add the friend's updates to the batch
+                batch.updateData([
+                    "friends": FieldValue.arrayUnion([currentUserEmail])
+                ], forDocument: friendDocument.reference)
+
+                // Commit the batch inside the completion block of getDocuments
+                batch.commit { error in
+                    if let error = error {
+                        print("Error accepting friend request: \(error)")
+                    } else {
+                        print("Friend request accepted.")
+                        // Move the updates for local arrays and table view here
+                        self?.updateLocalFriendListsAndTableView(for: friendEmail, at: index)
+                    }
+                }
             } else {
-                print("Friend request accepted.")
-                guard let strongSelf = self else { return }
-                strongSelf.acceptedFriends.append(friendEmail)
-                strongSelf.friendRequests.remove(at: index)
-
-                // Perform table view updates
-                strongSelf.friendRequestsTableView.performBatchUpdates({
-                    let indexPathForDeletion = IndexPath(row: index, section: 0)
-                    let indexPathForInsertion = IndexPath(row: strongSelf.acceptedFriends.count - 1, section: 0)
-
-                    strongSelf.friendRequestsTableView.deleteRows(at: [indexPathForDeletion], with: .automatic)
-                    strongSelf.friendRequestsTableView.insertRows(at: [indexPathForInsertion], with: .automatic)
-                }, completion: nil)
+                print("User with email \(friendEmail) does not exist")
             }
         }
     }
 
+    private func updateLocalFriendListsAndTableView(for friendEmail: String, at index: Int) {
+        self.acceptedFriends.append(friendEmail)
+        self.friendRequests.remove(at: index)
+        // Perform table view updates on the main thread
+        DispatchQueue.main.async {
+            self.friendRequestsTableView.performBatchUpdates({
+                let indexPathForDeletion = IndexPath(row: index, section: 0)
+                let indexPathForInsertion = IndexPath(row: self.acceptedFriends.count - 1, section: 0)
+
+                self.friendRequestsTableView.deleteRows(at: [indexPathForDeletion], with: .automatic)
+                self.friendRequestsTableView.insertRows(at: [indexPathForInsertion], with: .automatic)
+            }, completion: nil)
+        }
+    }
 
       private func animateCellBounce(_ cell: UITableViewCell) {
           let animationDuration = 0.5

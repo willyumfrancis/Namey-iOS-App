@@ -27,7 +27,7 @@ class RegisterViewController: UIViewController, CLLocationManagerDelegate {
                    } else {
                        // Use email to create a user document
                        let db = Firestore.firestore()
-                       let emailKey = email.replacingOccurrences(of: ".", with: ",") // Replace '.' with ',' as Firebase keys cannot contain '.'
+                       let emailKey = email
                        db.collection("users").document(emailKey).setData([
                            "email": email
                        ]) { error in
