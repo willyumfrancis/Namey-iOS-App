@@ -113,6 +113,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     }
     
     
+    @IBOutlet weak var userEmail: UILabel!
     
     var audioPlayer: AVAudioPlayer?
     
@@ -157,6 +158,12 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         
         friendRequestsTableView.layer.cornerRadius = 10
         friendRequestsTableView.layer.masksToBounds = true
+        
+        if let userEmailString = Auth.auth().currentUser?.email {
+            userEmail.text = userEmailString
+        } else {
+            userEmail.text = "Not logged in"
+        }
         
         
         // Set the delegate and data source for your friendRequestsTableView

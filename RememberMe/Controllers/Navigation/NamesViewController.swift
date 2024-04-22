@@ -206,35 +206,8 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
             locationManager.startUpdatingLocation()  // Start location updates when authorized
         }
     }
-    
-    func displayFriendsOnMap() {
-        guard let currentUserEmail = Auth.auth().currentUser?.email else { return }
-        let db = Firestore.firestore()
-        let userRef = db.collection("users").document(currentUserEmail)
-        
-        userRef.getDocument { [weak self] (document, error) in
-            if let document = document, document.exists, let friends = document.data()?["friends"] as? [String] {
-                for friendEmail in friends {
-                    let friendRef = db.collection("users").whereField("email", isEqualTo: friendEmail)
-                    friendRef.getDocuments { (querySnapshot, error) in
-                        if let documents = querySnapshot?.documents {
-                            for document in documents {
-                                if let locationData = document.data()["location"] as? [String: Double],
-                                   let latitude = locationData["latitude"], let longitude = locationData["longitude"],
-                                   let imageURL = document.data()["imageURL"] as? String {
-                                    let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-                                    self?.addAnnotation(for: coordinate, title: friendEmail, imageURL: imageURL)
-                                
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                print("Error fetching friends: \(error?.localizedDescription ?? "Unknown error")")
-            }
-        }
-    }
+
+
     
 
     
@@ -242,61 +215,93 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     @objc func toggleUserLocation() {
         mapView.showsUserLocation.toggle()  // Toggle the visibility of the user location
     }
+  
+    func displayFriendsOnMap() {
+        guard let currentUserEmail = Auth.auth().currentUser?.email else {
+            print("Debug: User is not logged in")
+            return
+        }
+
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(currentUserEmail)
+
+        userRef.getDocument { [weak self] (document, error) in
+            guard let self = self else { return }
+            
+            if let error = error {
+                print("Debug: Error fetching user document: \(error.localizedDescription)")
+                return
+            }
+
+            guard let document = document, document.exists,
+                  let friends = document.data()?["friends"] as? [String] else {
+                print("Debug: No friends data found for user.")
+                return
+            }
+            
+            print("Debug: Found \(friends.count) friends for user.")
+            
+            for friendEmail in friends {
+                let friendRef = db.collection("users").document(friendEmail)
+                friendRef.getDocument { (friendDocumentSnapshot, error) in
+                    if let error = error {
+                        print("Debug: Error fetching friend's document: \(error.localizedDescription)")
+                        return
+                    }
+                    
+                    guard let friendDocument = friendDocumentSnapshot, friendDocument.exists,
+                          let locationData = friendDocument.data()?["location"] as? [String: Double],
+                          let latitude = locationData["latitude"], let longitude = locationData["longitude"] else {
+                        print("Debug: Could not find location data for friend \(friendEmail)")
+                        return
+                    }
+                    
+                    print("Debug: Adding annotation for friend \(friendEmail)")
+                    let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+                    self.addAnnotation(for: coordinate, title: friendEmail, imageURL: friendDocument.data()?["imageURL"] as? String)
+                }
+            }
+        }
+    }
+
     
+
     class LocationAnnotation: MKPointAnnotation {
         var imageURL: String?
         var image: UIImage?
     }
-    
+
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         if let annotation = annotation as? LocationAnnotation {
-            let identifier = "LocationAnnotation"
-            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? MKAnnotationView
-            
+            let identifier = "FriendLocation"
+            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
+
             if annotationView == nil {
+                // Debug: Print that we're creating a new annotation view
+                print("Debug: Creating new annotation view for \(annotation.title ?? "")")
                 annotationView = MKAnnotationView(annotation: annotation, reuseIdentifier: identifier)
                 annotationView?.canShowCallout = true
             } else {
                 annotationView?.annotation = annotation
             }
             
-            if let imageURL = annotation.imageURL, let url = URL(string: imageURL) {
-                URLSession.shared.dataTask(with: url) { data, response, error in
-                    if let error = error {
-                        print("Error loading image: \(error.localizedDescription)")
-                    } else if let data = data, let image = UIImage(data: data) {
-                        let size = CGSize(width: 50, height: 50)
-                        UIGraphicsBeginImageContext(size)
-                        image.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
-                        if let resizedImage = UIGraphicsGetImageFromCurrentImageContext() {
-                            UIGraphicsEndImageContext()
-
-                            // Create the annotation view on the main thread
-                            DispatchQueue.main.async {
-                                annotation.image = resizedImage
-                                // Update the existing annotation view if it's visible, otherwise, it will be used when the view is created
-                                if let annotationView = mapView.view(for: annotation) as? MKAnnotationView {
-                                    annotationView.image = resizedImage
-                                }
-                            }
-                        } else {
-                            UIGraphicsEndImageContext()
-                            print("Error resizing image")
-                        }
-                    }
-                }.resume()
-            } else {
-                print("Invalid URL or no image URL provided")
-                // Handle the case where the URL is not valid or no imageURL is provided
+            // Load the image for the annotation
+            if let image = UIImage(named: "jellydev") {
+                // Resize the image to be slightly larger than a pin
+                let size = CGSize(width: 50, height: 70) // Adjust the size as needed
+                UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+                image.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+                let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+                UIGraphicsEndImageContext()
+                
+                // Set the resized image to the annotation view
+                annotationView?.image = resizedImage
             }
 
-            
             return annotationView
         }
-        
         return nil
     }
-    
     func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
         let gestureRecognizers = mapView.gestureRecognizers ?? []
         for gesture in gestureRecognizers {
@@ -389,21 +394,9 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         }
     }
 
-    
 
-
-    
     deinit {
         // Invalidate the timer when the view controller is deinitialized
         locationUpdateTimer?.invalidate()
     }
 }
-
-
-
-
-
-
-    
-    
-

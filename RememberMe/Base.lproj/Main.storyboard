@@ -496,6 +496,12 @@
                                     </navigationItem>
                                 </items>
                             </navigationBar>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wJO-qX-FZY">
+                                <rect key="frame" x="175" y="59" width="41.333333333333343" height="24"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="v78-BO-IR1"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -503,10 +509,14 @@
                             <constraint firstItem="6RE-an-yYf" firstAttribute="top" secondItem="eNI-Vd-Khi" secondAttribute="bottom" constant="8" id="7T8-1H-AX1"/>
                             <constraint firstItem="ZqA-Pk-kuH" firstAttribute="top" secondItem="UQm-ni-Ym6" secondAttribute="bottom" constant="19" id="AbE-yU-uTh"/>
                             <constraint firstItem="ZqA-Pk-kuH" firstAttribute="centerX" secondItem="KLL-aq-4zM" secondAttribute="centerX" id="C4b-RZ-STn"/>
+                            <constraint firstItem="wJO-qX-FZY" firstAttribute="centerX" secondItem="qmZ-fR-ckv" secondAttribute="centerX" id="DAa-G8-Cay"/>
+                            <constraint firstItem="eNI-Vd-Khi" firstAttribute="top" secondItem="wJO-qX-FZY" secondAttribute="bottom" constant="20" id="Fj7-Mv-IQy"/>
                             <constraint firstItem="eNI-Vd-Khi" firstAttribute="top" secondItem="KLL-aq-4zM" secondAttribute="bottom" constant="10" id="L6X-aB-4qD"/>
                             <constraint firstItem="UQm-ni-Ym6" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="v78-BO-IR1" secondAttribute="leading" symbolic="YES" id="Mie-RT-Q68"/>
                             <constraint firstItem="eNI-Vd-Khi" firstAttribute="leading" secondItem="v78-BO-IR1" secondAttribute="leading" constant="63" id="N0k-WR-dzC"/>
                             <constraint firstItem="v78-BO-IR1" firstAttribute="bottom" secondItem="6RE-an-yYf" secondAttribute="bottom" constant="193" id="O1k-gd-CP6"/>
+                            <constraint firstItem="wJO-qX-FZY" firstAttribute="centerX" secondItem="KLL-aq-4zM" secondAttribute="centerX" id="Oim-nY-RJV"/>
+                            <constraint firstItem="wJO-qX-FZY" firstAttribute="centerY" secondItem="KLL-aq-4zM" secondAttribute="centerY" id="P9d-rX-06H"/>
                             <constraint firstItem="eNI-Vd-Khi" firstAttribute="centerX" secondItem="6RE-an-yYf" secondAttribute="centerX" id="RcC-vs-D5C"/>
                             <constraint firstItem="ZqA-Pk-kuH" firstAttribute="centerX" secondItem="6RE-an-yYf" secondAttribute="centerX" id="Ur1-LP-Obb"/>
                             <constraint firstItem="UQm-ni-Ym6" firstAttribute="top" secondItem="6RE-an-yYf" secondAttribute="top" id="VSu-CO-1iF"/>
@@ -532,6 +542,7 @@
                         <outlet property="betaTap" destination="6RE-an-yYf" id="mrK-gM-kfS"/>
                         <outlet property="catImage" destination="eNI-Vd-Khi" id="Pqy-Yc-9AE"/>
                         <outlet property="friendRequestsTableView" destination="ZqA-Pk-kuH" id="3L1-Ch-tiw"/>
+                        <outlet property="userEmail" destination="wJO-qX-FZY" id="zye-10-dGi"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="s9s-KS-LjM" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
