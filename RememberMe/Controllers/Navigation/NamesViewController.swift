@@ -23,6 +23,8 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     var locationManager = CLLocationManager()  // CLLocationManager instance
     var shouldCenterMapOnUserLocation = false
     var locationUpdateTimer: Timer?
+    var visibilityState: Bool = false  // Tracks the visibility state
+
     
     weak var delegate: NamesViewControllerDelegate?
 
@@ -119,16 +121,119 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         displayFriendsOnMap()  // Optionally, load and display friends locations when the view appears
     }
     
+    
     func setupLocationManager() {
         locationManager.delegate = self
-             locationManager.desiredAccuracy = kCLLocationAccuracyBest
-             locationManager.requestAlwaysAuthorization()  // Request "Always" authorization
-             locationManager.allowsBackgroundLocationUpdates = true  // Allow updates in the background
-             locationManager.pausesLocationUpdatesAutomatically = false  // Prevent the system from pausing updates
-             locationManager.startUpdatingLocation()  // Start updating the location
-             startLocationUpdateTimer()  // Start the timer to limit updates
-         }
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.requestAlwaysAuthorization()
+        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.pausesLocationUpdatesAutomatically = false
+        startLocationUpdateTimer()
+    }
          
+    func startLocationUpdateTimer() {
+        locationUpdateTimer?.invalidate()
+        // Schedule a timer to trigger every 2 minutes
+        locationUpdateTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { [weak self] _ in
+            self?.updateUserLocationInFirestore()
+        }
+    }
+
+    func updateUserLocationInFirestore() {
+        guard let location = locationManager.location else {
+            print("No location available")
+            return
+        }
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User is not logged in")
+            return
+        }
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(userEmail)
+        let locationData = ["latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude]
+
+        userRef.updateData(["location": locationData]) { error in
+            if let error = error {
+                print("Error updating location: \(error.localizedDescription)")
+            } else {
+                print("User location updated successfully.")
+            }
+        }
+    }
+
+   
+    
+    @objc func toggleUserVisibility() {
+        visibilityState.toggle()  // Toggle the current visibility state
+        updateVisibilityInFirestore(visibilityState)
+        manageLocationUpdatesBasedOnVisibility(visibilityState)
+    }
+
+    
+    func updateVisibilityInFirestore(_ visible: Bool) {
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User is not logged in")
+            return
+        }
+        let db = Firestore.firestore()
+        db.collection("users").document(userEmail).updateData(["isVisible": visible]) { error in
+            if let error = error {
+                print("Error updating visibility: \(error.localizedDescription)")
+            } else {
+                print("Visibility updated to \(visible)")
+            }
+        }
+    }
+    
+    func manageLocationUpdatesBasedOnVisibility(_ visible: Bool) {
+           if visible {
+               startLocationUpdateTimer()
+           } else {
+               locationUpdateTimer?.invalidate()
+               removeUserLocationFromFirestore()
+           }
+       }
+
+       func removeUserLocationFromFirestore() {
+           guard let userEmail = Auth.auth().currentUser?.email else {
+               print("User is not logged in")
+               return
+           }
+           let db = Firestore.firestore()
+           db.collection("users").document(userEmail).updateData(["location": FieldValue.delete()]) { error in
+               if let error = error {
+                   print("Error removing location: \(error.localizedDescription)")
+               } else {
+                   print("User location removed from Firestore successfully.")
+               }
+           }
+       }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let location = locations.last {
+            print("Updated location: \(location.coordinate.latitude), \(location.coordinate.longitude)")
+            updateUserLocationInFirestore(location)
+        }
+    }
+
+    func updateUserLocationInFirestore(_ location: CLLocation) {
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User is not logged in")
+            return
+        }
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(userEmail)
+        let locationData = ["latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude]
+
+        userRef.updateData(["location": locationData]) { error in
+            if let error = error {
+                print("Error updating location: \(error.localizedDescription)")
+            } else {
+                print("User location updated successfully.")
+            }
+        }
+    }
+
     
 
     func setupMapView() {
@@ -148,56 +253,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
 
 
     
-    func startLocationUpdateTimer() {
-            // Invalidate the old timer if it exists
-            locationUpdateTimer?.invalidate()
-            // Schedule a timer to trigger every 2 minutes
-            locationUpdateTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { [weak self] _ in
-                self?.locationManager.startUpdatingLocation()
-            }
-        }
-    
-    
-    
-        func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-            if let location = locations.last {
-                // Update the user's location in Firestore
-                updateUserLocationInFirestore(location)
-                // Stop further updates until the timer fires again
-                locationManager.stopUpdatingLocation()
-            }
-        }
 
-    func updateUserLocationInFirestore(_ location: CLLocation) {
-        guard let currentUserEmail = Auth.auth().currentUser?.email else {
-            print("User is not logged in")
-            return
-        }
-
-        // Define the location data
-        let locationData = [
-            "latitude": location.coordinate.latitude,
-            "longitude": location.coordinate.longitude
-        ]
-
-        // Reference to the user's document in Firestore
-        let db = Firestore.firestore()
-        let userRef = db.collection("users").whereField("email", isEqualTo: currentUserEmail)
-
-        // Update the user's location
-        userRef.getDocuments { (querySnapshot, error) in
-            if let document = querySnapshot?.documents.first {
-                document.reference.updateData(["location": locationData]) { error in
-                    if let error = error {
-                        print("Error updating location: \(error.localizedDescription)")
-                    } else {
-                        print("User location updated to Firestore successfully.")
-                    }
-                }
-            }
-        }
-    }
-    
 
 
     
@@ -208,10 +264,6 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     }
 
 
-    
-
-    
-    
     @objc func toggleUserLocation() {
         mapView.showsUserLocation.toggle()  // Toggle the visibility of the user location
     }
@@ -288,7 +340,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
             // Load the image for the annotation
             if let image = UIImage(named: "jellydev") {
                 // Resize the image to be slightly larger than a pin
-                let size = CGSize(width: 50, height: 70) // Adjust the size as needed
+                let size = CGSize(width: 20, height: 40) // Adjust the size as needed
                 UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
                 image.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
                 let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
