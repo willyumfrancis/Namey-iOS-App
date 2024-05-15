@@ -19,25 +19,43 @@ class RegisterViewController: UIViewController, CLLocationManagerDelegate {
     let locationManager = CLLocationManager()
     
     @IBAction func RegisterButton(_ sender: Any) {
-        if let email = EmailTextField.text, let password = PasswordTextField.text {
-               Auth.auth().createUser(withEmail: email, password: password) { [weak self] authResult, error in
-                   guard let strongSelf = self else { return }
-                   if let e = error {
-                       // Handle error with alert...
+        guard let email = EmailTextField.text, !email.isEmpty, let password = PasswordTextField.text, !password.isEmpty else {
+               print("Debug: Email or password field is empty.")
+               showErrorAlert(message: "Please enter both email and password.")
+               return
+           }
+           
+           if password.count < 6 {
+               print("Debug: Password too short.")
+               showErrorAlert(message: "Password must be at least 6 characters long.")
+               return
+           }
+           
+           Auth.auth().createUser(withEmail: email, password: password) { [weak self] authResult, error in
+               guard let strongSelf = self else {
+                   print("Debug: self is nil.")
+                   return
+               }
+               if let e = error as NSError? {
+                   print("Debug: Error in createUser - \(e.localizedDescription)")
+                   if e.code == AuthErrorCode.emailAlreadyInUse.rawValue {
+                       strongSelf.showErrorAlert(message: "This email is already registered. Please use a different email.")
                    } else {
-                       // Use email to create a user document
-                       let db = Firestore.firestore()
-                       let emailKey = email
-                       db.collection("users").document(emailKey).setData([
-                           "email": email
-                       ]) { error in
-                           if let error = error {
-                               print("Error writing document: \(error)")
-                           } else {
-                               print("Document successfully written!")
-                               strongSelf.locationManager.requestWhenInUseAuthorization()
-                               strongSelf.performSegue(withIdentifier: "RegisterSegue", sender: strongSelf)
-                           }
+                       strongSelf.showErrorAlert(message: e.localizedDescription)
+                   }
+               } else {
+                   let db = Firestore.firestore()
+                   let emailKey = email
+                   db.collection("users").document(emailKey).setData([
+                       "email": email
+                   ]) { error in
+                       if let error = error {
+                           print("Debug: Error writing document - \(error.localizedDescription)")
+                           strongSelf.showErrorAlert(message: "Failed to register user: \(error.localizedDescription)")
+                       } else {
+                           print("Debug: Document successfully written!")
+                           strongSelf.locationManager.requestWhenInUseAuthorization()
+                           strongSelf.performSegue(withIdentifier: "RegisterSegue", sender: strongSelf)
                        }
                    }
                }
@@ -46,11 +64,7 @@ class RegisterViewController: UIViewController, CLLocationManagerDelegate {
        
        override func viewDidLoad() {
            super.viewDidLoad()
-           
-           // Code for rounding the corners of the login button
-                  Register.layer.cornerRadius = 12 // Adjust corner radiu
-           
-           // Request location authorization
+           Register.layer.cornerRadius = 12
            locationManager.delegate = self
        }
        
@@ -59,33 +73,29 @@ class RegisterViewController: UIViewController, CLLocationManagerDelegate {
            navigationController?.setNavigationBarHidden(false, animated: false)
        }
        
-       // CLLocationManagerDelegate method
        func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+           print("Debug: Location authorization status changed to \(status.rawValue)")
            if status == .authorizedWhenInUse {
                locationManager.requestLocation()
            }
        }
        
-       // CLLocationManagerDelegate method
        func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
            if let location = locations.first {
-               print("User's location: \(location)")
+               print("Debug: User's location - \(location)")
            }
        }
        
-       // CLLocationManagerDelegate method
        func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-           print("Failed to get user's location: \(error.localizedDescription)")
+           print("Debug: Failed to get user's location - \(error.localizedDescription)")
        }
        
-       /*
-        // MARK: - Navigation
-        
-        // In a storyboard-based application, you will often want to do a little preparation before navigation
-        override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
-        }
-        */
-       
+       private func showErrorAlert(message: String) {
+           let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+           alert.addAction(UIAlertAction(title: "OK", style: .default))
+           DispatchQueue.main.async {
+               self.present(alert, animated: true)
+           }
+           print("Debug: Showing error alert with message: \(message)")
+       }
    }

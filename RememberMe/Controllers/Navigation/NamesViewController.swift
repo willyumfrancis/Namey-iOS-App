@@ -2,8 +2,6 @@
 //  NamesViewController.swift
 //  RememberMe
 //
-//  Created by William Misiaszek on 3/13/23.
-//
 import UIKit
 import FirebaseCore
 import FirebaseFirestore
@@ -16,258 +14,54 @@ public protocol NamesViewControllerDelegate: AnyObject {
     func pinSelected(with locationName: String)
 }
 
-
-
 class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate {
     var mapView: MKMapView!
-    var locationManager = CLLocationManager()  // CLLocationManager instance
-    var shouldCenterMapOnUserLocation = false
+    var locationManager = CLLocationManager()
+    var visibilityState: Bool = false
     var locationUpdateTimer: Timer?
-    var visibilityState: Bool = false  // Tracks the visibility state
-
     
     weak var delegate: NamesViewControllerDelegate?
-
-
     
     let locationButton: UIButton = {
         let button = UIButton(type: .system)
-        button.translatesAutoresizingMaskIntoConstraints = false // Use Auto Layout
+        button.translatesAutoresizingMaskIntoConstraints = false
         button.setImage(UIImage(systemName: "location"), for: .normal)
         button.backgroundColor = .white
         button.layer.cornerRadius = 8
         button.layer.shadowOpacity = 0.3
         button.layer.shadowRadius = 3
         button.layer.shadowOffset = CGSize(width: 0, height: 3)
-        button.tintColor = .black // Set the color of the location icon
+        button.tintColor = .black
         button.addTarget(self, action: #selector(locationButtonTapped), for: .touchUpInside)
-        
-        // Set the size of the button
         button.widthAnchor.constraint(equalToConstant: 40).isActive = true
         button.heightAnchor.constraint(equalToConstant: 40).isActive = true
-        
         return button
     }()
     
-//    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-//        if let locationName = view.annotation?.title {
-//            print("Pin selected with location name: \(locationName)")
-//            delegate?.pinSelected(with: locationName!)
-//            mapView.deselectAnnotation(view.annotation, animated: true)
-//            performSegue(withIdentifier: "PinSegue", sender: locationName)
-//        }
-//    }
-
-
-
-       
-    
-    func addLocationPins() {
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User is not logged in")
-            return
-        }
-        
-        let db = Firestore.firestore()
-        // Fetch the user's document to get the list of friends
-        db.collection("users").document(userEmail).getDocument { [weak self] (document, error) in
-            guard let self = self else { return }
-            if let error = error {
-                print("Error fetching user data: \(error.localizedDescription)")
-                return
-            }
-            
-            var userAndFriends = [userEmail]  // Start with the user's email
-            if let friends = document?.data()?["friends"] as? [String] {
-                userAndFriends.append(contentsOf: friends)  // Add friends' emails
-            }
-
-            // Now query for notes created by the user and their friends
-            db.collection("notes")
-              .whereField("user", in: userAndFriends)  // Use the correct field name 'user' to filter notes
-              .getDocuments { (querySnapshot, error) in
-                  guard let documents = querySnapshot?.documents else {
-                      print("Error fetching documents: \(error?.localizedDescription ?? "Unknown error")")
-                      return
-                  }
-                  
-                  for document in documents {
-                      let data = document.data()
-                      if let locationGeoPoint = data["location"] as? GeoPoint,
-                         let locationName = data["locationName"] as? String {
-                          
-                          let location = CLLocationCoordinate2D(latitude: locationGeoPoint.latitude, longitude: locationGeoPoint.longitude)
-                          
-                          let annotation = MKPointAnnotation()
-                          annotation.coordinate = location
-                          annotation.title = locationName
-                          self.mapView.addAnnotation(annotation)
-                      }
-                  }
-              }
-        }
-    }
-
-
     override func viewDidLoad() {
         super.viewDidLoad()
         setupLocationManager()
         setupMapView()
-        mapView.showsUserLocation = false  // Show the user's location on the map
-        addLocationPins()
+        mapView.showsUserLocation = true  // Shows user's location but does not drop a pin for it
         setupLocationButton()
+        observeUsersLocations()
+    }
 
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        if let userLocation = locationManager.location {
-            let region = MKCoordinateRegion(center: userLocation.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
-            mapView.setRegion(region, animated: true)
-        }
-    }
-    
-    func setupLocationButton() {
-           view.addSubview(locationButton)
-           
-           // Set constraints for the button; e.g., position it at the top-right of the view
-           NSLayoutConstraint.activate([
-               locationButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-               locationButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-               locationButton.widthAnchor.constraint(equalToConstant: 100),
-               locationButton.heightAnchor.constraint(equalToConstant: 50)
-           ])
-       }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        self.navigationController?.navigationBar.isHidden = false
-        self.navigationController?.navigationBar.isTranslucent = false
-        displayFriendsOnMap()  // Optionally, load and display friends locations when the view appears
-    }
-    
-    
     func setupLocationManager() {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
         locationManager.allowsBackgroundLocationUpdates = true
         locationManager.pausesLocationUpdatesAutomatically = false
-        startLocationUpdateTimer()
+        locationManager.startUpdatingLocation()
     }
-         
-    func startLocationUpdateTimer() {
-        locationUpdateTimer?.invalidate()
-        // Schedule a timer to trigger every 2 minutes
-        locationUpdateTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { [weak self] _ in
-            self?.updateUserLocationInFirestore()
-        }
-    }
-
-    func updateUserLocationInFirestore() {
-        guard let location = locationManager.location else {
-            print("No location available")
-            return
-        }
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User is not logged in")
-            return
-        }
-        let db = Firestore.firestore()
-        let userRef = db.collection("users").document(userEmail)
-        let locationData = ["latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude]
-
-        userRef.updateData(["location": locationData]) { error in
-            if let error = error {
-                print("Error updating location: \(error.localizedDescription)")
-            } else {
-                print("User location updated successfully.")
-            }
-        }
-    }
-
-   
-    
-    @objc func toggleUserVisibility() {
-        visibilityState.toggle()  // Toggle the current visibility state
-        updateVisibilityInFirestore(visibilityState)
-        manageLocationUpdatesBasedOnVisibility(visibilityState)
-    }
-
-    
-    func updateVisibilityInFirestore(_ visible: Bool) {
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User is not logged in")
-            return
-        }
-        let db = Firestore.firestore()
-        db.collection("users").document(userEmail).updateData(["isVisible": visible]) { error in
-            if let error = error {
-                print("Error updating visibility: \(error.localizedDescription)")
-            } else {
-                print("Visibility updated to \(visible)")
-            }
-        }
-    }
-    
-    func manageLocationUpdatesBasedOnVisibility(_ visible: Bool) {
-           if visible {
-               startLocationUpdateTimer()
-           } else {
-               locationUpdateTimer?.invalidate()
-               removeUserLocationFromFirestore()
-           }
-       }
-
-       func removeUserLocationFromFirestore() {
-           guard let userEmail = Auth.auth().currentUser?.email else {
-               print("User is not logged in")
-               return
-           }
-           let db = Firestore.firestore()
-           db.collection("users").document(userEmail).updateData(["location": FieldValue.delete()]) { error in
-               if let error = error {
-                   print("Error removing location: \(error.localizedDescription)")
-               } else {
-                   print("User location removed from Firestore successfully.")
-               }
-           }
-       }
-
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if let location = locations.last {
-            print("Updated location: \(location.coordinate.latitude), \(location.coordinate.longitude)")
-            updateUserLocationInFirestore(location)
-        }
-    }
-
-    func updateUserLocationInFirestore(_ location: CLLocation) {
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User is not logged in")
-            return
-        }
-        let db = Firestore.firestore()
-        let userRef = db.collection("users").document(userEmail)
-        let locationData = ["latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude]
-
-        userRef.updateData(["location": locationData]) { error in
-            if let error = error {
-                print("Error updating location: \(error.localizedDescription)")
-            } else {
-                print("User location updated successfully.")
-            }
-        }
-    }
-
-    
 
     func setupMapView() {
         mapView = MKMapView()
         mapView.delegate = self
-        mapView.translatesAutoresizingMaskIntoConstraints = false  // Use Auto Layout
+        mapView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(mapView)
         
-        // Set up constraints to make the map view extend to the top of the screen
         NSLayoutConstraint.activate([
             mapView.topAnchor.constraint(equalTo: view.topAnchor),
             mapView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -276,205 +70,134 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         ])
     }
 
-
-    
-
-
-
-    
-    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        if status == .authorizedWhenInUse {
-            locationManager.startUpdatingLocation()  // Start location updates when authorized
-        }
+    func setupLocationButton() {
+        view.addSubview(locationButton)
+        NSLayoutConstraint.activate([
+            locationButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            locationButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            locationButton.widthAnchor.constraint(equalToConstant: 40),
+            locationButton.heightAnchor.constraint(equalToConstant: 40)
+        ])
     }
-
-
-    @objc func toggleUserLocation() {
-        mapView.showsUserLocation.toggle()  // Toggle the visibility of the user location
-    }
-  
-    func displayFriendsOnMap() {
-        guard let currentUserEmail = Auth.auth().currentUser?.email else {
-            print("Debug: User is not logged in")
-            return
-        }
-
-        let db = Firestore.firestore()
-        let userRef = db.collection("users").document(currentUserEmail)
-
-        userRef.getDocument { [weak self] (document, error) in
-            guard let self = self else { return }
-            
-            if let error = error {
-                print("Debug: Error fetching user document: \(error.localizedDescription)")
-                return
-            }
-
-            guard let document = document, document.exists,
-                  let friends = document.data()?["friends"] as? [String] else {
-                print("Debug: No friends data found for user.")
-                return
-            }
-            
-            print("Debug: Found \(friends.count) friends for user.")
-            
-            for friendEmail in friends {
-                let friendRef = db.collection("users").document(friendEmail)
-                friendRef.getDocument { (friendDocumentSnapshot, error) in
-                    if let error = error {
-                        print("Debug: Error fetching friend's document: \(error.localizedDescription)")
-                        return
-                    }
-                    
-                    guard let friendDocument = friendDocumentSnapshot, friendDocument.exists,
-                          let locationData = friendDocument.data()?["location"] as? [String: Double],
-                          let latitude = locationData["latitude"], let longitude = locationData["longitude"] else {
-                        print("Debug: Could not find location data for friend \(friendEmail)")
-                        return
-                    }
-                    
-                    print("Debug: Adding annotation for friend \(friendEmail)")
-                    let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-                    self.addAnnotation(for: coordinate, title: friendEmail, imageURL: friendDocument.data()?["imageURL"] as? String)
-                }
-            }
-        }
-    }
-
-    
-
-    class LocationAnnotation: MKPointAnnotation {
-        var imageURL: String?
-        var image: UIImage?
-    }
-
-    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-        if let annotation = annotation as? LocationAnnotation {
-            let identifier = "FriendLocation"
-            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
-
-            if annotationView == nil {
-                // Debug: Print that we're creating a new annotation view
-                print("Debug: Creating new annotation view for \(annotation.title ?? "")")
-                annotationView = MKAnnotationView(annotation: annotation, reuseIdentifier: identifier)
-                annotationView?.canShowCallout = true
-            } else {
-                annotationView?.annotation = annotation
-            }
-            
-            // Load the image for the annotation
-            if let image = UIImage(named: "jellydev") {
-                // Resize the image to be slightly larger than a pin
-                let size = CGSize(width: 50, height: 70) // Adjust the size as needed
-                UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
-                image.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
-                let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
-                UIGraphicsEndImageContext()
-                
-                // Set the resized image to the annotation view
-                annotationView?.image = resizedImage
-            }
-
-            return annotationView
-        }
-        return nil
-    }
-
-    func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
-        let gestureRecognizers = mapView.gestureRecognizers ?? []
-        for gesture in gestureRecognizers {
-            if gesture.state == .began || gesture.state == .ended {
-                shouldCenterMapOnUserLocation = false
-                break
-            }
-        }
-    }
-    
-    // In NamesViewController
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == "PinSegue", let homeVC = segue.destination as? HomeViewController {
-            if let locationName = sender as? String {
-                homeVC.selectedLocationName = locationName
-                print("Location name set for HomeViewController: \(locationName)")
-            }
-        }
-    }
-
 
     @objc func locationButtonTapped() {
-        mapView.showsUserLocation.toggle()  // Toggle the visibility of the user location
-        
-        // Show an alert with the current state
-        let message = mapView.showsUserLocation ? "Your location is now visible on the map for your friends!" : "Your location is now hidden."
-        let alertController = UIAlertController(title: "Location Visibility", message: message, preferredStyle: .alert)
-        alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-        present(alertController, animated: true)
-
-        // Optionally center the map on the user's current location when shown
-        if mapView.showsUserLocation, let location = locationManager.location {
-            let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
-            mapView.setRegion(region, animated: true)
+        toggleVisibilityAndUpdateLocation()
+        if visibilityState, let location = locationManager.location {
+            centerMapOnLocation(location)
         }
-       }
-    
-    
-    var locationImages: [String: UIImage] = [:]
+        locationButton.tintColor = visibilityState ? .systemBlue : .black
+    }
 
-    
-    
-    
-    func addAnnotation(for coordinate: CLLocationCoordinate2D, title: String, imageURL: String?) {
-        // Create the annotation with the provided details
-        let annotation = LocationAnnotation(__coordinate: coordinate, title: title, subtitle: nil)
-        annotation.imageURL = imageURL
-
-        // Add the annotation to the map
-        self.mapView.addAnnotation(annotation)
+    func toggleVisibilityAndUpdateLocation() {
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User is not logged in")
+            return
+        }
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(userEmail)
+        visibilityState.toggle()
         
-        // Load the image asynchronously if it is not already in the cache
-        if let imageURL = imageURL, locationImages[title] == nil {
-            URLSession.shared.dataTask(with: URL(string: imageURL)!) { [weak self] data, response, error in
-                guard let self = self else { return }
-                if let error = error {
-                    print("Error loading image: \(error.localizedDescription)")
-                } else if let data = data, let image = UIImage(data: data) {
-                    let size = CGSize(width: 50, height: 50)
-                    UIGraphicsBeginImageContext(size)
-                    image.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
-                    let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
-                    UIGraphicsEndImageContext()
+        if visibilityState {
+            startLocationUpdates()
+            let location = locationManager.location
+            updateFirestoreWithLocation(location, for: userEmail)
+            showVisibilityNotification(visible: true)
+        } else {
+            stopLocationUpdates()
+            userRef.updateData([
+                "visibility": false,
+                "location": FieldValue.delete()  // Ensure the location is deleted
+            ])
+            showVisibilityNotification(visible: false)
+        }
+    }
+
+    func startLocationUpdates() {
+        locationUpdateTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+            guard let self = self, let location = self.locationManager.location else { return }
+            self.updateFirestoreWithLocation(location, for: Auth.auth().currentUser?.email ?? "")
+        }
+    }
+
+    func stopLocationUpdates() {
+        locationUpdateTimer?.invalidate()
+    }
+
+    func updateFirestoreWithLocation(_ location: CLLocation?, for userEmail: String) {
+        guard let location = location else { return }
+        let locationData = ["latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude]
+        let db = Firestore.firestore()
+        db.collection("users").document(userEmail).updateData([
+            "location": locationData,
+            "visibility": true
+        ])
+    }
+
+    func observeUsersLocations() {
+        let db = Firestore.firestore()
+        db.collection("users").whereField("visibility", isEqualTo: true).addSnapshotListener { [weak self] (querySnapshot, error) in
+            guard let self = self, let snapshot = querySnapshot else {
+                print("Error fetching user locations: \(error?.localizedDescription ?? "unknown error")")
+                return
+            }
+            
+            for change in snapshot.documentChanges {
+                if let locationData = change.document.data()["location"] as? [String: Double],
+                   let latitude = locationData["latitude"], let longitude = locationData["longitude"],
+                   change.document.documentID != Auth.auth().currentUser?.email { // Exclude current user
+                    let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
                     
-                    // Cache the image
-                    self.locationImages[title] = resizedImage
-                    
-                    // Create the annotation view on the main thread
-                    DispatchQueue.main.async {
-                        // Find the annotation by title and update its image if it's visible
-                        if let annotations = self.mapView.annotations as? [LocationAnnotation] {
-                            for ann in annotations where ann.title == title {
-                                if let annotationView = self.mapView.view(for: ann) as? MKAnnotationView {
-                                    annotationView.image = resizedImage
-                                }
-                            }
-                        }
+                    switch change.type {
+                    case .added, .modified:
+                        self.addOrUpdateAnnotationForUser(at: coordinate, email: change.document.documentID)
+                    case .removed:
+                        self.removeAnnotationForUser(email: change.document.documentID)
                     }
-                }
-            }.resume()
-        } else if let cachedImage = locationImages[title] {
-            // If the image is already in the cache, find the annotation and update its image
-            if let annotations = self.mapView.annotations as? [LocationAnnotation] {
-                for ann in annotations where ann.title == title {
-                    if let annotationView = self.mapView.view(for: ann) as? MKAnnotationView {
-                        annotationView.image = cachedImage
-                    }
+                } else if change.type == .removed || change.document.data()["visibility"] as? Bool == false {
+                    self.removeAnnotationForUser(email: change.document.documentID)
                 }
             }
         }
     }
 
+    func addOrUpdateAnnotationForUser(at coordinate: CLLocationCoordinate2D, email: String) {
+        let existingAnnotation = mapView.annotations.first {
+            ($0 as? MKPointAnnotation)?.title == email
+        } as? MKPointAnnotation
 
-    deinit {
-        // Invalidate the timer when the view controller is deinitialized
-        locationUpdateTimer?.invalidate()
+        if let annotation = existingAnnotation {
+            DispatchQueue.main.async {
+                annotation.coordinate = coordinate
+            }
+        } else {
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = coordinate
+            annotation.title = email
+            DispatchQueue.main.async {
+                self.mapView.addAnnotation(annotation)
+            }
+        }
+    }
+
+    func removeAnnotationForUser(email: String) {
+        if let annotation = (mapView.annotations.first {
+            ($0 as? MKPointAnnotation)?.title == email
+        } as? MKPointAnnotation) {
+            DispatchQueue.main.async {
+                self.mapView.removeAnnotation(annotation)
+            }
+        }
+    }
+
+    func showVisibilityNotification(visible: Bool) {
+        let message = visible ? "You are now visible to others." : "You are now hidden from others."
+        let alert = UIAlertController(title: "Visibility Changed", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(alert, animated: true, completion: nil)
+    }
+    
+    func centerMapOnLocation(_ location: CLLocation) {
+        let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
+        mapView.setRegion(region, animated: true)
     }
 }
