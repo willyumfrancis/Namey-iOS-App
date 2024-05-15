@@ -19,6 +19,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     var locationManager = CLLocationManager()
     var visibilityState: Bool = false
     var locationUpdateTimer: Timer?
+    var initialLocationSet: Bool = false  // Used to track if initial location centering is done
     
     weak var delegate: NamesViewControllerDelegate?
     
@@ -42,7 +43,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         super.viewDidLoad()
         setupLocationManager()
         setupMapView()
-        mapView.showsUserLocation = true  // Shows user's location but does not drop a pin for it
+        mapView.showsUserLocation = visibilityState
         setupLocationButton()
         observeUsersLocations()
     }
@@ -97,16 +98,19 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         let userRef = db.collection("users").document(userEmail)
         visibilityState.toggle()
         
+        mapView.showsUserLocation = visibilityState
+        
         if visibilityState {
             startLocationUpdates()
-            let location = locationManager.location
-            updateFirestoreWithLocation(location, for: userEmail)
+            if let location = locationManager.location {
+                updateFirestoreWithLocation(location, for: userEmail)
+            }
             showVisibilityNotification(visible: true)
         } else {
             stopLocationUpdates()
             userRef.updateData([
                 "visibility": false,
-                "location": FieldValue.delete()  // Ensure the location is deleted
+                "location": FieldValue.delete()
             ])
             showVisibilityNotification(visible: false)
         }
@@ -160,6 +164,36 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         }
     }
 
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        guard let annotation = annotation as? MKPointAnnotation, annotation.title != Auth.auth().currentUser?.email else {
+            return nil
+        }
+
+        let identifier = "FriendLocation"
+        var view: MKAnnotationView
+        if let dequeuedView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) {
+            dequeuedView.annotation = annotation
+            view = dequeuedView
+        } else {
+            view = MKAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+            view.canShowCallout = true
+            view.calloutOffset = CGPoint(x: -5, y: 5)
+            view.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
+        }
+
+        // Resizing the "jellydev" image to fit the annotation view
+        if let jellyDevImage = UIImage(named: "jellydev") {
+            let size = CGSize(width: 50, height: 70)  // Set your desired size
+            UIGraphicsBeginImageContext(size)
+            jellyDevImage.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+            let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+            UIGraphicsEndImageContext()
+            view.image = resizedImage
+        }
+        
+        return view
+    }
+
     func addOrUpdateAnnotationForUser(at coordinate: CLLocationCoordinate2D, email: String) {
         let existingAnnotation = mapView.annotations.first {
             ($0 as? MKPointAnnotation)?.title == email
@@ -197,7 +231,18 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     }
     
     func centerMapOnLocation(_ location: CLLocation) {
-        let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
-        mapView.setRegion(region, animated: true)
+        if !initialLocationSet {
+            let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
+            mapView.setRegion(region, animated: true)
+            initialLocationSet = true  // Ensure we only center the map initially
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let location = locations.last, visibilityState {
+            if !initialLocationSet {
+                centerMapOnLocation(location)
+            }
+        }
     }
 }
