@@ -117,7 +117,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     }
 
     func startLocationUpdates() {
-        locationUpdateTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+        locationUpdateTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
             guard let self = self, let location = self.locationManager.location else { return }
             self.updateFirestoreWithLocation(location, for: Auth.auth().currentUser?.email ?? "")
         }
