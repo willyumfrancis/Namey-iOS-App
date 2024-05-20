@@ -9,17 +9,20 @@ import FirebaseAuth
 import CoreData
 import CoreLocation
 import MapKit
+import UserNotifications
 
 public protocol NamesViewControllerDelegate: AnyObject {
     func pinSelected(with locationName: String)
 }
 
-class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate {
+class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate, UNUserNotificationCenterDelegate {
     var mapView: MKMapView!
     var locationManager = CLLocationManager()
     var visibilityState: Bool = false
     var locationUpdateTimer: Timer?
     var initialLocationSet: Bool = false  // Used to track if initial location centering is done
+    var notifiedUsers: Set<String> = []  // Set to track users who have been notified
+    var lastNotificationTimestamp: [String: Timestamp] = [:] // Track last notification sent time per friend
     
     weak var delegate: NamesViewControllerDelegate?
     
@@ -41,11 +44,14 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        requestNotificationPermission()
         setupLocationManager()
         setupMapView()
         mapView.showsUserLocation = visibilityState
         setupLocationButton()
         observeUsersLocations()
+        observeFriendsLocationEnabledAt() // Add this line
+        UNUserNotificationCenter.current().delegate = self
     }
 
     func setupLocationManager() {
@@ -70,6 +76,71 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
             mapView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        print("Notification will present: \(notification.request.content.title)")
+        completionHandler([.banner, .sound])
+    }
+
+    func observeUsersLocations() {
+        let db = Firestore.firestore()
+        db.collection("users").whereField("visibility", isEqualTo: true).addSnapshotListener { [weak self] (querySnapshot, error) in
+            guard let self = self, let querySnapshot = querySnapshot else {
+                print("Error fetching user locations: \(error?.localizedDescription ?? "unknown error")")
+                return
+            }
+
+            for change in querySnapshot.documentChanges {
+                let userEmail = change.document.documentID
+                if userEmail == Auth.auth().currentUser?.email {
+                    continue  // Skip the current user's updates
+                }
+
+                let userName = userEmail  // Ideally, you would fetch the user's name from the document or cache
+
+                if change.type == .added || (change.type == .modified && change.document.data()["visibility"] as? Bool == true) {
+                    if !self.notifiedUsers.contains(userEmail) {
+                        print("User \(userName) is live")
+                        self.notifiedUsers.insert(userEmail)
+                    }
+                }
+
+                if let locationData = change.document.data()["location"] as? [String: Double],
+                   let latitude = locationData["latitude"], let longitude = locationData["longitude"] {
+                    let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+
+                    switch change.type {
+                    case .added, .modified:
+                        self.addOrUpdateAnnotationForUser(at: coordinate, email: change.document.documentID)
+                    case .removed:
+                        self.removeAnnotationForUser(email: change.document.documentID)
+                    }
+                } else if change.type == .removed || change.document.data()["visibility"] as? Bool == false {
+                    self.removeAnnotationForUser(email: change.document.documentID)
+                    self.notifiedUsers.remove(userEmail)  // Remove user from notified set when they go offline
+                }
+            }
+        }
+    }
+
+    private func sendNotificationForUserGoingLive(_ userName: String) {
+        print("Sending notification for user \(userName) going live")
+        let content = UNMutableNotificationContent()
+        content.title = "\(userName) is live on Namie"
+        content.body = "\(userName) has just enabled their location sharing."
+        content.sound = UNNotificationSound.default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Error scheduling notification: \(error)")
+            } else {
+                print("Notification scheduled successfully for user \(userName)")
+            }
+        }
+    }
 
     func setupLocationButton() {
         view.addSubview(locationButton)
@@ -82,6 +153,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     }
 
     @objc func locationButtonTapped() {
+        print("Location button tapped")
         toggleVisibilityAndUpdateLocation()
         if visibilityState, let location = locationManager.location {
             centerMapOnLocation(location)
@@ -106,12 +178,19 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
                 updateFirestoreWithLocation(location, for: userEmail)
             }
             showVisibilityNotification(visible: true)
+            updateLocationEnabledAt(for: userEmail)
         } else {
             stopLocationUpdates()
             userRef.updateData([
                 "visibility": false,
                 "location": FieldValue.delete()
-            ])
+            ]) { error in
+                if let error = error {
+                    print("Error updating Firestore visibility: \(error)")
+                } else {
+                    print("Firestore visibility updated to false")
+                }
+            }
             showVisibilityNotification(visible: false)
         }
     }
@@ -134,31 +213,74 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         db.collection("users").document(userEmail).updateData([
             "location": locationData,
             "visibility": true
-        ])
+        ]) { error in
+            if let error = error {
+                print("Error updating Firestore location: \(error)")
+            } else {
+                print("Firestore location updated for user \(userEmail)")
+            }
+        }
     }
 
-    func observeUsersLocations() {
+    private func requestNotificationPermission() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound]) { granted, error in
+            if granted {
+                print("Notification permission granted.")
+            } else {
+                print("Notification permission denied.")
+            }
+        }
+    }
+
+    private func updateLocationEnabledAt(for userEmail: String) {
         let db = Firestore.firestore()
-        db.collection("users").whereField("visibility", isEqualTo: true).addSnapshotListener { [weak self] (querySnapshot, error) in
-            guard let self = self, let snapshot = querySnapshot else {
-                print("Error fetching user locations: \(error?.localizedDescription ?? "unknown error")")
+        let userRef = db.collection("users").document(userEmail)
+        userRef.updateData([
+            "locationEnabledAt": FieldValue.serverTimestamp()
+        ]) { error in
+            if let error = error {
+                print("Error updating locationEnabledAt: \(error)")
+            } else {
+                print("locationEnabledAt timestamp updated successfully")
+            }
+        }
+    }
+
+    private func observeFriendsLocationEnabledAt() {
+        let db = Firestore.firestore()
+        guard let userEmail = Auth.auth().currentUser?.email else {
+            print("User is not logged in")
+            return
+        }
+        
+        let userRef = db.collection("users").document(userEmail)
+        userRef.getDocument { [weak self] (document, error) in
+            guard let self = self, let document = document, document.exists else {
+                print("Error fetching user document: \(error?.localizedDescription ?? "unknown error")")
                 return
             }
             
-            for change in snapshot.documentChanges {
-                if let locationData = change.document.data()["location"] as? [String: Double],
-                   let latitude = locationData["latitude"], let longitude = locationData["longitude"],
-                   change.document.documentID != Auth.auth().currentUser?.email { // Exclude current user
-                    let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-                    
-                    switch change.type {
-                    case .added, .modified:
-                        self.addOrUpdateAnnotationForUser(at: coordinate, email: change.document.documentID)
-                    case .removed:
-                        self.removeAnnotationForUser(email: change.document.documentID)
+            let friends = document.data()?["friends"] as? [String] ?? []
+            for friendEmail in friends {
+                db.collection("users").document(friendEmail).addSnapshotListener { [weak self] (documentSnapshot, error) in
+                    guard let self = self, let document = documentSnapshot, document.exists else {
+                        print("Error fetching friend document: \(error?.localizedDescription ?? "unknown error")")
+                        return
                     }
-                } else if change.type == .removed || change.document.data()["visibility"] as? Bool == false {
-                    self.removeAnnotationForUser(email: change.document.documentID)
+                    
+                    if let locationEnabledAt = document.data()?["locationEnabledAt"] as? Timestamp {
+                        let userName = friendEmail  // Ideally, you would fetch the user's name from the document or cache
+                        
+                        // Check if the notification has already been sent recently
+                        if let lastNotified = self.lastNotificationTimestamp[friendEmail], locationEnabledAt.compare(lastNotified) != .orderedDescending {
+                            return
+                        }
+                        
+                        // Update the last notification timestamp
+                        self.lastNotificationTimestamp[friendEmail] = locationEnabledAt
+                        self.sendNotificationForUserGoingLive(userName)
+                    }
                 }
             }
         }
@@ -231,17 +353,15 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     }
     
     func centerMapOnLocation(_ location: CLLocation) {
-        if !initialLocationSet {
-            let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
-            mapView.setRegion(region, animated: true)
-            initialLocationSet = true  // Ensure we only center the map initially
-        }
+        let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
+        mapView.setRegion(region, animated: true)
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let location = locations.last, visibilityState {
             if !initialLocationSet {
                 centerMapOnLocation(location)
+                initialLocationSet = true
             }
         }
     }
