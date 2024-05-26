@@ -27,17 +27,19 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setImage(UIImage(systemName: "location"), for: .normal)
-        button.backgroundColor = .white
-        button.layer.cornerRadius = 8
+        button.backgroundColor = UIColor(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
+        button.layer.borderWidth = 2
+        button.layer.borderColor = UIColor.black.cgColor
+        button.layer.cornerRadius = 8 // Increased to match the first function
         button.layer.shadowOpacity = 0.3
         button.layer.shadowRadius = 3
         button.layer.shadowOffset = CGSize(width: 0, height: 3)
-        button.tintColor = .black
         button.addTarget(self, action: #selector(locationButtonTapped), for: .touchUpInside)
         button.widthAnchor.constraint(equalToConstant: 40).isActive = true
         button.heightAnchor.constraint(equalToConstant: 40).isActive = true
         return button
     }()
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -97,21 +99,15 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
                 let userName = userEmail  // Ideally, you would fetch the user's name from the document or cache
 
                 if change.type == .added || (change.type == .modified && change.document.data()["visibility"] as? Bool == true) {
-                    if !self.notifiedUsers.contains(userEmail) {
-                        print("User \(userName) is live")
-                        self.notifiedUsers.insert(userEmail)
-                    }
-                }
-
-                if let locationData = change.document.data()["location"] as? [String: Double],
-                   let latitude = locationData["latitude"], let longitude = locationData["longitude"] {
-                    let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-
-                    switch change.type {
-                    case .added, .modified:
+                    if let locationData = change.document.data()["location"] as? [String: Double],
+                       let latitude = locationData["latitude"], let longitude = locationData["longitude"] {
+                        let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
                         self.addOrUpdateAnnotationForUser(at: coordinate, email: change.document.documentID)
-                    case .removed:
-                        self.removeAnnotationForUser(email: change.document.documentID)
+
+                        if !self.notifiedUsers.contains(userEmail) {
+                            self.sendNotificationForUserGoingLive(userName)
+                            self.notifiedUsers.insert(userEmail)
+                        }
                     }
                 } else if change.type == .removed || change.document.data()["visibility"] as? Bool == false {
                     self.removeAnnotationForUser(email: change.document.documentID)
@@ -277,9 +273,14 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
                             return
                         }
                         
-                        // Update the last notification timestamp
-                        self.lastNotificationTimestamp[friendEmail] = locationEnabledAt
-                        self.sendNotificationForUserGoingLive(userName)
+                        // Check visibility and location before sending notification
+                        if let visibility = document.data()?["visibility"] as? Bool, visibility,
+                           let locationData = document.data()?["location"] as? [String: Double],
+                           locationData["latitude"] != nil, locationData["longitude"] != nil {
+                            // Update the last notification timestamp
+                            self.lastNotificationTimestamp[friendEmail] = locationEnabledAt
+                            self.sendNotificationForUserGoingLive(userName)
+                        }
                     }
                 }
             }
@@ -287,7 +288,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     }
 
     private func scheduleLocationDisableTimer() {
-        let disableDate = Date().addingTimeInterval(8 * 60 * 60) // 24 hours
+        let disableDate = Date().addingTimeInterval(24 * 60 * 60) // 24 hours
         let timer = Timer(fireAt: disableDate, interval: 0, target: self, selector: #selector(disableLocationSharing), userInfo: nil, repeats: false)
         RunLoop.main.add(timer, forMode: .common)
     }
@@ -313,7 +314,8 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     }
 
     private func updateLocationButtonColor() {
-        locationButton.tintColor = UIColor(red: 116/255, green: 246/255, blue: 230/255, alpha: 1.0)
+        locationButton.tintColor = visibilityState ? .black : #colorLiteral(red: 0, green: 0, blue: 0, alpha: 0.499249793)
+
     }
 
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
