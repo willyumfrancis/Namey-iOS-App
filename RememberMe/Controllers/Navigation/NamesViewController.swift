@@ -1,7 +1,3 @@
-//
-//  NamesViewController.swift
-//  RememberMe
-//
 import UIKit
 import FirebaseCore
 import FirebaseFirestore
@@ -23,6 +19,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     var initialLocationSet: Bool = false  // Used to track if initial location centering is done
     var notifiedUsers: Set<String> = []  // Set to track users who have been notified
     var lastNotificationTimestamp: [String: Timestamp] = [:] // Track last notification sent time per friend
+    var locationEnabledTimestamp: Timestamp? // Track the timestamp when location was enabled
     
     weak var delegate: NamesViewControllerDelegate?
     
@@ -50,7 +47,8 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         mapView.showsUserLocation = visibilityState
         setupLocationButton()
         observeUsersLocations()
-        observeFriendsLocationEnabledAt() // Add this line
+        observeFriendsLocationEnabledAt()
+        checkLocationSharingState() // Check the location sharing state on launch
         UNUserNotificationCenter.current().delegate = self
     }
 
@@ -146,7 +144,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         view.addSubview(locationButton)
         NSLayoutConstraint.activate([
             locationButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            locationButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            locationButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20), // Moved to bottom
             locationButton.widthAnchor.constraint(equalToConstant: 40),
             locationButton.heightAnchor.constraint(equalToConstant: 40)
         ])
@@ -158,7 +156,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         if visibilityState, let location = locationManager.location {
             centerMapOnLocation(location)
         }
-        locationButton.tintColor = visibilityState ? .systemBlue : .black
+        updateLocationButtonColor()
     }
 
     func toggleVisibilityAndUpdateLocation() {
@@ -243,6 +241,8 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
                 print("Error updating locationEnabledAt: \(error)")
             } else {
                 print("locationEnabledAt timestamp updated successfully")
+                self.locationEnabledTimestamp = Timestamp(date: Date())
+                self.scheduleLocationDisableTimer()
             }
         }
     }
@@ -286,34 +286,78 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         }
     }
 
+    private func scheduleLocationDisableTimer() {
+        let disableDate = Date().addingTimeInterval(8 * 60 * 60) // 24 hours
+        let timer = Timer(fireAt: disableDate, interval: 0, target: self, selector: #selector(disableLocationSharing), userInfo: nil, repeats: false)
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    @objc private func disableLocationSharing() {
+        guard visibilityState else { return }
+        print("Disabling location sharing after 24 hours")
+        toggleVisibilityAndUpdateLocation()
+    }
+
+    private func checkLocationSharingState() {
+        guard let userEmail = Auth.auth().currentUser?.email else { return }
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(userEmail)
+        userRef.getDocument { [weak self] document, error in
+            guard let self = self, let document = document, document.exists else { return }
+            if let visibility = document.data()?["visibility"] as? Bool {
+                self.visibilityState = visibility
+                self.mapView.showsUserLocation = visibility
+                self.updateLocationButtonColor()
+            }
+        }
+    }
+
+    private func updateLocationButtonColor() {
+        locationButton.tintColor = UIColor(red: 116/255, green: 246/255, blue: 230/255, alpha: 1.0)
+    }
+
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-        guard let annotation = annotation as? MKPointAnnotation, annotation.title != Auth.auth().currentUser?.email else {
-            return nil
-        }
+          guard let annotation = annotation as? MKPointAnnotation, annotation.title != Auth.auth().currentUser?.email else {
+              return nil
+          }
 
-        let identifier = "FriendLocation"
-        var view: MKAnnotationView
-        if let dequeuedView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) {
-            dequeuedView.annotation = annotation
-            view = dequeuedView
-        } else {
-            view = MKAnnotationView(annotation: annotation, reuseIdentifier: identifier)
-            view.canShowCallout = true
-            view.calloutOffset = CGPoint(x: -5, y: 5)
-            view.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
-        }
+          let identifier = "FriendLocation"
+          var view: MKAnnotationView
+          if let dequeuedView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) {
+              dequeuedView.annotation = annotation
+              view = dequeuedView
+          } else {
+              view = MKAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+              view.canShowCallout = true
+              view.calloutOffset = CGPoint(x: -5, y: 5)
+              view.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
+          }
 
-        // Resizing the "jellydev" image to fit the annotation view
-        if let jellyDevImage = UIImage(named: "jellydev") {
-            let size = CGSize(width: 50, height: 70)  // Set your desired size
-            UIGraphicsBeginImageContext(size)
-            jellyDevImage.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
-            let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
-            UIGraphicsEndImageContext()
-            view.image = resizedImage
-        }
+          // Resizing the "jellydev" image to fit the annotation view
+          if let jellyDevImage = UIImage(named: "jellydev") {
+              let size = CGSize(width: 50, height: 70)  // Set your desired size
+              UIGraphicsBeginImageContext(size)
+              jellyDevImage.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+              let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+              UIGraphicsEndImageContext()
+              view.image = resizedImage
+          }
+          
+          return view
+      }
+
+    // Handle the directions button tap
+    func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
+        guard let annotation = view.annotation as? MKPointAnnotation else { return }
         
-        return view
+        let coordinate = annotation.coordinate
+        let mapItem = MKMapItem(placemark: MKPlacemark(coordinate: coordinate))
+        mapItem.name = annotation.title ?? "Destination"
+        
+        let options = [
+            MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving
+        ]
+        mapItem.openInMaps(launchOptions: options)
     }
 
     func addOrUpdateAnnotationForUser(at coordinate: CLLocationCoordinate2D, email: String) {
