@@ -16,8 +16,10 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     var locationManager = CLLocationManager()
     var visibilityState: Bool = false
     var locationUpdateTimer: Timer?
+    var disableLocationTimer: Timer?
     var initialLocationSet: Bool = false
     var notifiedUsers: Set<String> = [] // Track notified users
+    var countdownLabel: UILabel!
     
     weak var delegate: NamesViewControllerDelegate?
 
@@ -45,6 +47,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         setupMapView()
         mapView.showsUserLocation = visibilityState
         setupLocationButton()
+        setupCountdownLabel()
         observeUsersLocations()
         checkLocationSharingState() // Check the location sharing state on launch
         UNUserNotificationCenter.current().delegate = self
@@ -73,6 +76,31 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         ])
         print("Map view setup complete.")
     }
+
+    func setupCountdownLabel() {
+        countdownLabel = UILabel()
+        countdownLabel.translatesAutoresizingMaskIntoConstraints = false
+        countdownLabel.backgroundColor = UIColor(red: 0.07450980392, green: 0.9803921569, blue: 0.9019607843, alpha: 1)
+        countdownLabel.textColor = .black
+        countdownLabel.textAlignment = .center
+        countdownLabel.layer.borderWidth = 2
+        countdownLabel.layer.borderColor = UIColor.black.cgColor
+        countdownLabel.layer.cornerRadius = 8
+        countdownLabel.layer.shadowOpacity = 0.3
+        countdownLabel.layer.shadowRadius = 3
+        countdownLabel.layer.shadowOffset = CGSize(width: 0, height: 3)
+        countdownLabel.layer.masksToBounds = true
+        view.addSubview(countdownLabel)
+        NSLayoutConstraint.activate([
+            countdownLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            countdownLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            countdownLabel.widthAnchor.constraint(equalToConstant: 120),
+            countdownLabel.heightAnchor.constraint(equalToConstant: 40)
+        ])
+        countdownLabel.isHidden = true
+        print("Countdown label setup complete.")
+    }
+
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         print("Notification will present: \(notification.request.content.title)")
@@ -192,7 +220,6 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         }
     }
 
-
     func startLocationUpdates() {
         locationUpdateTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
             guard let self = self, let location = self.locationManager.location else { return }
@@ -203,6 +230,8 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
 
     func stopLocationUpdates() {
         locationUpdateTimer?.invalidate()
+        disableLocationTimer?.invalidate()
+        countdownLabel.isHidden = true
         print("Stopped location updates.")
     }
 
@@ -249,16 +278,33 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     }
 
     private func scheduleLocationDisableTimer() {
-        let disableDate = Date().addingTimeInterval(8 * 60 * 60) // 24 hours
-        let timer = Timer(fireAt: disableDate, interval: 0, target: self, selector: #selector(disableLocationSharing), userInfo: nil, repeats: false)
-        RunLoop.main.add(timer, forMode: .common)
+        disableLocationTimer = Timer.scheduledTimer(timeInterval: 4 * 60 * 60, target: self, selector: #selector(disableLocationSharing), userInfo: nil, repeats: false)
+        updateCountdownLabel(with: 4 * 60 * 60) // 4 hours countdown
         print("Scheduled location disable timer.")
     }
 
     @objc private func disableLocationSharing() {
         guard visibilityState else { return }
-        print("Disabling location sharing after 24 hours.")
+        print("Disabling location sharing after 4 hours.")
         toggleVisibilityAndUpdateLocation()
+    }
+
+    private func updateCountdownLabel(with timeInterval: TimeInterval) {
+        countdownLabel.isHidden = false
+        var remainingTime = Int(timeInterval)
+        
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+            if remainingTime > 0 {
+                remainingTime -= 1
+                let hours = remainingTime / 3600
+                let minutes = (remainingTime % 3600) / 60
+                let seconds = remainingTime % 60
+                self.countdownLabel.text = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+            } else {
+                self.countdownLabel.isHidden = true
+                timer.invalidate()
+            }
+        }
     }
 
     private func checkLocationSharingState() {
