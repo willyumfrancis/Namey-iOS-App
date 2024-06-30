@@ -447,31 +447,8 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="ZqA-Pk-kuH">
-                                <rect key="frame" x="75" y="535" width="241" height="185"/>
-                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                <prototypes>
-                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="FriendRequestCell" id="T1g-Jq-czz">
-                                        <rect key="frame" x="0.0" y="50" width="241" height="43.666667938232422"/>
-                                        <autoresizingMask key="autoresizingMask"/>
-                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="T1g-Jq-czz" id="qtv-Og-iDc">
-                                            <rect key="frame" x="0.0" y="0.0" width="241" height="43.666667938232422"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                        </tableViewCellContentView>
-                                    </tableViewCell>
-                                </prototypes>
-                            </tableView>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="UQm-ni-Ym6">
-                                <rect key="frame" x="327.33333333333331" y="481" width="49.666666666666686" height="35"/>
-                                <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" image="person.crop.circle.fill.badge.plus" catalog="system" title=""/>
-                                <connections>
-                                    <action selector="addFriendButtonTapped:" destination="xbb-iS-Kw8" eventType="touchUpInside" id="wzj-ae-bap"/>
-                                </connections>
-                            </button>
                             <navigationBar opaque="NO" contentMode="scaleToFill" translucent="NO" translatesAutoresizingMaskIntoConstraints="NO" id="KLL-aq-4zM">
-                                <rect key="frame" x="-1" y="49" width="393" height="44"/>
+                                <rect key="frame" x="-1" y="49" width="395" height="44"/>
                                 <color key="barTintColor" red="0.074509803920000006" green="0.98039215690000003" blue="0.90196078430000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <items>
                                     <navigationItem id="c4o-Wk-9vH">
@@ -497,7 +474,7 @@
                                 </items>
                             </navigationBar>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wJO-qX-FZY">
-                                <rect key="frame" x="175" y="59" width="41.333333333333343" height="24"/>
+                                <rect key="frame" x="176" y="59" width="41.333333333333343" height="24"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -507,28 +484,20 @@
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
                             <constraint firstItem="6RE-an-yYf" firstAttribute="top" secondItem="eNI-Vd-Khi" secondAttribute="bottom" constant="8" id="7T8-1H-AX1"/>
-                            <constraint firstItem="ZqA-Pk-kuH" firstAttribute="top" secondItem="UQm-ni-Ym6" secondAttribute="bottom" constant="19" id="AbE-yU-uTh"/>
-                            <constraint firstItem="ZqA-Pk-kuH" firstAttribute="centerX" secondItem="KLL-aq-4zM" secondAttribute="centerX" id="C4b-RZ-STn"/>
                             <constraint firstItem="wJO-qX-FZY" firstAttribute="centerX" secondItem="qmZ-fR-ckv" secondAttribute="centerX" id="DAa-G8-Cay"/>
                             <constraint firstItem="eNI-Vd-Khi" firstAttribute="top" secondItem="wJO-qX-FZY" secondAttribute="bottom" constant="20" id="Fj7-Mv-IQy"/>
                             <constraint firstItem="eNI-Vd-Khi" firstAttribute="top" secondItem="KLL-aq-4zM" secondAttribute="bottom" constant="10" id="L6X-aB-4qD"/>
-                            <constraint firstItem="UQm-ni-Ym6" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="v78-BO-IR1" secondAttribute="leading" symbolic="YES" id="Mie-RT-Q68"/>
                             <constraint firstItem="eNI-Vd-Khi" firstAttribute="leading" secondItem="v78-BO-IR1" secondAttribute="leading" constant="63" id="N0k-WR-dzC"/>
                             <constraint firstItem="v78-BO-IR1" firstAttribute="bottom" secondItem="6RE-an-yYf" secondAttribute="bottom" constant="193" id="O1k-gd-CP6"/>
                             <constraint firstItem="wJO-qX-FZY" firstAttribute="centerX" secondItem="KLL-aq-4zM" secondAttribute="centerX" id="Oim-nY-RJV"/>
                             <constraint firstItem="wJO-qX-FZY" firstAttribute="centerY" secondItem="KLL-aq-4zM" secondAttribute="centerY" id="P9d-rX-06H"/>
                             <constraint firstItem="eNI-Vd-Khi" firstAttribute="centerX" secondItem="6RE-an-yYf" secondAttribute="centerX" id="RcC-vs-D5C"/>
-                            <constraint firstItem="ZqA-Pk-kuH" firstAttribute="centerX" secondItem="6RE-an-yYf" secondAttribute="centerX" id="Ur1-LP-Obb"/>
-                            <constraint firstItem="UQm-ni-Ym6" firstAttribute="top" secondItem="6RE-an-yYf" secondAttribute="top" id="VSu-CO-1iF"/>
                             <constraint firstItem="eNI-Vd-Khi" firstAttribute="centerX" secondItem="qmZ-fR-ckv" secondAttribute="centerX" constant="-1" id="ZCa-Dw-Wu7"/>
-                            <constraint firstItem="ZqA-Pk-kuH" firstAttribute="bottom" secondItem="v78-BO-IR1" secondAttribute="bottom" id="cll-5b-cGT"/>
-                            <constraint firstItem="ZqA-Pk-kuH" firstAttribute="leading" secondItem="v78-BO-IR1" secondAttribute="leading" constant="75" id="drY-Dh-o7K"/>
                             <constraint firstItem="6RE-an-yYf" firstAttribute="leading" secondItem="v78-BO-IR1" secondAttribute="leading" constant="88" id="itM-co-WLc"/>
                             <constraint firstItem="KLL-aq-4zM" firstAttribute="leading" secondItem="qmZ-fR-ckv" secondAttribute="leadingMargin" constant="-17" id="nxv-8l-SWT"/>
                             <constraint firstItem="AgT-fB-avi" firstAttribute="top" secondItem="qmZ-fR-ckv" secondAttribute="topMargin" constant="-32" id="tt8-ol-g5m"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="AgT-fB-avi" secondAttribute="trailing" constant="20" symbolic="YES" id="w6S-VV-5Py"/>
                             <constraint firstItem="AgT-fB-avi" firstAttribute="leading" secondItem="qmZ-fR-ckv" secondAttribute="leadingMargin" id="xM2-6g-mZB"/>
-                            <constraint firstItem="UQm-ni-Ym6" firstAttribute="trailing" secondItem="qmZ-fR-ckv" secondAttribute="trailingMargin" id="z8T-aF-fKM"/>
                         </constraints>
                     </view>
                     <tabBarItem key="tabBarItem" title="Settings" image="gear" catalog="system" id="JEa-ln-6ly"/>
@@ -541,7 +510,6 @@
                     <connections>
                         <outlet property="betaTap" destination="6RE-an-yYf" id="mrK-gM-kfS"/>
                         <outlet property="catImage" destination="eNI-Vd-Khi" id="Pqy-Yc-9AE"/>
-                        <outlet property="friendRequestsTableView" destination="ZqA-Pk-kuH" id="3L1-Ch-tiw"/>
                         <outlet property="userEmail" destination="wJO-qX-FZY" id="zye-10-dGi"/>
                     </connections>
                 </viewController>
@@ -661,7 +629,6 @@
         <image name="location.square.fill" catalog="system" width="128" height="114"/>
         <image name="map" catalog="system" width="128" height="112"/>
         <image name="mic" catalog="system" width="110" height="128"/>
-        <image name="person.crop.circle.fill.badge.plus" catalog="system" width="128" height="114"/>
         <systemColor name="labelColor">
             <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
