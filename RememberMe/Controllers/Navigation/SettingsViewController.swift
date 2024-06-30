@@ -10,6 +10,9 @@ import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
 import AVFoundation
+import MessageUI
+
+
 
 class AppState {
     static let shared = AppState()
@@ -20,8 +23,7 @@ class AppState {
     private init() {}
 }
 
-
-class SettingsViewController: UIViewController {
+class SettingsViewController: UIViewController, MFMailComposeViewControllerDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return friendRequests.count + acceptedFriends.count
     }
@@ -172,6 +174,7 @@ class SettingsViewController: UIViewController {
            let longPressGestureRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(labelLongPressed))
            longPressGestureRecognizer.minimumPressDuration = 1.0 // 1 second
            betaTap.addGestureRecognizer(longPressGestureRecognizer)
+        setupFeedbackButton()
        }
        
        override func viewWillDisappear(_ animated: Bool) {
@@ -200,6 +203,56 @@ class SettingsViewController: UIViewController {
            alert.addAction(cancelAction)
            present(alert, animated: true)
        }
+    
+    func setupFeedbackButton() {
+        let feedbackButton = UIButton(type: .system)
+        feedbackButton.setTitle("Send Feedback!", for: .normal)
+        feedbackButton.setTitleColor(.white, for: .normal)
+        feedbackButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        feedbackButton.contentEdgeInsets = UIEdgeInsets(top: 10, left: 20, bottom: 10, right: 20)
+        feedbackButton.addTarget(self, action: #selector(feedbackButtonTapped), for: .touchUpInside)
+        
+        view.addSubview(feedbackButton)
+        feedbackButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            feedbackButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            feedbackButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            feedbackButton.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, multiplier: 0.8) // Button width is at most 80% of the view width
+        ])
+    }
+    func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        controller.dismiss(animated: true, completion: nil)
+    }
+    
+    let feedbackEmail = "wmisiasz@gmail.com"
+    @objc func feedbackButtonTapped() {
+        if MFMailComposeViewController.canSendMail() {
+            let mailComposer = MFMailComposeViewController()
+            mailComposer.mailComposeDelegate = self
+            
+            mailComposer.setToRecipients([feedbackEmail])
+            mailComposer.setSubject("Namie Feedback 🌝")
+            
+            present(mailComposer, animated: true, completion: nil)
+        } else {
+            openDefaultMailClient()
+        }
+    }
+
+    func openDefaultMailClient() {
+        let subject = "Namie Feedback 🌝"
+        let body = "Enter your feedback here"
+        
+        let urlString = "mailto:\(feedbackEmail)?subject=\(subject)&body=\(body)"
+        
+        if let emailUrl = URL(string: urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "") {
+            if UIApplication.shared.canOpenURL(emailUrl) {
+                UIApplication.shared.open(emailUrl, options: [:], completionHandler: nil)
+            } else {
+                showAlert(withTitle: "Cannot Open Mail", message: "Your device couldn't open the mail client. You can send feedback to \(feedbackEmail)")
+            }
+        }
+    }
        
        func deleteUserAccount() {
            let user = Auth.auth().currentUser
