@@ -18,7 +18,6 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     var locationUpdateTimer: Timer?
     var disableLocationTimer: Timer?
     var initialLocationSet: Bool = false
-    var notifiedUsers: Set<String> = [] // Track notified users
     var countdownLabel: UILabel!
     
     weak var delegate: NamesViewControllerDelegate?
@@ -49,7 +48,6 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         mapView.showsUserLocation = visibilityState
         setupLocationButton()
         setupCountdownLabel()
-        observeUsersLocations()
         fetchUserNotes()
         checkLocationSharingState() // Check the location sharing state on launch
         UNUserNotificationCenter.current().delegate = self
@@ -137,64 +135,8 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         completionHandler([.banner, .sound])
     }
 
-    func observeUsersLocations() {
-        let db = Firestore.firestore()
-        db.collection("users").whereField("visibility", isEqualTo: true).addSnapshotListener { [weak self] (querySnapshot, error) in
-            guard let self = self, let querySnapshot = querySnapshot else {
-                print("Error fetching user locations: \(error?.localizedDescription ?? "unknown error")")
-                return
-            }
+    
 
-            var updatedUsers: Set<String> = []
-            for change in querySnapshot.documentChanges {
-                let userEmail = change.document.documentID
-                if userEmail == Auth.auth().currentUser?.email {
-                    continue  // Skip the current user's updates
-                }
-
-                let userName = userEmail  // Ideally, you would fetch the user's name from the document or cache
-
-                if change.type == .added || (change.type == .modified && change.document.data()["visibility"] as? Bool == true) {
-                    if let locationData = change.document.data()["location"] as? [String: Double],
-                       let latitude = locationData["latitude"], let longitude = locationData["longitude"] {
-                        let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-                        self.addOrUpdateAnnotationForUser(at: coordinate, email: change.document.documentID)
-                        updatedUsers.insert(userEmail)
-                    }
-                } else if change.type == .removed || change.document.data()["visibility"] as? Bool == false {
-                    self.removeAnnotationForUser(email: change.document.documentID)
-                    self.notifiedUsers.remove(userEmail)  // Remove user from notified set when they go offline
-                }
-            }
-
-            // Send notifications for newly visible users
-            for userEmail in updatedUsers {
-                if !self.notifiedUsers.contains(userEmail) {
-                    self.sendNotificationForUserGoingLive(userEmail)
-                    self.notifiedUsers.insert(userEmail)
-                }
-            }
-        }
-    }
-
-    private func sendNotificationForUserGoingLive(_ userName: String) {
-        print("Sending notification for user \(userName) going live")
-        let content = UNMutableNotificationContent()
-        content.title = "\(userName) is live on Namie"
-        content.body = "\(userName) has enabled their location sharing."
-        content.sound = UNNotificationSound.default
-
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-        let request = UNNotificationRequest(identifier: userName, content: content, trigger: trigger)
-
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("Error scheduling notification: \(error)")
-            } else {
-                print("Notification scheduled successfully for user \(userName)")
-            }
-        }
-    }
 
     func setupLocationButton() {
         view.addSubview(locationButton)
@@ -209,45 +151,10 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
 
     @objc func locationButtonTapped() {
         print("Location button tapped.")
-        toggleVisibilityAndUpdateLocation()
         if visibilityState, let location = locationManager.location {
             centerMapOnLocation(location)
         }
         updateLocationButtonColor()
-    }
-
-    func toggleVisibilityAndUpdateLocation() {
-        guard let userEmail = Auth.auth().currentUser?.email else {
-            print("User is not logged in")
-            return
-        }
-        let db = Firestore.firestore()
-        let userRef = db.collection("users").document(userEmail)
-        visibilityState.toggle()
-
-        mapView.showsUserLocation = visibilityState
-
-        if visibilityState {
-            startLocationUpdates()
-            if let location = locationManager.location {
-                updateFirestoreWithLocation(location, for: userEmail)
-            }
-            showVisibilityNotification(visible: true)
-            updateLocationEnabledAt(for: userEmail)
-        } else {
-            stopLocationUpdates()
-            userRef.updateData([
-                "visibility": false,
-                "location": FieldValue.delete()
-            ]) { error in
-                if let error = error {
-                    print("Error updating Firestore visibility: \(error.localizedDescription)")
-                } else {
-                    print("Firestore visibility updated to false")
-                }
-            }
-            showVisibilityNotification(visible: false)
-        }
     }
 
     func startLocationUpdates() {
@@ -317,7 +224,6 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     @objc private func disableLocationSharing() {
         guard visibilityState else { return }
         print("Disabling location sharing after 4 hours.")
-        toggleVisibilityAndUpdateLocation()
     }
 
     private func updateCountdownLabel(with timeInterval: TimeInterval) {
@@ -374,7 +280,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
             view.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
         }
 
-        if let title = annotation.title, title == Auth.auth().currentUser?.email || title == "User's friend email" {
+        if let title = annotation.title, title == Auth.auth().currentUser?.email {
             if let jellyDevImage = UIImage(named: "jellydev") {
                 let size = CGSize(width: 50, height: 70)
                 UIGraphicsBeginImageContext(size)
@@ -384,72 +290,31 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
                 view.image = resizedImage
             }
         } else if let markerView = view as? MKMarkerAnnotationView {
-            if markerView.annotation is MKPointAnnotation {
-                markerView.markerTintColor = .purple // For new location pins
-            } else {
-                markerView.markerTintColor = .red // For other pins
-            }
-        }
-
-        // Ensure all annotations have a callout accessory view
-        if view.rightCalloutAccessoryView == nil {
-            view.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
+            markerView.markerTintColor = .purple // For location pins
         }
 
         return view
     }
+
+
+    
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         guard let annotation = view.annotation else { return }
 
         let coordinate = annotation.coordinate
         let mapItem = MKMapItem(placemark: MKPlacemark(coordinate: coordinate))
-        mapItem.name = annotation.title ?? "Destination"
+        mapItem.name = annotation.title ?? "Location"
 
         let options = [
             MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving
         ]
         mapItem.openInMaps(launchOptions: options)
 
-        // Notify the delegate that a pin was selected
-        if let locationName = annotation.title {
-            delegate?.pinSelected(with: locationName!)
-        }
-    }
-    func addOrUpdateAnnotationForUser(at coordinate: CLLocationCoordinate2D, email: String) {
-        let existingAnnotation = mapView.annotations.first {
-            ($0 as? MKPointAnnotation)?.title == email
-        } as? MKPointAnnotation
-
-        if let annotation = existingAnnotation {
-            DispatchQueue.main.async {
-                annotation.coordinate = coordinate
-            }
-        } else {
-            let annotation = MKPointAnnotation()
-            annotation.coordinate = coordinate
-            annotation.title = email
-            DispatchQueue.main.async {
-                self.mapView.addAnnotation(annotation)
-            }
+        if let title = annotation.title {
+            delegate?.pinSelected(with: title!)
         }
     }
 
-    func removeAnnotationForUser(email: String) {
-        if let annotation = (mapView.annotations.first {
-            ($0 as? MKPointAnnotation)?.title == email
-        } as? MKPointAnnotation) {
-            DispatchQueue.main.async {
-                self.mapView.removeAnnotation(annotation)
-            }
-        }
-    }
-
-    func showVisibilityNotification(visible: Bool) {
-        let message = visible ? "You are now visible to others." : "You are now hidden from others."
-        let alert = UIAlertController(title: "Visibility Changed", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-        present(alert, animated: true, completion: nil)
-    }
 
     func centerMapOnLocation(_ location: CLLocation) {
         let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
