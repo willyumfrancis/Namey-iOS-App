@@ -45,10 +45,12 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         requestNotificationPermission()
         setupLocationManager()
         setupMapView()
+        fetchAndDisplayLocations()
         mapView.showsUserLocation = visibilityState
         setupLocationButton()
         setupCountdownLabel()
         observeUsersLocations()
+        fetchUserNotes()
         checkLocationSharingState() // Check the location sharing state on launch
         UNUserNotificationCenter.current().delegate = self
     }
@@ -62,6 +64,35 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         locationManager.startUpdatingLocation()
         print("Location manager setup complete.")
     }
+    // New method to fetch and display locations
+      func fetchAndDisplayLocations() {
+          guard let userEmail = Auth.auth().currentUser?.email else { return }
+          let db = Firestore.firestore()
+          db.collection("locations").whereField("user", isEqualTo: userEmail).getDocuments { [weak self] (querySnapshot, error) in
+              guard let self = self, let documents = querySnapshot?.documents else {
+                  print("Error fetching locations: \(error?.localizedDescription ?? "unknown error")")
+                  return
+              }
+              
+              for document in documents {
+                  if let locationData = document.data()["location"] as? GeoPoint,
+                     let locationName = document.data()["locationName"] as? String {
+                      let coordinate = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                      self.addLocationAnnotation(at: coordinate, name: locationName)
+                  }
+              }
+          }
+      }
+
+      // New method to add location annotation
+      func addLocationAnnotation(at coordinate: CLLocationCoordinate2D, name: String) {
+          let annotation = MKPointAnnotation()
+          annotation.coordinate = coordinate
+          annotation.title = name
+          DispatchQueue.main.async {
+              self.mapView.addAnnotation(annotation)
+          }
+      }
 
     func setupMapView() {
         mapView = MKMapView()
@@ -100,7 +131,6 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         countdownLabel.isHidden = true
         print("Countdown label setup complete.")
     }
-
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         print("Notification will present: \(notification.request.content.title)")
@@ -277,6 +307,7 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
         }
     }
 
+    
     private func scheduleLocationDisableTimer() {
         disableLocationTimer = Timer.scheduledTimer(timeInterval: 4 * 60 * 60, target: self, selector: #selector(disableLocationSharing), userInfo: nil, repeats: false)
         updateCountdownLabel(with: 4 * 60 * 60) // 4 hours countdown
@@ -326,38 +357,49 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
     }
 
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-        guard let annotation = annotation as? MKPointAnnotation, annotation.title != Auth.auth().currentUser?.email else {
-            return nil
+        guard !(annotation is MKUserLocation) else {
+            return nil // Use default blue dot for user location
         }
 
-        let identifier = "FriendLocation"
+        let identifier = "LocationPin"
+        
         var view: MKAnnotationView
         if let dequeuedView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) {
             dequeuedView.annotation = annotation
             view = dequeuedView
         } else {
-            view = MKAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+            view = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
             view.canShowCallout = true
             view.calloutOffset = CGPoint(x: -5, y: 5)
             view.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
         }
 
-        // Resizing the "jellydev" image to fit the annotation view
-        if let jellyDevImage = UIImage(named: "jellydev") {
-            let size = CGSize(width: 50, height: 70)  // Set your desired size
-            UIGraphicsBeginImageContext(size)
-            jellyDevImage.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
-            let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
-            UIGraphicsEndImageContext()
-            view.image = resizedImage
+        if let title = annotation.title, title == Auth.auth().currentUser?.email || title == "User's friend email" {
+            if let jellyDevImage = UIImage(named: "jellydev") {
+                let size = CGSize(width: 50, height: 70)
+                UIGraphicsBeginImageContext(size)
+                jellyDevImage.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+                let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+                UIGraphicsEndImageContext()
+                view.image = resizedImage
+            }
+        } else if let markerView = view as? MKMarkerAnnotationView {
+            if markerView.annotation is MKPointAnnotation {
+                markerView.markerTintColor = .purple // For new location pins
+            } else {
+                markerView.markerTintColor = .red // For other pins
+            }
+        }
+
+        // Ensure all annotations have a callout accessory view
+        if view.rightCalloutAccessoryView == nil {
+            view.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
         }
 
         return view
     }
-
-    // Handle the directions button tap
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
-        guard let annotation = view.annotation as? MKPointAnnotation else { return }
+        guard let annotation = view.annotation else { return }
 
         let coordinate = annotation.coordinate
         let mapItem = MKMapItem(placemark: MKPlacemark(coordinate: coordinate))
@@ -367,8 +409,12 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
             MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving
         ]
         mapItem.openInMaps(launchOptions: options)
-    }
 
+        // Notify the delegate that a pin was selected
+        if let locationName = annotation.title {
+            delegate?.pinSelected(with: locationName!)
+        }
+    }
     func addOrUpdateAnnotationForUser(at coordinate: CLLocationCoordinate2D, email: String) {
         let existingAnnotation = mapView.annotations.first {
             ($0 as? MKPointAnnotation)?.title == email
@@ -415,6 +461,50 @@ class NamesViewController: UIViewController, CLLocationManagerDelegate, MKMapVie
             if !initialLocationSet {
                 centerMapOnLocation(location)
                 initialLocationSet = true
+            }
+        }
+    }
+
+    // New function to fetch user notes and display them as annotations on the map
+    func fetchUserNotes() {
+        guard let userEmail = Auth.auth().currentUser?.email else { return }
+        let db = Firestore.firestore()
+        db.collection("notes").whereField("user", isEqualTo: userEmail).getDocuments { [weak self] (querySnapshot, error) in
+            guard let self = self, let documents = querySnapshot?.documents else {
+                print("Error fetching user notes: \(error?.localizedDescription ?? "unknown error")")
+                return
+            }
+            
+            var seenLocationNames: Set<String> = []
+            for document in documents {
+                if let locationData = document.data()["location"] as? GeoPoint,
+                   let locationName = document.data()["locationName"] as? String {
+                    if seenLocationNames.contains(locationName) {
+                        continue // Skip duplicate location names
+                    }
+                    seenLocationNames.insert(locationName)
+                    let coordinate = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                    self.addOrUpdateAnnotationForNote(at: coordinate, locationName: locationName)
+                }
+            }
+        }
+    }
+
+    func addOrUpdateAnnotationForNote(at coordinate: CLLocationCoordinate2D, locationName: String) {
+        let existingAnnotation = mapView.annotations.first {
+            ($0 as? MKPointAnnotation)?.title == locationName
+        } as? MKPointAnnotation
+
+        if let annotation = existingAnnotation {
+            DispatchQueue.main.async {
+                annotation.coordinate = coordinate
+            }
+        } else {
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = coordinate
+            annotation.title = locationName
+            DispatchQueue.main.async {
+                self.mapView.addAnnotation(annotation)
             }
         }
     }
