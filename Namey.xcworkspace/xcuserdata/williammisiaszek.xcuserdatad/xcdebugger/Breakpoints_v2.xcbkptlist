@@ -30,8 +30,8 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "722"
-            endingLineNumber = "722"
+            startingLineNumber = "754"
+            endingLineNumber = "754"
             landmarkName = "checkAudioRecordingPermission(completion:)"
             landmarkType = "7">
          </BreakpointContent>

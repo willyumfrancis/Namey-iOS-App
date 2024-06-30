@@ -463,49 +463,81 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         return true
     }
     
-    func saveNote() {
-        var locationToSave: CLLocationCoordinate2D?
-        var locationNameForNote: String?
+    func promptForNewLocation(location: CLLocationCoordinate2D, noteText: String, noteId: String) {
+        let alertController = UIAlertController(title: "New Location", message: "Please enter a name for this new location:", preferredStyle: .alert)
+        alertController.addTextField()
         
-        // Prioritize selectedLocation over currentLocation
-        if let selectedLocation = selectedLocation {
-            locationToSave = selectedLocation
-            print("Debug: Using selected location for saving note.")
-            locationNameForNote = fetchLocationNameFor(location: selectedLocation)
-        } else if let currentLocation = currentLocation {
-            locationToSave = currentLocation
-            print("Debug: Using current location for saving note.")
-            locationNameForNote = fetchLocationNameFor(location: currentLocation)
-        } else {
-            print("Failed to get user's current location or selected location")
-            return // Exit if there is no location determined.
+        let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self] _ in
+            guard let self = self,
+                  let locationName = alertController.textFields?.first?.text,
+                  !locationName.isEmpty else {
+                print("Location name is empty.")
+                return
+            }
+            
+            self.currentLocationName = locationName
+            self.updateNotesCountLabel()
+            
+            // Save the note first
+            self.saveNoteToFirestore(noteId: noteId, noteText: noteText, location: location, locationName: locationName, imageURL: "") { success in
+                if success {
+                    print("Note successfully saved to Firestore.")
+                    DispatchQueue.main.async {
+                        if let noteIndex = self.notes.firstIndex(where: { $0.id == noteId }) {
+                            self.notes[noteIndex].text = noteText
+                            self.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
+                        }
+                        self.updateLocationNameLabel(location: location)
+                        self.updateUI(withLocationName: locationName)
+                        
+                        // Now prompt for image
+                        self.presentImagePicker(locationName: locationName)
+                    }
+                }
+            }
         }
+        alertController.addAction(saveAction)
         
-        guard let saveLocation = locationToSave,
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        alertController.addAction(cancelAction)
+        
+        present(alertController, animated: true)
+    }
+    
+    func saveNote() {
+        guard let userEmail = Auth.auth().currentUser?.email,
               let activeCell = activeNoteCell,
               let noteText = activeCell.noteTextField.text,
-              !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              let userEmail = Auth.auth().currentUser?.email else {
+              !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             print("Failed to prepare data for saving")
             return
         }
-        
-        // Use the fetched location name if available; otherwise, use "New Place".
-        locationNameForNote = locationNameForNote ?? "New Place"
-        
+
+        let locationToSave = selectedLocation ?? currentLocation
+        guard let saveLocation = locationToSave else {
+            print("Failed to get user's current location or selected location")
+            return
+        }
+
         let noteId = activeCell.note?.id ?? UUID().uuidString
-        
-        // Proceed to save the note with the determined location name and coordinates.
-        saveNoteToFirestore(noteId: noteId, noteText: noteText, location: saveLocation, locationName: locationNameForNote!, imageURL: self.currentLocationImageURL?.absoluteString ?? "") { success in
-            if success {
-                print("Note successfully saved to Firestore with location name: '\(locationNameForNote!)'.")
-                DispatchQueue.main.async {
-                    if let noteIndex = self.notes.firstIndex(where: { $0.id == noteId }) {
-                        self.notes[noteIndex].text = noteText
-                        self.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
+
+        // Check if this is a new location
+        if currentLocationName == nil || currentLocationName?.isEmpty == true {
+            // This is a new location, prompt for name and image
+            promptForNewLocation(location: saveLocation, noteText: noteText, noteId: noteId)
+        } else {
+            // Existing location, proceed with normal save
+            saveNoteToFirestore(noteId: noteId, noteText: noteText, location: saveLocation, locationName: currentLocationName!, imageURL: self.currentLocationImageURL?.absoluteString ?? "") { success in
+                if success {
+                    print("Note successfully saved to Firestore.")
+                    DispatchQueue.main.async {
+                        if let noteIndex = self.notes.firstIndex(where: { $0.id == noteId }) {
+                            self.notes[noteIndex].text = noteText
+                            self.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
+                        }
+                        self.updateLocationNameLabel(location: saveLocation)
+                        self.updateUI(withLocationName: self.currentLocationName!)
                     }
-                    self.updateLocationNameLabel(location: saveLocation)
-                    self.updateUI(withLocationName: locationNameForNote!)  // Ensure this is using the same location name
                 }
             }
         }
@@ -818,6 +850,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             notesCountLabel.text = labelText
         }
     }
+    
+    //PIC AND NAME OF PLACE BEGIN
     @IBAction func uploadImageButton(_ sender: UIButton) {
           // Start jiggling
           let animation = CAKeyframeAnimation(keyPath: "transform.rotation")
@@ -1965,7 +1999,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     // Image Picker iOS
     func presentImagePicker(locationName: String) {
-        // Store the location name for later use
         currentLocationName = locationName
         let imagePickerController = UIImagePickerController()
         imagePickerController.delegate = self
@@ -1977,46 +2010,25 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
                 imagePickerController.sourceType = .camera
                 self.present(imagePickerController, animated: true, completion: nil)
-                self.updateUI(withLocationName: locationName) // Update the UI
-                
-                
             }
         }
         let libraryAction = UIAlertAction(title: "Choose from Library", style: .default) { _ in
             if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
                 imagePickerController.sourceType = .photoLibrary
                 self.present(imagePickerController, animated: true, completion: nil)
-                self.updateUI(withLocationName: locationName) // Update the UI
-                
             }
         }
         
-        // Updated "Skip" action
         let skipAction = UIAlertAction(title: "Skip", style: .default) { _ in
-            print("Skip action triggered.")
-            if let selectedLocation = self.selectedLocation {
-                // Use the selected location if available
-                self.updateNotesLocationName(location: selectedLocation, newLocationName: locationName) { updatedNotes in
-                    // Perform any required operations with the updated notes here
-                    self.updateUI(withLocationName: locationName) // Update the UI
-                    self.downloadAndDisplayImage(locationName: locationName) // Retain the associated image
-                }
-            } else if let userLocation = self.locationManager.location?.coordinate {
-                // Fallback to the user's current location
-                self.updateNotesLocationName(location: userLocation, newLocationName: locationName) { updatedNotes in
-                    // Perform any required operations with the updated notes here
-                    self.updateUI(withLocationName: locationName) // Update the UI
-                    self.downloadAndDisplayImage(locationName: locationName) // Retain the associated image
-                }
-            } else {
-                print("Neither selected location nor user location is available.")
-            }
+            print("Skipped image selection for new location.")
+            self.updateUI(withLocationName: locationName)
         }
+        
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
         
         alertController.addAction(cameraAction)
         alertController.addAction(libraryAction)
-        alertController.addAction(skipAction) // Add the "Skip" action to the alertController
+        alertController.addAction(skipAction)
         alertController.addAction(cancelAction)
         
         present(alertController, animated: true, completion: nil)
