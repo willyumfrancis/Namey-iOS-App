@@ -124,6 +124,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         
     }
     
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
