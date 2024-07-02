@@ -66,15 +66,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
          // MARK: UNUserNotificationCenterDelegate
          
-         func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
-             let userInfo = response.notification.request.content.userInfo
-             
-             if let locationName = userInfo["locationName"] as? String {
-                 navigateToHomeViewController(with: locationName)
-             }
-             
-             completionHandler()
-         }
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        let userInfo = response.notification.request.content.userInfo
+        
+        if let locationName = userInfo["locationName"] as? String {
+            // Post a notification to inform the app that a location should be loaded
+            NotificationCenter.default.post(name: NSNotification.Name("LoadLocationFromNotification"), object: nil, userInfo: ["locationName": locationName])
+        }
+        
+        completionHandler()
+    }
 
          // MARK: Navigation
          

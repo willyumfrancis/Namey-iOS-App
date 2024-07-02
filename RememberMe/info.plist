@@ -4,6 +4,10 @@
 <dict>
 	<key>CFBundleShortVersionString</key>
 	<string>1.1</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string></string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>&quot;Pings users when they are close to a place!&quot;</string>
 	<key>CFBundleVersion</key>
 	<string>1.1</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>

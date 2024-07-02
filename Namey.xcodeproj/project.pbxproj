@@ -29,7 +29,6 @@
 		75B69CED29BFF5120049D4F5 /* WelcomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CEC29BFF5120049D4F5 /* WelcomeViewController.swift */; };
 		75B69CEF29BFF5200049D4F5 /* RegisterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B69CEE29BFF5200049D4F5 /* RegisterViewController.swift */; };
 		75C91A6D2AFCD23D002FD99B /* silent.wav in Resources */ = {isa = PBXBuildFile; fileRef = 75C91A6C2AFCD23D002FD99B /* silent.wav */; };
-		75CE23A12BE7222E00564290 /* MemoryController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CE23A02BE7222E00564290 /* MemoryController.swift */; };
 		75DAE7192A9F22B700929388 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 75DAE7182A9F22B700929388 /* .gitignore */; };
 		75E3997E2AA1AC9300914DA5 /* ImageCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E3997D2AA1AC9300914DA5 /* ImageCacheManager.swift */; };
 		75EC7DE32A93FF8200A8EB75 /* APIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EC7DE22A93FF8200A8EB75 /* APIManager.swift */; };
@@ -64,7 +63,6 @@
 		75B69CEC29BFF5120049D4F5 /* WelcomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewController.swift; sourceTree = "<group>"; };
 		75B69CEE29BFF5200049D4F5 /* RegisterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterViewController.swift; sourceTree = "<group>"; };
 		75C91A6C2AFCD23D002FD99B /* silent.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = silent.wav; sourceTree = "<group>"; };
-		75CE23A02BE7222E00564290 /* MemoryController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryController.swift; sourceTree = "<group>"; };
 		75DAE7182A9F22B700929388 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		75E3997D2AA1AC9300914DA5 /* ImageCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCacheManager.swift; sourceTree = "<group>"; };
 		75EC7DE22A93FF8200A8EB75 /* APIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIManager.swift; sourceTree = "<group>"; };
@@ -114,7 +112,6 @@
 				7545750E29C00868004242C5 /* NamesViewController.swift */,
 				7545751029C0086F004242C5 /* SettingsViewController.swift */,
 				75F5D89429C63D2A00272A2F /* MenuController.swift */,
-				75CE23A02BE7222E00564290 /* MemoryController.swift */,
 			);
 			path = Navigation;
 			sourceTree = "<group>";
@@ -323,7 +320,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				75CE23A12BE7222E00564290 /* MemoryController.swift in Sources */,
 				75EC7DE32A93FF8200A8EB75 /* APIManager.swift in Sources */,
 				75B69CDF29BFEEE40049D4F5 /* RememberMe.xcdatamodeld in Sources */,
 				7516ED2229D215CB00801960 /* K.swift in Sources */,
