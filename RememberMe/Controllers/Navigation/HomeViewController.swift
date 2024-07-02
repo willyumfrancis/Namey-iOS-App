@@ -241,33 +241,40 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     func sendNotification(locationName: String, lastThreeNotes: [String]) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            print("Preparing to send notification for location: \(locationName)") // Debugging line
-            
+            print("Preparing to send notification for location: \(locationName)")
             
             // Check if locationName and lastThreeNotes are not empty
-            if locationName.isEmpty || lastThreeNotes.isEmpty {
-                print("Either the location name or the last three notes are empty. Skipping notification.") // Debugging line
+            if locationName.isEmpty {
+                print("Location name is empty. Skipping notification.")
                 return
             }
-            
             
             // Update the last sent time for this location
             self.geofenceManager.lastNotificationSentTime[locationName] = Date()
             
-            print("Sending notification for location: \(locationName)") // Debugging line
+            print("Sending notification for location: \(locationName)")
             let content = UNMutableNotificationContent()
-            content.title = "Near \(locationName)"
-            let notesText = lastThreeNotes.joined(separator: ", ")
-            content.body = "\(notesText)"
+            content.title = "You're near \(locationName)"
+            
+            if lastThreeNotes.isEmpty {
+                content.body = "Tap to view your notes for this location."
+            } else {
+                let numberedNotes = lastThreeNotes.enumerated().map { index, note in
+                    return "\(index + 1). \(note)"
+                }
+                content.body = numberedNotes.joined(separator: "\n")
+            }
+            
+            content.sound = .default
             content.categoryIdentifier = "notesCategory"
-            content.sound = UNNotificationSound.default
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+            content.userInfo = ["locationName": locationName]
+            
+            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
             UNUserNotificationCenter.current().add(request) { error in
                 if let error = error {
-                    print("Error adding notification: \(error)") // Debugging line
+                    print("Error adding notification: \(error)")
                 } else {
-                    print("Notification added successfully") // Debugging line
+                    print("Notification added successfully")
                 }
             }
         }
