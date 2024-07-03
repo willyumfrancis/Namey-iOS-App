@@ -22,6 +22,7 @@ struct LocationData {
     let name: String
     let location: CLLocation
     let imageURL: URL?
+    var notificationsEnabled: Bool
 }
 
 // Utility function for sanitizing strings (newly added)
@@ -179,6 +180,61 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         print("App became active - reloading location data.")
         locationManager.startUpdatingLocation() // This will trigger location update and eventually reload data
     }
+    func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let location = filteredLocations[indexPath.row]
+        let action = UIContextualAction(style: .normal, title: location.notificationsEnabled ? "Disable" : "Enable") { [weak self] (action, view, completionHandler) in
+            self?.toggleNotifications(for: indexPath)
+            completionHandler(true)
+        }
+        action.backgroundColor = location.notificationsEnabled ? .red : .green
+        return UISwipeActionsConfiguration(actions: [action])
+    }
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] (action, view, completionHandler) in
+            self?.deleteLocationAndNotes(locationData: self?.filteredLocations[indexPath.row] ?? LocationData(name: "", location: CLLocation(), imageURL: nil, notificationsEnabled: false), indexPath: indexPath)
+            completionHandler(true)
+        }
+        deleteAction.backgroundColor = .red
+        return UISwipeActionsConfiguration(actions: [deleteAction])
+    }
+
+    func toggleNotifications(for indexPath: IndexPath) {
+        filteredLocations[indexPath.row].notificationsEnabled.toggle()
+        if let index = locations.firstIndex(where: { $0.name == filteredLocations[indexPath.row].name }) {
+            locations[index].notificationsEnabled.toggle()
+        }
+        tableView.reloadRows(at: [indexPath], with: .automatic)
+        updateNotificationStatus(for: filteredLocations[indexPath.row])
+    }
+
+    func updateNotificationStatus(for location: LocationData) {
+        guard let userEmail = Auth.auth().currentUser?.email else { return }
+        let db = Firestore.firestore()
+        
+        // Query all notes for this location
+        db.collection("notes")
+            .whereField("user", isEqualTo: userEmail)
+            .whereField("locationName", isEqualTo: location.name)
+            .getDocuments { (querySnapshot, error) in
+                if let error = error {
+                    print("Error getting documents: \(error)")
+                } else {
+                    for document in querySnapshot!.documents {
+                        // Update each note's notification status
+                        document.reference.updateData([
+                            "notificationsEnabled": location.notificationsEnabled
+                        ]) { err in
+                            if let err = err {
+                                print("Error updating document \(document.documentID): \(err)")
+                            } else {
+                                print("Document \(document.documentID) successfully updated")
+                            }
+                        }
+                    }
+                }
+            }
+    }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
@@ -263,7 +319,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
         
         db.collection("notes")
             .whereField("user", isEqualTo: userEmail)
-            .addSnapshotListener { (querySnapshot, error) in
+            .getDocuments { (querySnapshot, error) in
                 if let e = error {
                     print("There was an issue retrieving data from Firestore: \(e)")
                 } else {
@@ -283,15 +339,19 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                                     imageURL = URL(string: imageURLString)
                                 }
                                 
-                                let locationDataInstance = LocationData(name: locationName, location: location, imageURL: imageURL)
+                                let notificationsEnabled = data["notificationsEnabled"] as? Bool ?? true
                                 
-                                fetchedLocationsDict[locationName] = locationDataInstance // Use the name as a key to eliminate duplicates
+                                let locationDataInstance = LocationData(name: locationName, location: location, imageURL: imageURL, notificationsEnabled: notificationsEnabled)
+                                
+                                fetchedLocationsDict[locationName] = locationDataInstance
                             } else {
                                 print("Failed to parse location data for document ID: \(doc.documentID)")
                             }
                         }
                         
                         self.locations = Array(fetchedLocationsDict.values)
+                        print("Loaded \(self.locations.count) locations") // Debugging line
+                        
                         // Check if we are currently filtering by letter; if not, sort by distance
                         if !self.isFilteringByLetter {
                             if let userLocation = self.userLocation {
@@ -307,6 +367,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                         
                         DispatchQueue.main.async {
                             self.tableView.reloadData()
+                            print("Table view reloaded with \(self.filteredLocations.count) locations") // Debugging line
                         }
                     } else {
                         print("No snapshot documents found")
@@ -341,6 +402,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     func loadNotes(completion: @escaping ([Note]) -> Void) {
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
+            completion([])
             return
         }
         
@@ -349,6 +411,7 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             .getDocuments { querySnapshot, error in
                 if let e = error {
                     print("There was an issue retrieving data from Firestore: \(e)")
+                    completion([])
                 } else {
                     if let snapshotDocuments = querySnapshot?.documents {
                         var fetchedNotes: [Note] = []
@@ -356,20 +419,20 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                             let data = doc.data()
                             print("Fetched data: \(data)")  // Debugging line
                             
-                            // Extract the values from the data dictionary
-                            if let id = data["id"] as? String,
-                               let text = data["text"] as? String,
-                               let lat = data["latitude"] as? Double,
-                               let lon = data["longitude"] as? Double,
-                               let locationName = data["locationName"] as? String,
-                               let imageURLString = data["imageURL"] as? String,
-                               let imageURL = URL(string: imageURLString) {
+                            if let text = data["note"] as? String,
+                               let locationData = data["location"] as? GeoPoint,
+                               let locationName = data["locationName"] as? String {
                                 
-                                // Create a CLLocationCoordinate2D instance for the location
-                                let location = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                                let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+                                let imageURL = URL(string: data["imageURL"] as? String ?? "")
+                                let notificationsEnabled = data["notificationsEnabled"] as? Bool ?? true
                                 
-                                // Create a Note instance
-                                let note = Note(id: id, text: text, location: location, locationName: locationName, imageURL: imageURL)
+                                let note = Note(id: doc.documentID,
+                                                text: text,
+                                                location: location,
+                                                locationName: locationName,
+                                                imageURL: imageURL,
+                                                notificationsEnabled: notificationsEnabled)
                                 
                                 print("Created note: \(note)")  // Debugging line
                                 fetchedNotes.append(note)
@@ -380,6 +443,9 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                         self.notes = fetchedNotes
                         print("Loaded notes: \(self.notes)")  // Debugging line
                         completion(fetchedNotes)
+                    } else {
+                        print("No snapshot documents found")
+                        completion([])
                     }
                 }
             }
@@ -495,10 +561,11 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
                                 } else {
                                     print("Location successfully removed!")
                                     
-                                    // Remove the location from the local array
+                                    // Remove the location from the local arrays
                                     self.locations.removeAll { $0.name == locationData.name }
-                                    // Reload the tableView instead of deleting single row to avoid inconsistency
-                                    self.tableView.reloadData()
+                                    self.filteredLocations.removeAll { $0.name == locationData.name }
+                                    // Remove the row from the table view
+                                    self.tableView.deleteRows(at: [indexPath], with: .fade)
                                 }
                             }
                         }
@@ -539,10 +606,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        // Decide which array to use based on whether we're currently filtering.
         let selectedLocation = isFilteringByLetter ? filteredLocations[indexPath.row] : locations[indexPath.row]
         
-        // Calculate the average of the selected location's notes' coordinates
         var totalLatitude = 0.0
         var totalLongitude = 0.0
         var notesCount = 0
@@ -560,8 +625,8 @@ class PlacesViewController: UIViewController, UITableViewDataSource, UITableView
             let averageLongitude = totalLongitude / Double(notesCount)
             let averageLocation = CLLocationCoordinate2D(latitude: averageLatitude, longitude: averageLongitude)
             
-            let locationData = NSKeyedArchiver.archivedData(withRootObject: averageLocation)
-            UserDefaults.standard.set(locationData, forKey: "averageSelectedLocation")
+            let encodedLocation = encodeCoordinate(averageLocation)
+            UserDefaults.standard.set(encodedLocation, forKey: "averageSelectedLocation")
             UserDefaults.standard.set(selectedLocation.name, forKey: "averageSelectedLocationName")
         } else {
             UserDefaults.standard.removeObject(forKey: "averageSelectedLocation")
@@ -583,4 +648,13 @@ protocol PlacesViewControllerDelegate: AnyObject {
 
 
 
-
+extension PlacesViewController {
+    func encodeCoordinate(_ coordinate: CLLocationCoordinate2D) -> [String: Double] {
+        return ["latitude": coordinate.latitude, "longitude": coordinate.longitude]
+    }
+    
+    func decodeCoordinate(from dict: [String: Double]) -> CLLocationCoordinate2D? {
+        guard let latitude = dict["latitude"], let longitude = dict["longitude"] else { return nil }
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+}
