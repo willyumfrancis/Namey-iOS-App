@@ -66,6 +66,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
          // MARK: UNUserNotificationCenterDelegate
          
+
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
@@ -74,32 +75,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         if let locationName = userInfo["locationName"] as? String {
             // Post a notification to inform the app that a location should be loaded
             NotificationCenter.default.post(name: NSNotification.Name("LoadLocationFromNotification"), object: nil, userInfo: ["locationName": locationName])
+            
+            // Navigate to HomeViewController
+            navigateToHomeViewController(with: locationName)
         }
         
         completionHandler()
     }
 
+    private func navigateToHomeViewController(with locationName: String) {
+        DispatchQueue.main.async {
+            if let rootViewController = self.window?.rootViewController as? UINavigationController,
+               let homeViewController = rootViewController.viewControllers.first(where: { $0 is HomeViewController }) as? HomeViewController {
+                // HomeViewController exists in navigation stack, pop to it
+                rootViewController.popToViewController(homeViewController, animated: true)
+                homeViewController.LoadPlacesNotes(for: locationName)
+            } else {
+                // HomeViewController is not in the stack (or the root is not a UINavigationController)
+                let storyboard = UIStoryboard(name: "Main", bundle: nil)
+                if let newHomeViewController = storyboard.instantiateViewController(withIdentifier: "HomeViewControllerID") as? HomeViewController {
+                    newHomeViewController.LoadPlacesNotes(for: locationName)
+                    self.window?.rootViewController = UINavigationController(rootViewController: newHomeViewController)
+                    self.window?.makeKeyAndVisible()
+                }
+            }
+        }
+    }
+
          // MARK: Navigation
          
-         private func navigateToHomeViewController(with locationName: String) {
-             // Ensure that this is run on the main thread
-             DispatchQueue.main.async {
-                 if let rootViewController = self.window?.rootViewController as? UINavigationController,
-                    let homeViewController = rootViewController.viewControllers.first(where: { $0 is HomeViewController }) as? HomeViewController {
-                     // HomeViewController exists in navigation stack, pop to it
-                     rootViewController.popToViewController(homeViewController, animated: true)
-                     homeViewController.LoadPlacesNotes(for: locationName)
-                 } else {
-                     // HomeViewController is not in the stack (or the root is not a UINavigationController)
-                     let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                     if let newHomeViewController = storyboard.instantiateViewController(withIdentifier: "HomeViewControllerID") as? HomeViewController {
-                         newHomeViewController.LoadPlacesNotes(for: locationName)
-                         self.window?.rootViewController = UINavigationController(rootViewController: newHomeViewController)
-                         self.window?.makeKeyAndVisible()
-                     }
-                 }
-             }
-         }
+
 
 
     // MARK: Background Tasks

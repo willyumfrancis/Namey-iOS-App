@@ -484,7 +484,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         db.collection("notes")
             .whereField("user", isEqualTo: userEmail)
             .whereField("locationName", isEqualTo: locationName)
-            .order(by: "timestamp", descending: true) // Order by timestamp, newest first
+            .order(by: "timestamp", descending: true)
             .getDocuments { [weak self] querySnapshot, error in
                 if let e = error {
                     print("There was an issue retrieving data from Firestore: \(e)")
@@ -504,23 +504,33 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                 let imageURL = URL(string: imageURLString ?? "")
                                 let newNote = Note(id: doc.documentID, text: noteText, location: location, locationName: locationName, imageURL: imageURL)
 
-                                // Store this location as the selected location
-                                self?.selectedLocation = location
-
                                 self?.notes.append(newNote)
+                                
+                                // Set the selected location to the first note's location
+                                if self?.selectedLocation == nil {
+                                    self?.selectedLocation = location
+                                }
                             }
                         }
 
                         DispatchQueue.main.async {
-                            print("Showing \(self?.notes.count ?? 0) notes based on location")
                             self?.tableView.reloadData()
-                            self?.locationNameLabel.text = "\(locationName)"
+                            self?.locationNameLabel.text = locationName
                             self?.currentLocationName = locationName
-                            completion?()
+                            self?.updateNotesCountLabel()
+                            self?.displayImage(locationName: locationName)
+                            
+                            // Scroll to the top of the table view
+                            if let firstRow = self?.tableView.indexPathsForVisibleRows?.first {
+                                self?.tableView.scrollToRow(at: firstRow, at: .top, animated: true)
+                            }
+                            
                             self?.fetchImageURLFor(locationName: locationName) { imageURL in
                                 self?.currentLocationImageURL = imageURL
                                 self?.updateNotesImageURLGeoLocation(imageURL: self?.currentLocationImageURL ?? nil)
                             }
+                            
+                            completion?()
                         }
                     }
                 }
@@ -863,6 +873,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         
         
+        
         // Check if app has permissions to record audio
         checkAudioRecordingPermission { [weak self] hasPermission in
             if hasPermission {
@@ -876,7 +887,24 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 // You can show an alert here asking the user to enable permissions
             }
         }
-    }
+        
+        // Add observer for loading location from notification
+           NotificationCenter.default.addObserver(self,
+                                                  selector: #selector(loadLocationFromNotification(_:)),
+                                                  name: NSNotification.Name("LoadLocationFromNotification"),
+                                                  object: nil)
+       }
+
+       @objc func loadLocationFromNotification(_ notification: Notification) {
+           if let locationName = notification.userInfo?["locationName"] as? String {
+               LoadPlacesNotes(for: locationName)
+           }
+       }
+
+       deinit {
+           NotificationCenter.default.removeObserver(self)
+       }
+    
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
@@ -972,9 +1000,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     //ENDVIEWDIDLOAD
     
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
+
     
     func updateLocationNameLabel(location: CLLocationCoordinate2D) {
         let locationName = fetchLocationNameFor(location: location) ?? "New Place"
