@@ -139,7 +139,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     private let onboardingPages = [
         """
         Welcome to Namie!
-        Your Social Memory Assistant
 
         Never forget a name or detail again.
         """,
@@ -162,7 +161,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         Say goodbye to awkward moments and hello to smooth conversations!
         """,
         
-        "Let's get started!"
+        "Your Social Memory Assistant"
     ]
     
     private func calculateContentViewHeight(for text: String) -> CGFloat {
@@ -708,11 +707,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                     print("There was an issue retrieving data from Firestore: \(e)")
                 } else {
                     self?.notes = [] // Clear the existing notes array
+                    var locationImageURL: URL?
 
                     if let snapshotDocuments = querySnapshot?.documents {
                         print("Found \(snapshotDocuments.count) notes")
                         for doc in snapshotDocuments {
                             let data = doc.data()
+                            
                             if let noteText = data["note"] as? String,
                                let locationData = data["location"] as? GeoPoint,
                                let locationName = data["locationName"] as? String,
@@ -726,6 +727,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                                 self?.selectedLocation = location
 
                                 self?.notes.append(newNote)
+
+                                // Set the locationImageURL if not already set
+                                if locationImageURL == nil {
+                                    locationImageURL = imageURL
+                                }
                             }
                         }
 
@@ -734,11 +740,19 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             self?.tableView.reloadData()
                             self?.locationNameLabel.text = "\(locationName)"
                             self?.currentLocationName = locationName
-                            completion?()
-                            self?.fetchImageURLFor(locationName: locationName) { imageURL in
-                                self?.currentLocationImageURL = imageURL
-                                self?.updateNotesImageURLGeoLocation(imageURL: self?.currentLocationImageURL ?? nil)
+                            self?.currentLocationImageURL = locationImageURL
+                            
+                            // If we didn't find an imageURL in the notes, try to fetch it
+                            if locationImageURL == nil {
+                                self?.fetchImageURLFor(locationName: locationName) { imageURL in
+                                    self?.currentLocationImageURL = imageURL
+                                    self?.updateNotesImageURLGeoLocation(imageURL: imageURL)
+                                }
+                            } else {
+                                self?.updateNotesImageURLGeoLocation(imageURL: locationImageURL)
                             }
+                            
+                            completion?()
                         }
                     }
                 }
@@ -875,29 +889,38 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
 
         let noteId = activeCell.note?.id ?? UUID().uuidString
         let locationName = currentLocationName ?? "Unnamed Location"
-        let imageURL = currentLocationImageURL?.absoluteString ?? ""
+        
+        // Get the current image URL
+        let safeFileName = self.safeFileName(for: locationName)
+        let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
+        
+        storageRef.downloadURL { [weak self] (url, error) in
+            guard let self = self else { return }
+            
+            let imageURL = url?.absoluteString ?? ""
 
-        print("Saving note with locationName: \(locationName), imageURL: \(imageURL)")
+            print("Saving note with locationName: \(locationName), imageURL: \(imageURL)")
 
-        saveNoteToFirestore(noteId: noteId, noteText: noteText, location: saveLocation, locationName: locationName, imageURL: imageURL) { success in
-            if success {
-                print("Note successfully saved to Firestore.")
-                DispatchQueue.main.async {
-                    if let noteIndex = self.notes.firstIndex(where: { $0.id == noteId }) {
-                        self.notes[noteIndex].text = noteText
-                        self.notes[noteIndex].locationName = locationName
-                        self.notes[noteIndex].imageURL = URL(string: imageURL)
-                        self.tableView.reloadRows(at: [IndexPath(row: noteIndex, section: 0)], with: .automatic)
-                    } else {
-                        // If the note doesn't exist in the array, add it
-                        let newNote = Note(id: noteId, text: noteText, location: saveLocation, locationName: locationName, imageURL: URL(string: imageURL))
-                        self.notes.append(newNote)
-                        self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+            self.saveNoteToFirestore(noteId: noteId, noteText: noteText, location: saveLocation, locationName: locationName, imageURL: imageURL) { success in
+                if success {
+                    print("Note successfully saved to Firestore.")
+                    DispatchQueue.main.async {
+                        if let noteIndex = self.notes.firstIndex(where: { $0.id == noteId }) {
+                            self.notes[noteIndex].text = noteText
+                            self.notes[noteIndex].locationName = locationName
+                            self.notes[noteIndex].imageURL = URL(string: imageURL)
+                            self.tableView.reloadRows(at: [IndexPath(row: noteIndex, section: 0)], with: .automatic)
+                        } else {
+                            // If the note doesn't exist in the array, add it
+                            let newNote = Note(id: noteId, text: noteText, location: saveLocation, locationName: locationName, imageURL: URL(string: imageURL))
+                            self.notes.append(newNote)
+                            self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                        }
+                        self.updateUI(withLocationName: locationName)
                     }
-                    self.updateUI(withLocationName: locationName)
+                } else {
+                    print("Failed to save note to Firestore.")
                 }
-            } else {
-                print("Failed to save note to Firestore.")
             }
         }
     }
@@ -1484,8 +1507,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     let distanceFilter: CLLocationDistance = 15
     
     func saveImageToFirestore(image: UIImage, location: CLLocationCoordinate2D, locationName: String) {
-        _ = selectedLocation ?? location  // Use the selected location if it exists, otherwise use the given location.
-        
         let safeFileName = self.safeFileName(for: locationName)
         let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
         
@@ -1500,6 +1521,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             self?.uploadImage(image: image, location: location, locationName: locationName) { result in
                 switch result {
                 case .success(let imageURL):
+                    self?.currentLocationImageURL = imageURL
+                    print("Image uploaded successfully. URL: \(imageURL)")
                     // Update all notes with the new imageURL and locationName
                     self?.updateAllNotesInFirestore(location: location, newLocationName: locationName, newImageURL: imageURL) { success in
                         if success {
@@ -1508,9 +1531,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                             print("Failed to update all notes.")
                         }
                     }
-                    
-                    // ... other code ...
-                    
                 case .failure(let error):
                     print("Error uploading image: \(error)")
                 }
@@ -1863,15 +1883,25 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     @IBAction func toggleRecording(_ sender: UIButton) {
-            if audioEngine.isRunning {
+        if audioEngine.isRunning {
                 audioEngine.stop()
                 recognitionRequest?.endAudio()
-                sender.setImage(UIImage(systemName: "mic"), for: .normal)
+                changeMicButtonColor(sender, to: .red) // Change color to red when stopping
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { // Change back to original after 1 second
+                    self.changeMicButtonColor(sender, to: .black)
+                }
             } else {
                 startRecording()
-                sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
+                changeMicButtonColor(sender, to: .green) // Change color to green when starting
             }
         }
+    
+    func changeMicButtonColor(_ button: UIButton, to color: UIColor) {
+        UIView.animate(withDuration: 0.3) {
+            button.tintColor = color
+        }
+    }
+
     
     func handleTranscription(_ transcription: String) {
          createNewNoteWithTranscription(transcription)
@@ -1968,35 +1998,46 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     func createNewNoteWithTranscription(_ transcription: String) {
-           if let currentLocation = self.currentLocation {
-               let emptyURL = URL(string: "")
-               let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: self.currentLocationName ?? "", imageURL: emptyURL)
-               notes.append(newNote)
-               selectedNote = newNote
-               
-               DispatchQueue.main.async {
-                   self.tableView.beginUpdates()
-                   self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                   self.tableView.endUpdates()
-                   
-                   self.saveNoteToFirestore(noteId: newNote.id, noteText: transcription, location: currentLocation, locationName: self.currentLocationName ?? "", imageURL: "") { success in
-                       if success {
-                           print("Note successfully saved to Firestore.")
-                       } else {
-                           print("Failed to save note to Firestore.")
-                       }
-                   }
-                   
-                   DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                       guard let self = self else { return }
-                       if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                          let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                           newCell.noteTextField.becomeFirstResponder()
-                       }
-                   }
-               }
-           }
-       }
+        if let currentLocation = self.currentLocation {
+            let locationName = self.currentLocationName ?? "Unnamed Location"
+            let imageURL = self.currentLocationImageURL?.absoluteString ?? ""
+
+            let newNote = Note(id: UUID().uuidString,
+                               text: transcription,
+                               location: currentLocation,
+                               locationName: locationName,
+                               imageURL: URL(string: imageURL))
+            
+            notes.append(newNote)
+            selectedNote = newNote
+            
+            DispatchQueue.main.async {
+                self.tableView.beginUpdates()
+                self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                self.tableView.endUpdates()
+                
+                self.saveNoteToFirestore(noteId: newNote.id,
+                                         noteText: transcription,
+                                         location: currentLocation,
+                                         locationName: locationName,
+                                         imageURL: imageURL) { success in
+                    if success {
+                        print("Note successfully saved to Firestore.")
+                    } else {
+                        print("Failed to save note to Firestore.")
+                    }
+                }
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                    guard let self = self else { return }
+                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                        newCell.noteTextField.becomeFirstResponder()
+                    }
+                }
+            }
+        }
+    }
    
     
     
@@ -2244,18 +2285,26 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 return
             }
             
-            if let locationName = currentLocationName {
-                // Save the image and update the notes
+            let saveImageAndUpdateNotes = { (locationName: String) in
                 self.saveImageToFirestore(image: image, location: location, locationName: locationName)
                 DispatchQueue.main.async {
                     self.currentLocationName = locationName
                     self.locationNameLabel.text = locationName
+                    self.updateNotesCountLabel()
                 }
                 
                 // Update notes with the new locationName
                 self.updateNotesLocationName(location: location, newLocationName: locationName) { updatedNotes in
                     // Perform any required operations with the updated notes here
+                    DispatchQueue.main.async {
+                        self.tableView.reloadData()
+                    }
                 }
+            }
+            
+            if let locationName = currentLocationName {
+                // Save the image and update the notes
+                saveImageAndUpdateNotes(locationName)
             } else {
                 // Show an alert to get the location name from the user
                 let alertController = UIAlertController(title: "Spot Name", message: "Please enter a name for this place:", preferredStyle: .alert)
@@ -2267,16 +2316,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                         return
                     }
                     
-                    self.currentLocationName = locationName
-                    self.updateNotesCountLabel()
-                    
-                    // Save the image and update the notes
-                    self.saveImageToFirestore(image: image, location: location, locationName: locationName)
-                    
-                    // Update notes with the new locationName
-                    self.updateNotesLocationName(location: location, newLocationName: locationName) { updatedNotes in
-                        // Perform any required operations with the updated notes here
-                    }
+                    saveImageAndUpdateNotes(locationName)
                 }
                 alertController.addAction(saveAction)
                 

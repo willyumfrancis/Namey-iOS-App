@@ -11,6 +11,8 @@ import FirebaseFirestore
 import FirebaseAuth
 import AVFoundation
 import MessageUI
+import FirebaseStorage
+
 
 
 
@@ -23,7 +25,8 @@ class AppState {
     private init() {}
 }
 
-class SettingsViewController: UIViewController, MFMailComposeViewControllerDelegate {
+class SettingsViewController: UIViewController, MFMailComposeViewControllerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return friendRequests.count + acceptedFriends.count
     }
@@ -136,48 +139,81 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
     }
     
 
-    
-    
     override func viewDidLoad() {
-           super.viewDidLoad()
-           
-           if let userEmailString = Auth.auth().currentUser?.email {
-               userEmail.text = userEmailString
-           } else {
-               userEmail.text = "Not logged in"
-           }
+        super.viewDidLoad()
+        
+        // Use a transparent placeholder initially
+        catImage.image = UIImage() // or you can hide the image initially if preferred
+        
+        if let userEmailString = Auth.auth().currentUser?.email {
+            userEmail.text = userEmailString
+            loadUserAvatar(for: userEmailString) // Load the user's avatar image
+        } else {
+            userEmail.text = "Not logged in"
+        }
         
         setupShareButton()
-           
-           // Initialize audio player with the new path
-           if let path = Bundle.main.path(forResource: "eastersong", ofType: "mp3") {
-               let url = URL(fileURLWithPath: path)
-               do {
-                   audioPlayer = try AVAudioPlayer(contentsOf: url)
-                   print("Audio player initialized.")
-               } catch {
-                   print("Could not initialize audio player: \(error.localizedDescription)")
-               }
-           } else {
-               print("Could not find audio file.")
-           }
-           
-           // Add UITapGestureRecognizer to catImage
-           let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
-           catImage.isUserInteractionEnabled = true
-           catImage.addGestureRecognizer(tapGestureRecognizer)
-           
-           // Add UITapGestureRecognizer to betaTap label
-           let labelTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(labelTapped))
-           betaTap.isUserInteractionEnabled = true
-           betaTap.addGestureRecognizer(labelTapGestureRecognizer)
-           
-           // Add UILongPressGestureRecognizer to betaTap label
-           let longPressGestureRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(labelLongPressed))
-           longPressGestureRecognizer.minimumPressDuration = 1.0 // 1 second
-           betaTap.addGestureRecognizer(longPressGestureRecognizer)
+        
+        // Initialize audio player with the new path
+        if let path = Bundle.main.path(forResource: "eastersong", ofType: "mp3") {
+            let url = URL(fileURLWithPath: path)
+            do {
+                audioPlayer = try AVAudioPlayer(contentsOf: url)
+                audioPlayer?.prepareToPlay()
+                print("Audio player initialized.")
+            } catch {
+                print("Could not initialize audio player: \(error.localizedDescription)")
+            }
+        } else {
+            print("Could not find audio file.")
+        }
+        
+        // Add UITapGestureRecognizer to catImage
+        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
+        catImage.isUserInteractionEnabled = true
+        catImage.addGestureRecognizer(tapGestureRecognizer)
+        
+        // Add UITapGestureRecognizer to betaTap label
+        let labelTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(labelTapped))
+        betaTap.isUserInteractionEnabled = true
+        betaTap.addGestureRecognizer(labelTapGestureRecognizer)
+        
+        // Add UILongPressGestureRecognizer to betaTap label
+        let longPressGestureRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(labelLongPressed))
+        longPressGestureRecognizer.minimumPressDuration = 1.0 // 1 second
+        betaTap.addGestureRecognizer(longPressGestureRecognizer)
+        
         setupFeedbackButton()
-       }
+        setupAnimalButton()
+        checkInvitedFriends()  // Check if the user has invited any friends
+
+        // Add a delay before setting the default image
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            if self?.catImage.image == UIImage() {
+                self?.catImage.image = UIImage(named: "jellydev") // Use the correct default cat image name
+                self?.animateCatImageAppearance()
+            }
+        }
+    }
+
+
+    @objc private func imageTapped() {
+        rotationSpeed += 0.03
+        let rotationAnimation = CABasicAnimation(keyPath: "transform.rotation")
+        rotationAnimation.toValue = NSNumber(value: Double.pi * 2.0 * rotationSpeed)
+        rotationAnimation.duration = 1.0
+        rotationAnimation.isCumulative = true
+        rotationAnimation.repeatCount = Float.greatestFiniteMagnitude
+        catImage.layer.add(rotationAnimation, forKey: "rotationAnimation")
+        
+        // Play the song when the cat is tapped
+        audioPlayer?.play()
+        print("Started the song.")
+    }
+    
+    
+
+
        
        override func viewWillDisappear(_ animated: Bool) {
            super.viewWillDisappear(animated)
@@ -206,7 +242,13 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
            present(alert, animated: true)
        }
     
-    
+    func animateCatImageAppearance() {
+        catImage.transform = CGAffineTransform(scaleX: 0.1, y: 0.1)
+        UIView.animate(withDuration: 1.0, delay: 0, usingSpringWithDamping: 0.5, initialSpringVelocity: 0.5, options: .curveEaseInOut, animations: {
+            self.catImage.transform = CGAffineTransform.identity
+        }, completion: nil)
+    }
+
     
     func setupFeedbackButton() {
         let feedbackButton = UIButton(type: .system)
@@ -242,6 +284,53 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
             openDefaultMailClient()
         }
     }
+    
+    
+
+    func loadUserAvatar(for email: String) {
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(email)
+        userRef.getDocument { [weak self] (document, error) in
+            if let error = error {
+                print("Error fetching document: \(error.localizedDescription)")
+                return
+            }
+            
+            if let document = document, document.exists {
+                if let avatarURL = document.data()?["avatarURL"] as? String {
+                    if avatarURL == "default_cat_image" { // Use the same identifier for the default image
+                        self?.catImage.image = UIImage(named: "jellydev") // Use the correct default cat image name
+                        self?.animateCatImageAppearance()
+                    } else if let url = URL(string: avatarURL) {
+                        self?.loadImage(from: url)
+                    }
+                } else {
+                    // No avatar URL found, use default cat image
+                    self?.catImage.image = UIImage(named: "jellydev") // Use the correct default cat image name
+                    self?.animateCatImageAppearance()
+                }
+            } else {
+                // Document does not exist, use default cat image
+                self?.catImage.image = UIImage(named: "jellydev") // Use the correct default cat image name
+                self?.animateCatImageAppearance()
+            }
+        }
+    }
+
+    func loadImage(from url: URL) {
+        DispatchQueue.global().async {
+            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+                DispatchQueue.main.async {
+                    self.catImage.image = image
+                    self.animateCatImageAppearance() // Animate the appearance of the loaded image
+                }
+            } else {
+                print("Error loading image from URL.")
+            }
+        }
+    }
+
+
 
     func openDefaultMailClient() {
         let subject = "Namie Feedback 🌝"
@@ -270,6 +359,186 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
                }
            }
        }
+    
+    // MARK: - Animal Button Setup
+    
+    var animalButton: UIButton!
+
+    
+    func setupAnimalButton() {
+        animalButton = UIButton(type: .system)
+        if let animalImage = UIImage(systemName: "pawprint") {
+            animalButton.setImage(animalImage, for: .normal)
+        }
+        animalButton.tintColor = .white
+        animalButton.addTarget(self, action: #selector(animalButtonTapped), for: .touchUpInside)
+        animalButton.isHidden = true  // Hidden by default
+
+        view.addSubview(animalButton)
+        animalButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            animalButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            animalButton.topAnchor.constraint(equalTo: view.centerYAnchor, constant: view.bounds.height / 4 + 60), // Positioning below the share button
+            animalButton.widthAnchor.constraint(equalToConstant: 80),
+            animalButton.heightAnchor.constraint(equalToConstant: 80)
+        ])
+    }
+    
+    private func inviteFriend(_ friendEmail: String) {
+        guard let currentUserEmail = Auth.auth().currentUser?.email else {
+            print("No current user email found.")
+            return
+        }
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(currentUserEmail)
+        
+        userRef.updateData([
+            "invited": FieldValue.arrayUnion([friendEmail])
+        ]) { [weak self] error in
+            if let error = error {
+                print("Error updating document: \(error)")
+            } else {
+                print("Successfully invited friend: \(friendEmail)")
+                self?.openEmailClient(to: friendEmail, from: currentUserEmail)
+                self?.checkInvitedFriends()  // Check if the user has invited any friends
+            }
+        }
+    }
+    
+    func checkInvitedFriends() {
+        guard let currentUserEmail = Auth.auth().currentUser?.email else {
+            print("No current user email found.")
+            return
+        }
+        
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(currentUserEmail)
+        
+        userRef.getDocument { [weak self] (document, error) in
+            if let error = error {
+                print("Error fetching document: \(error)")
+                return
+            }
+            
+            if let document = document, document.exists {
+                if let invited = document.data()?["invited"] as? [String], !invited.isEmpty {
+                    print("User has invited friends: \(invited)")
+                    self?.animalButton.isHidden = false
+                } else {
+                    print("User has not invited any friends.")
+                    self?.animalButton.isHidden = true
+                }
+            } else {
+                print("Document for user \(currentUserEmail) does not exist")
+            }
+        }
+    }
+
+
+
+        
+    @objc func animalButtonTapped() {
+        let alert = UIAlertController(title: "Change Image", message: "Choose an option", preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "Use Miss Jelly", style: .default, handler: { [weak self] _ in
+            self?.setDefaultCatImage()
+        }))
+        
+        alert.addAction(UIAlertAction(title: "Upload Image", style: .default, handler: { [weak self] _ in
+            self?.presentImagePicker()
+        }))
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        
+        present(alert, animated: true, completion: nil)
+    }
+
+    func setDefaultCatImage() {
+        guard let currentUserEmail = Auth.auth().currentUser?.email else {
+            print("No current user email found.")
+            return
+        }
+        
+        let defaultCatImageURL = "default_cat_image" // Use an identifier for the default image
+        
+        // Update Firestore with the default cat image identifier
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(currentUserEmail)
+        userRef.updateData(["avatarURL": defaultCatImageURL]) { [weak self] error in
+            if let error = error {
+                print("Error updating Firestore: \(error.localizedDescription)")
+            } else {
+                print("Firestore updated with default cat image identifier.")
+                self?.catImage.image = UIImage(named: "jellydev") // Use the correct default cat image name
+                self?.animateCatImageAppearance()
+            }
+        }
+    }
+
+
+
+    
+    func presentImagePicker() {
+           let imagePickerController = UIImagePickerController()
+           imagePickerController.delegate = self
+           imagePickerController.sourceType = .photoLibrary
+           present(imagePickerController, animated: true, completion: nil)
+       }
+       
+       func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+           picker.dismiss(animated: true, completion: nil)
+           
+           if let selectedImage = info[.originalImage] as? UIImage {
+               catImage.image = selectedImage
+               uploadImageToFirebase(selectedImage)
+           }
+       }
+       
+       func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+           picker.dismiss(animated: true, completion: nil)
+       }
+       
+    func uploadImageToFirebase(_ image: UIImage) {
+        guard let currentUserEmail = Auth.auth().currentUser?.email else {
+            print("No current user email found.")
+            return
+        }
+        
+        let storageRef = Storage.storage().reference().child("useravatars/\(currentUserEmail).jpg")
+        
+        if let uploadData = image.jpegData(compressionQuality: 0.8) {
+            storageRef.putData(uploadData, metadata: nil) { (metadata, error) in
+                if let error = error {
+                    print("Error uploading image: \(error.localizedDescription)")
+                    return
+                }
+                
+                storageRef.downloadURL { (url, error) in
+                    if let error = error {
+                        print("Error getting download URL: \(error.localizedDescription)")
+                        return
+                    }
+                    
+                    if let url = url {
+                        print("Image uploaded successfully. URL: \(url)")
+                        // Update Firestore with new avatar URL
+                        let db = Firestore.firestore()
+                        let userRef = db.collection("users").document(currentUserEmail)
+                        userRef.updateData(["avatarURL": url.absoluteString]) { error in
+                            if let error = error {
+                                print("Error updating Firestore: \(error.localizedDescription)")
+                            } else {
+                                print("Firestore updated with new avatar URL.")
+                                self.loadImage(from: url) // Set and animate the new image
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
     
     // Load all user emails from the Firestore users collection.
         private func loadAllUserEmailsFromUsersCollection() {
@@ -310,7 +579,7 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
         }
         
     @objc func shareButtonTapped() {
-           let alert = UIAlertController(title: "Invite a Friend", message: "Enter your a friend's email to invite them.", preferredStyle: .alert)
+           let alert = UIAlertController(title: "Invite a Friend", message: "Enter a friend's email to invite them.", preferredStyle: .alert)
            alert.addTextField { textField in
                textField.placeholder = "Friend's email"
                textField.keyboardType = .emailAddress
@@ -343,25 +612,7 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
         }
         
     
-    private func inviteFriend(_ friendEmail: String) {
-           guard let currentUserEmail = Auth.auth().currentUser?.email else {
-               print("No current user email found.")
-               return
-           }
-           let db = Firestore.firestore()
-           let userRef = db.collection("users").document(currentUserEmail)
-           
-           userRef.updateData([
-               "invited": FieldValue.arrayUnion([friendEmail])
-           ]) { [weak self] error in
-               if let error = error {
-                   print("Error updating document: \(error)")
-               } else {
-                   print("Successfully invited friend: \(friendEmail)")
-                   self?.openEmailClient(to: friendEmail, from: currentUserEmail)
-               }
-           }
-       }
+    
     
     // This function handles the logic for sending a friend request
     private func sendFriendRequest(to recipientEmail: String) {
@@ -434,25 +685,6 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
     }
 
 
-    
-    @objc private func imageTapped() {
-        
-        rotationSpeed += 0.03
-        let rotationAnimation = CABasicAnimation(keyPath: "transform.rotation")
-        rotationAnimation.toValue = NSNumber(value: Double.pi * 2.0 * rotationSpeed)
-        rotationAnimation.duration = 1.0
-        rotationAnimation.isCumulative = true
-        rotationAnimation.repeatCount = Float.greatestFiniteMagnitude
-        catImage.layer.add(rotationAnimation, forKey: "rotationAnimation")
-        // Play the song when cat is tapped
-        if audioPlayer?.play() == true {
-            //                   audioControlButton.isHidden = false // Show the audio control button
-            //                   audioControlButton.setTitle("⏸", for: .normal) // Set to pause symbol when playing
-            print("Started the song.")
-        } else {
-            print("Failed to start the song.")
-        }
-    }
     
     
     @objc private func labelTapped() {
