@@ -509,7 +509,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     func setupNotificationCategory() {
         print("Setting up notification category") // Debugging line
-        let viewLastThreeNotesAction = UNNotificationAction(identifier: "viewLastThreeNotes", title: "View last three notes", options: [.foreground])
+        let viewLastThreeNotesAction = UNNotificationAction(identifier: "viewLastThreeNotes", title: "Open Namey", options: [.foreground])
         let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastThreeNotesAction], intentIdentifiers: [], options: [])
         UNUserNotificationCenter.current().setNotificationCategories([category])
         print("Notification category setup complete.") // Debugging line

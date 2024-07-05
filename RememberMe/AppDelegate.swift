@@ -6,7 +6,6 @@ import CoreData
 import UserNotifications
 import CoreLocation
 import BackgroundTasks
-import AVFoundation
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
@@ -14,21 +13,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     var geofenceManager: GeofenceManager!
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        
-        // Set up audio session
-           let audioSession = AVAudioSession.sharedInstance()
-           do {
-               try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowAirPlay, .mixWithOthers])
-               try audioSession.setActive(true)
-           } catch let error as NSError {
-               if error.code == AVAudioSession.ErrorCode.insufficientPriority.rawValue {
-                   print("Insufficient priority to set up audio session. Deferring setup.")
-                   // Defer the audio session setup to a later point or handle it differently
-               } else {
-                   print("Failed to set up audio session: \(error)")
-               }
-           }
-
         // Configure Firebase
         FirebaseApp.configure()
 

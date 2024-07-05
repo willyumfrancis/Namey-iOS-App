@@ -142,19 +142,22 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Use a transparent placeholder initially
-        catImage.image = UIImage() // or you can hide the image initially if preferred
+        setupAudioSession()
+        let audioSession = AVAudioSession.sharedInstance()
+        print("Audio session category: \(audioSession.category)")
+        print("Audio session mode: \(audioSession.mode)")
+        print("Audio session options: \(audioSession.categoryOptions)")
         
+        catImage.image = UIImage()
         if let userEmailString = Auth.auth().currentUser?.email {
             userEmail.text = userEmailString
-            loadUserAvatar(for: userEmailString) // Load the user's avatar image
+            loadUserAvatar(for: userEmailString)
         } else {
             userEmail.text = "Not logged in"
         }
         
         setupShareButton()
         
-        // Initialize audio player with the new path
         if let path = Bundle.main.path(forResource: "eastersong", ofType: "mp3") {
             let url = URL(fileURLWithPath: path)
             do {
@@ -168,33 +171,30 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
             print("Could not find audio file.")
         }
         
-        // Add UITapGestureRecognizer to catImage
         let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
         catImage.isUserInteractionEnabled = true
         catImage.addGestureRecognizer(tapGestureRecognizer)
         
-        // Add UITapGestureRecognizer to betaTap label
         let labelTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(labelTapped))
         betaTap.isUserInteractionEnabled = true
         betaTap.addGestureRecognizer(labelTapGestureRecognizer)
         
-        // Add UILongPressGestureRecognizer to betaTap label
         let longPressGestureRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(labelLongPressed))
-        longPressGestureRecognizer.minimumPressDuration = 1.0 // 1 second
+        longPressGestureRecognizer.minimumPressDuration = 1.0
         betaTap.addGestureRecognizer(longPressGestureRecognizer)
         
         setupFeedbackButton()
         setupAnimalButton()
-        checkInvitedFriends()  // Check if the user has invited any friends
+        checkInvitedFriends()
 
-        // Add a delay before setting the default image
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
             if self?.catImage.image == UIImage() {
-                self?.catImage.image = UIImage(named: "jellydev") // Use the correct default cat image name
+                self?.catImage.image = UIImage(named: "jellydev")
                 self?.animateCatImageAppearance()
             }
         }
     }
+
 
 
     @objc private func imageTapped() {
@@ -206,13 +206,28 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
         rotationAnimation.repeatCount = Float.greatestFiniteMagnitude
         catImage.layer.add(rotationAnimation, forKey: "rotationAnimation")
         
-        // Play the song when the cat is tapped
-        audioPlayer?.play()
-        print("Started the song.")
+        if let audioPlayer = audioPlayer {
+            audioPlayer.volume = 1.0
+            audioPlayer.play()
+            print("Audio player started playing. Duration: \(audioPlayer.duration), Is playing: \(audioPlayer.isPlaying)")
+        } else {
+            print("Audio player is not initialized.")
+        }
     }
-    
-    
 
+    
+    func setupAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .default, options: [.mixWithOthers, .defaultToSpeaker])
+            try AVAudioSession.sharedInstance().setActive(true)
+            print("Audio session category set successfully.")
+        } catch {
+            print("Failed to set audio session category. Error: \(error)")
+        }
+    }
+
+
+    
 
        
        override func viewWillDisappear(_ animated: Bool) {
@@ -262,7 +277,7 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
         feedbackButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             feedbackButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            feedbackButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            feedbackButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -60),
             feedbackButton.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, multiplier: 0.8) // Button width is at most 80% of the view width
         ])
     }
