@@ -1150,53 +1150,39 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         sender.view?.removeFromSuperview()
     }
     
-    func updateImageURLForNotesWithSameLocation(location: CLLocationCoordinate2D, locationName: String, newImageURL: URL) {
-        print("Attempting to update imageURL for notes at location: \(location), locationName: \(locationName)")
-        
+    func updateImageURLForNotesWithSameLocation(locationName: String, newImageURL: URL) {
+        print("Attempting to update imageURL for notes with locationName: \(locationName)")
+
         guard let userEmail = Auth.auth().currentUser?.email else {
             print("User email not found")
             return
         }
-        
+
         db.collection("notes")
             .whereField("user", isEqualTo: userEmail)
+            .whereField("locationName", isEqualTo: locationName)
             .getDocuments { querySnapshot, error in
                 if let e = error {
                     print("There was an issue retrieving data from Firestore: \(e)")
-                } else {
-                    if let snapshotDocuments = querySnapshot?.documents {
-                        for doc in snapshotDocuments {
-                            let data = doc.data()
-                            
-                            guard let noteLocationData = data["location"] as? GeoPoint else {
-                                continue
-                            }
-                            
-                            guard let noteLocationName = data["locationName"] as? String else {
-                                continue
-                            }
-                            
-                            let noteLocation = CLLocationCoordinate2D(latitude: noteLocationData.latitude, longitude: noteLocationData.longitude)
-                            
-                            if (noteLocation.latitude == location.latitude && noteLocation.longitude == location.longitude) || noteLocationName == locationName {
-                                // Update the imageURL for the note with the given document ID
-                                doc.reference.updateData([
-                                    "imageURL": newImageURL.absoluteString
-                                ]) { err in
-                                    if let err = err {
-                                        print("Error updating imageURL for document ID \(doc.documentID): \(err)")
-                                    } else {
-                                        print("Successfully updated imageURL for document ID \(doc.documentID)")
-                                    }
-                                }
+                } else if let snapshotDocuments = querySnapshot?.documents, !snapshotDocuments.isEmpty {
+                    for doc in snapshotDocuments {
+                        // Directly update the imageURL for the note with the given document ID
+                        doc.reference.updateData([
+                            "imageURL": newImageURL.absoluteString
+                        ]) { err in
+                            if let err = err {
+                                print("Error updating imageURL for document ID \(doc.documentID): \(err)")
+                            } else {
+                                print("Successfully updated imageURL for document ID \(doc.documentID)")
                             }
                         }
-                    } else {
-                        print("No snapshot documents found")
                     }
+                } else {
+                    print("No matching documents found for locationName: \(locationName)")
                 }
             }
     }
+
     
     func updateNotesImageURLGeoLocation(imageURL: URL?) {
         guard let userEmail = Auth.auth().currentUser?.email else {
@@ -1958,7 +1944,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
         print("Image data for upload: \(imageData)")
         
-        
         let safeFileName = safeFileName(for: locationName)
         let storageRef = Storage.storage().reference().child("location_images").child("\(safeFileName).jpg")
         
@@ -1992,7 +1977,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 
                 // Success: tell the completion handler
                 completion(.success(url))
-                self.updateImageURLForNotesWithSameLocation(location: location, locationName: locationName, newImageURL: url)
+                
+                // Update imageURL for notes with same location
+                self.updateImageURLForNotesWithSameLocation(locationName: locationName, newImageURL: url)
                 
                 DispatchQueue.main.async {
                     // reloadData is being called on main thread as UI update should be done on main thread.
@@ -2001,6 +1988,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
+
     
     // Image Picker Delegate - Selection and Saving
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {

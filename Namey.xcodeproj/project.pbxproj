@@ -487,7 +487,7 @@
 				DEVELOPMENT_TEAM = TV7YB5JDT2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RememberMe/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Namie;
+				INFOPLIST_KEY_CFBundleDisplayName = Namey;
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to let you take and upload photos.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app can run in the background to provide real-time navigation updates.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to locate establishments you are visiting. It is a core function of the app";
@@ -526,7 +526,7 @@
 				DEVELOPMENT_TEAM = TV7YB5JDT2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RememberMe/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Namie;
+				INFOPLIST_KEY_CFBundleDisplayName = Namey;
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to let you take and upload photos.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app can run in the background to provide real-time navigation updates.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to locate establishments you are visiting. It is a core function of the app";
