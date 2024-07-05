@@ -123,6 +123,170 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
 
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
     
+    //MARK: - ONBOARDING USERS
+    
+    private var onboardingView: UIView?
+        private var currentOnboardingPage = 0
+    
+    private let onboardingPages = [
+        """
+        Welcome to Namie!
+        Your Social Memory Assistant
+
+        Never forget a name or detail again.
+        """,
+        
+        """
+        Effortless Recall
+
+        Simply jot down names and memorable details about the people you meet.
+        """,
+        
+        """
+        Location-Based Reminders
+
+        Namie pings you with your notes when you return to a location.
+        """,
+        
+        """
+        Boost Your Social Confidence
+
+        Say goodbye to awkward moments and hello to smooth conversations!
+        """,
+        
+        "Let's get started!"
+    ]
+    
+    private func calculateContentViewHeight(for text: String) -> CGFloat {
+        let label = UILabel()
+        label.font = UIFont(name: "Avenir-Medium", size: 20)  // Match the font size used in the actual label
+        label.numberOfLines = 0
+        label.text = text
+        
+        let maxWidth = view.bounds.width * 0.8 - 40 // 80% of screen width minus padding
+        let size = label.sizeThatFits(CGSize(width: maxWidth, height: .greatestFiniteMagnitude))
+        
+        // Increase the added height to accommodate the image and buttons
+        let minHeight: CGFloat = 300 // Increase minimum height
+        return max(min(size.height + 200, view.bounds.height * 0.8), minHeight)
+    }
+
+    private var contentViewHeightConstraint: NSLayoutConstraint?
+
+    private func setupOnboardingView() {
+        onboardingView = UIView(frame: view.bounds)
+        onboardingView?.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        
+        let contentView = UIVisualEffectView(effect: UIBlurEffect(style: .dark))
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.layer.cornerRadius = 20
+        contentView.clipsToBounds = true
+        
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        
+        let label = UILabel()
+        label.textAlignment = .center
+        label.font = UIFont(name: "Avenir-Medium", size: 20)
+        label.textColor = .white
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        
+        let nextButton = UIButton(type: .system)
+        nextButton.setTitle("Next", for: .normal)
+        nextButton.setTitleColor(.white, for: .normal)
+        nextButton.titleLabel?.font = UIFont(name: "Avenir-Heavy", size: 22)
+        nextButton.addTarget(self, action: #selector(nextOnboardingPage), for: .touchUpInside)
+        nextButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        contentView.contentView.addSubview(imageView)
+        contentView.contentView.addSubview(label)
+        contentView.contentView.addSubview(nextButton)
+        onboardingView?.addSubview(contentView)
+        
+        let contentHeight = calculateContentViewHeight(for: onboardingPages[currentOnboardingPage])
+        contentViewHeightConstraint = contentView.heightAnchor.constraint(equalToConstant: contentHeight)
+        
+        NSLayoutConstraint.activate([
+                contentView.centerXAnchor.constraint(equalTo: onboardingView!.centerXAnchor),
+                contentView.centerYAnchor.constraint(equalTo: onboardingView!.centerYAnchor),
+                contentView.widthAnchor.constraint(equalTo: onboardingView!.widthAnchor, multiplier: 0.8),
+                contentViewHeightConstraint!,
+                
+                imageView.topAnchor.constraint(equalTo: contentView.contentView.topAnchor, constant: 30),
+                imageView.centerXAnchor.constraint(equalTo: contentView.contentView.centerXAnchor),
+                imageView.widthAnchor.constraint(equalTo: contentView.contentView.widthAnchor, multiplier: 0.3),
+                imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor),
+                
+                label.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20),
+                label.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor, constant: 20),
+                label.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor, constant: -20),
+                
+                nextButton.centerXAnchor.constraint(equalTo: contentView.contentView.centerXAnchor),
+                nextButton.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor, constant: -20),
+                nextButton.topAnchor.constraint(greaterThanOrEqualTo: label.bottomAnchor, constant: 20)
+            ])
+        
+        view.addSubview(onboardingView!)
+        
+        updateOnboardingContent(for: currentOnboardingPage)
+    }
+    
+    
+    
+    private func updateOnboardingContent(for page: Int) {
+        guard let contentView = onboardingView?.subviews.first as? UIVisualEffectView,
+              let label = contentView.contentView.subviews.first(where: { $0 is UILabel }) as? UILabel,
+              let imageView = contentView.contentView.subviews.first(where: { $0 is UIImageView }) as? UIImageView,
+              let nextButton = contentView.contentView.subviews.last as? UIButton else {
+            return
+        }
+        
+        label.text = onboardingPages[page]
+        
+        let imageName: String
+        switch page {
+        case 0:
+            imageName = "person.2.circle"
+        case 1:
+            imageName = "pencil.and.outline"
+        case 2:
+            imageName = "location.circle"
+        case 3:
+            imageName = "person.fill.checkmark"
+        default:
+            imageName = "checkmark.circle"
+        }
+        
+        imageView.image = UIImage(systemName: imageName)?.withRenderingMode(.alwaysTemplate)
+        imageView.tintColor = .white
+        
+        nextButton.setTitle(page == onboardingPages.count - 1 ? "Get Started" : "Next", for: .normal)
+        
+        let newHeight = calculateContentViewHeight(for: onboardingPages[page])
+        contentViewHeightConstraint?.constant = newHeight
+    }
+
+    @objc private func nextOnboardingPage() {
+        currentOnboardingPage += 1
+        
+        if currentOnboardingPage < onboardingPages.count {
+            UIView.transition(with: onboardingView!, duration: 0.3, options: .transitionCrossDissolve, animations: {
+                self.updateOnboardingContent(for: self.currentOnboardingPage)
+                self.view.layoutIfNeeded()
+            }, completion: nil)
+        } else {
+            // Onboarding complete
+            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+            UIView.animate(withDuration: 0.3, animations: {
+                self.onboardingView?.alpha = 0
+            }) { _ in
+                self.onboardingView?.removeFromSuperview()
+                self.onboardingView = nil
+            }
+        }
+    }
     
     // MARK: - NOTIFICATIONS
     
@@ -882,6 +1046,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         requestNotificationAuthorization()
         checkNotificationSettings()
         NotificationCenter.default.addObserver(self, selector: #selector(handleAppDidBecomeActive), name: NSNotification.Name("appDidBecomeActive"), object: nil)
+        
+        if !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
+                setupOnboardingView()
+            }
         
         // Retrieve the stored goal number from UserDefaults
         let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")

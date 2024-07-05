@@ -146,6 +146,8 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
            } else {
                userEmail.text = "Not logged in"
            }
+        
+        setupShareButton()
            
            // Initialize audio player with the new path
            if let path = Bundle.main.path(forResource: "eastersong", ofType: "mp3") {
@@ -203,6 +205,8 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
            alert.addAction(cancelAction)
            present(alert, animated: true)
        }
+    
+    
     
     func setupFeedbackButton() {
         let feedbackButton = UIButton(type: .system)
@@ -284,6 +288,80 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
   
     
 //MARK: - END IBACTIONS
+    
+    // MARK: - Share Button Setup
+        
+        func setupShareButton() {
+            let shareButton = UIButton(type: .system)
+            if let shareImage = UIImage(systemName: "square.and.arrow.up") {
+                shareButton.setImage(shareImage, for: .normal)
+            }
+            shareButton.tintColor = .white
+            shareButton.addTarget(self, action: #selector(shareButtonTapped), for: .touchUpInside)
+            
+            view.addSubview(shareButton)
+            shareButton.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                shareButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                shareButton.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: view.bounds.height / 4), // Positioning towards the bottom half
+                shareButton.widthAnchor.constraint(equalToConstant: 50),
+                shareButton.heightAnchor.constraint(equalToConstant: 50)
+            ])
+        }
+        
+    @objc func shareButtonTapped() {
+           let alert = UIAlertController(title: "Invite a Friend", message: "Enter your a friend's email to invite them.", preferredStyle: .alert)
+           alert.addTextField { textField in
+               textField.placeholder = "Friend's email"
+               textField.keyboardType = .emailAddress
+           }
+           let sendAction = UIAlertAction(title: "Send", style: .default) { [weak self, weak alert] _ in
+               guard let textField = alert?.textFields?.first, let friendEmail = textField.text, !friendEmail.isEmpty else {
+                   return
+               }
+               self?.inviteFriend(friendEmail)
+           }
+           let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+           alert.addAction(sendAction)
+           alert.addAction(cancelAction)
+           present(alert, animated: true, completion: nil)
+       }
+    
+    private func openEmailClient(to friendEmail: String, from currentUserEmail: String) {
+            let subject = "Join me on Namey!"
+            let body = "Hi there!\n\nI've been using Namey and thought you might like it too."  + "It's a great way to stay connected and remember important moments. https://apps.apple.com/us/app/namie/id6449910626"
+            
+            let urlString = "mailto:\(friendEmail)?subject=\(subject)&body=\(body)"
+            
+            if let emailUrl = URL(string: urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "") {
+                if UIApplication.shared.canOpenURL(emailUrl) {
+                    UIApplication.shared.open(emailUrl, options: [:], completionHandler: nil)
+                } else {
+                    showAlert(withTitle: "Cannot Open Mail", message: "Your device couldn't open the mail client. Please send the invite manually to \(friendEmail).")
+                }
+            }
+        }
+        
+    
+    private func inviteFriend(_ friendEmail: String) {
+           guard let currentUserEmail = Auth.auth().currentUser?.email else {
+               print("No current user email found.")
+               return
+           }
+           let db = Firestore.firestore()
+           let userRef = db.collection("users").document(currentUserEmail)
+           
+           userRef.updateData([
+               "invited": FieldValue.arrayUnion([friendEmail])
+           ]) { [weak self] error in
+               if let error = error {
+                   print("Error updating document: \(error)")
+               } else {
+                   print("Successfully invited friend: \(friendEmail)")
+                   self?.openEmailClient(to: friendEmail, from: currentUserEmail)
+               }
+           }
+       }
     
     // This function handles the logic for sending a friend request
     private func sendFriendRequest(to recipientEmail: String) {
