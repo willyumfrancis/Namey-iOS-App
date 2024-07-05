@@ -19,6 +19,8 @@ import SDWebImage
 import UserNotifications
 import AVFoundation
 import OpenAI
+import Speech
+
 
 struct Geofence {
     let location: CLLocationCoordinate2D
@@ -122,6 +124,12 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
 
 
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
+    
+    
+    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+        private var recognitionTask: SFSpeechRecognitionTask?
+        private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+        private var audioEngine = AVAudioEngine()
     
     //MARK: - ONBOARDING USERS
     
@@ -1042,6 +1050,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     // VIEWDIDLOAD BRO
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        requestSpeechAuthorization()
         UNUserNotificationCenter.current().delegate = self
         requestNotificationAuthorization()
         checkNotificationSettings()
@@ -1119,6 +1129,25 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         @unknown default:
             completion(false)
+        }
+    }
+    
+    func requestSpeechAuthorization() {
+        SFSpeechRecognizer.requestAuthorization { authStatus in
+            OperationQueue.main.addOperation {
+                switch authStatus {
+                case .authorized:
+                    self.MicLook.isEnabled = true
+                case .denied:
+                    self.MicLook.isEnabled = false
+                    print("Speech recognition authorization denied")
+                case .restricted, .notDetermined:
+                    self.MicLook.isEnabled = false
+                    print("Speech recognition not authorized")
+                @unknown default:
+                    print("Unknown authorization status")
+                }
+            }
         }
     }
     
@@ -1812,74 +1841,33 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     
     
-    //MARK: - Whisper API
+    //MARK: - APPLE MIC
     
     var isRecording = false // Add this property to keep track of recording state
     
     
     @IBAction func toggleRecording(_ sender: UIButton) {
-        if isRecording {
-            print("Stopping recording...")
-            stopRecordingAndTranscribeAudio()
-            sender.setImage(UIImage(systemName: "mic"), for: .normal)
-        } else {
-            print("Starting recording...")
-            startRecording()
-            sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
-        }
-        isRecording.toggle()
-    }
-    
-    func stopRecordingAndTranscribeAudio() {
-        print("Stopping recording.")
-        audioRecorder.stop()
-        
-        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav")
-        print("Audio file URL: \(audioFilename)")
-        
-        let fileManager = FileManager.default
-        if fileManager.fileExists(atPath: audioFilename.path) {
-            print("File exists")
-        } else {
-            print("File does not exist")
-        }
-        
-        print(audioFilename)
-        
-        APIManager.shared.transcribeAudio(fileURL: audioFilename) { result in
-            print("Inside transcribeAudio completion handler") // Debugging line
-            
-            switch result {
-            case .success(let transcription):
-                print("Transcription successful: \(transcription)") // Debugging line
-                
-                DispatchQueue.main.async {
-                    // Create a new note and add it to the notes array
-                    let newNote = Note(id: UUID().uuidString, text: transcription, location: self.selectedLocation ?? CLLocationCoordinate2D(), locationName: "", imageURL: URL(string: ""))
-                    self.notes.append(newNote)
-                    
-                    // Update the UI to insert the new note into the table view
-                    self.tableView.beginUpdates()
-                    self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                    self.tableView.endUpdates()
-                    
-                    // Find the newly added cell and set it as the active cell
-                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                        self.activeNoteCell = newCell
-                        self.activeNoteCell?.note = newNote
-                        self.activeNoteCell?.noteTextField.text = transcription
-                        self.saveNote()  // Call the function to save the note
-                    }
-                }
-            case .failure(let error):
-                print("Error transcribing audio: \(error)") // Debugging line
-                DispatchQueue.main.async {
-                    
-                }
+            if audioEngine.isRunning {
+                audioEngine.stop()
+                recognitionRequest?.endAudio()
+                sender.setImage(UIImage(systemName: "mic"), for: .normal)
+            } else {
+                startRecording()
+                sender.setImage(UIImage(systemName: "mic.fill"), for: .normal)
             }
         }
-    }
+    
+    func handleTranscription(_ transcription: String) {
+         createNewNoteWithTranscription(transcription)
+     }
+    
+    func showTranscriptionError(_ error: Error) {
+          let alert = UIAlertController(title: "Transcription Error", message: error.localizedDescription, preferredStyle: .alert)
+          alert.addAction(UIAlertAction(title: "OK", style: .default))
+          present(alert, animated: true)
+      }
+    
+    
     
     
     
@@ -1893,48 +1881,107 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     var audioRecorder: AVAudioRecorder!
     
     func startRecording() {
-        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.wav") // Changed to .wav
-        print("Starting recording. Audio filename: \(audioFilename)")
-        
-        let settings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: 44100,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 16,
-            AVLinearPCMIsBigEndianKey: false,
-            AVLinearPCMIsFloatKey: false
-        ]
-        
+            if recognitionTask != nil {
+                recognitionTask?.cancel()
+                recognitionTask = nil
+            }
+
+            let audioSession = AVAudioSession.sharedInstance()
+            do {
+                try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+                try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            } catch {
+                print("Failed to set up audio session: \(error)")
+                return
+            }
+
+            recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
+
+            let inputNode = audioEngine.inputNode
+            guard let recognitionRequest = recognitionRequest else {
+                print("Unable to create recognition request")
+                return
+            }
+
+            recognitionRequest.shouldReportPartialResults = true
+
+            recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { result, error in
+                var isFinal = false
+
+                if let result = result {
+                    isFinal = result.isFinal
+                    print("Speech recognition result: \(result.bestTranscription.formattedString)")
+                }
+
+                if error != nil || isFinal {
+                    self.audioEngine.stop()
+                    inputNode.removeTap(onBus: 0)
+
+                    self.recognitionRequest = nil
+                    self.recognitionTask = nil
+
+                    self.MicLook.isEnabled = true
+                    if isFinal {
+                        self.createNewNoteWithTranscription(result?.bestTranscription.formattedString ?? "")
+                    }
+                }
+            }
+
+            let recordingFormat = inputNode.outputFormat(forBus: 0)
+            inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
+                self.recognitionRequest?.append(buffer)
+            }
+
+            audioEngine.prepare()
+
+            do {
+                try audioEngine.start()
+            } catch {
+                print("Failed to start audio engine: \(error)")
+                return
+            }
+        }
+    
+    func setupAudioSession() {
         do {
-            audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
-            audioRecorder.record()
-        } catch let error {
-            print("Error starting recording: \(error)")
+            try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to set up audio session: \(error)")
         }
     }
     
     func createNewNoteWithTranscription(_ transcription: String) {
-        if let currentLocation = self.currentLocation {
-            let emptyURL = URL(string: "")
-            let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: "", imageURL: emptyURL)
-            notes.append(newNote)
-            selectedNote = newNote
-            
-            DispatchQueue.main.async {
-                self.tableView.beginUpdates()
-                self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                self.tableView.endUpdates()
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                    guard let self = self else { return }
-                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                        newCell.noteTextField.becomeFirstResponder()
-                    }
-                }
-            }
-        }
-    }
+           if let currentLocation = self.currentLocation {
+               let emptyURL = URL(string: "")
+               let newNote = Note(id: UUID().uuidString, text: transcription, location: currentLocation, locationName: self.currentLocationName ?? "", imageURL: emptyURL)
+               notes.append(newNote)
+               selectedNote = newNote
+               
+               DispatchQueue.main.async {
+                   self.tableView.beginUpdates()
+                   self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                   self.tableView.endUpdates()
+                   
+                   self.saveNoteToFirestore(noteId: newNote.id, noteText: transcription, location: currentLocation, locationName: self.currentLocationName ?? "", imageURL: "") { success in
+                       if success {
+                           print("Note successfully saved to Firestore.")
+                       } else {
+                           print("Failed to save note to Firestore.")
+                       }
+                   }
+                   
+                   DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                       guard let self = self else { return }
+                       if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                          let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                           newCell.noteTextField.becomeFirstResponder()
+                       }
+                   }
+               }
+           }
+       }
+   
     
     
     private func setupRoundedImageView() {

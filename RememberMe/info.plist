@@ -3,13 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleShortVersionString</key>
-	<string>1.1</string>
+	<string>1.2</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Do you like talking over texting? We need access to your mic for audio transcription.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Speech recognition tech to transcribe your audio into notes.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Pings users when they are close to a place!</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>&quot;Pings users when they are close to a place!&quot;</string>
+	<string>Pings users when they are close to a place!</string>
 	<key>CFBundleVersion</key>
-	<string>1.1</string>
+	<string>1.2</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>misiaszek.RememberMe.refreshGeofences</string>
