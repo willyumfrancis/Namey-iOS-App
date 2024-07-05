@@ -14,9 +14,9 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1104"
-            endingLineNumber = "1104"
-            landmarkName = "requestSpeechAuthorization()"
+            startingLineNumber = "1115"
+            endingLineNumber = "1115"
+            landmarkName = "viewDidAppear(_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -30,9 +30,9 @@
             filePath = "RememberMe/Controllers/Navigation/HomeViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1745"
-            endingLineNumber = "1745"
-            landmarkName = "fetchImageURLFor(locationName:completion:)"
+            startingLineNumber = "1761"
+            endingLineNumber = "1761"
+            landmarkName = "fetchLocationNameFor(location:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

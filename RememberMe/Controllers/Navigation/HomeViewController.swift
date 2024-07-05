@@ -308,6 +308,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     var lastLocationUpdateTime: Date?
     var lastProcessedLocation: CLLocationCoordinate2D?
     var hasFetchedLocation = false
+    
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if hasFetchedLocation {
             return
@@ -319,7 +320,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         self.currentLocation = newLocation.coordinate
         print("User's location: \(newLocation)")
         
-        updateLocationNameLabel(location: newLocation.coordinate)
+        updateCurrentLocationInfo(location: newLocation.coordinate)
         self.displayImage(location: self.currentLocation!)
         
         if let coord = self.currentLocation {
@@ -574,7 +575,15 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
     }
-    var currentLocationName: String?
+    
+    var currentLocationName: String? {
+        didSet {
+            DispatchQueue.main.async {
+                self.locationNameLabel.text = self.currentLocationName
+                print("Updated location name: \(String(describing: self.currentLocationName))")
+            }
+        }
+    }
     var currentLocationImageURL: URL?
     private let locationManager = CLLocationManager()
     var currentLocation: CLLocationCoordinate2D?
@@ -609,16 +618,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
     
     func refreshLocation() {
-        // Use the user's current location
         guard let currentLocation = locationManager.location?.coordinate else {
             print("User location not available yet")
             return
         }
         
-        // Set the user's current location as the selected location
         selectedLocation = currentLocation
-        
-        // Update the current location information
+        updateCurrentLocationInfo(location: currentLocation)
         updateLocation(location: currentLocation)
     }
     
@@ -868,25 +874,30 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
 
         let noteId = activeCell.note?.id ?? UUID().uuidString
+        let locationName = currentLocationName ?? "Unnamed Location"
+        let imageURL = currentLocationImageURL?.absoluteString ?? ""
 
-        // Check if this is a new location
-        if currentLocationName == nil || currentLocationName?.isEmpty == true {
-            // This is a new location, prompt for name and image
-            promptForNewLocation(location: saveLocation, noteText: noteText, noteId: noteId)
-        } else {
-            // Existing location, proceed with normal save
-            saveNoteToFirestore(noteId: noteId, noteText: noteText, location: saveLocation, locationName: currentLocationName!, imageURL: self.currentLocationImageURL?.absoluteString ?? "") { success in
-                if success {
-                    print("Note successfully saved to Firestore.")
-                    DispatchQueue.main.async {
-                        if let noteIndex = self.notes.firstIndex(where: { $0.id == noteId }) {
-                            self.notes[noteIndex].text = noteText
-                            self.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
-                        }
-                        self.updateLocationNameLabel(location: saveLocation)
-                        self.updateUI(withLocationName: self.currentLocationName!)
+        print("Saving note with locationName: \(locationName), imageURL: \(imageURL)")
+
+        saveNoteToFirestore(noteId: noteId, noteText: noteText, location: saveLocation, locationName: locationName, imageURL: imageURL) { success in
+            if success {
+                print("Note successfully saved to Firestore.")
+                DispatchQueue.main.async {
+                    if let noteIndex = self.notes.firstIndex(where: { $0.id == noteId }) {
+                        self.notes[noteIndex].text = noteText
+                        self.notes[noteIndex].locationName = locationName
+                        self.notes[noteIndex].imageURL = URL(string: imageURL)
+                        self.tableView.reloadRows(at: [IndexPath(row: noteIndex, section: 0)], with: .automatic)
+                    } else {
+                        // If the note doesn't exist in the array, add it
+                        let newNote = Note(id: noteId, text: noteText, location: saveLocation, locationName: locationName, imageURL: URL(string: imageURL))
+                        self.notes.append(newNote)
+                        self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
                     }
+                    self.updateUI(withLocationName: locationName)
                 }
+            } else {
+                print("Failed to save note to Firestore.")
             }
         }
     }
@@ -1215,9 +1226,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     func updateLocationNameLabel(location: CLLocationCoordinate2D) {
         let locationName = fetchLocationNameFor(location: location) ?? "New Place"
-        locationNameLabel.text = "\(locationName)"
-        print("Location name is \(locationName)")
-        
+        self.currentLocationName = locationName
+    }
+    func updateCurrentLocationInfo(location: CLLocationCoordinate2D) {
+        updateLocationNameLabel(location: location)
+        fetchImageURLFor(locationName: self.currentLocationName ?? "") { imageURL in
+            self.currentLocationImageURL = imageURL
+            print("Updated currentLocationImageURL: \(String(describing: self.currentLocationImageURL))")
+        }
     }
     
     //Update Name Goal
