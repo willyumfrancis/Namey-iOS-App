@@ -393,7 +393,7 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
         animalButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             animalButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            animalButton.topAnchor.constraint(equalTo: view.centerYAnchor, constant: view.bounds.height / 4 + 60), // Positioning below the share button
+            animalButton.topAnchor.constraint(equalTo: view.centerYAnchor, constant: view.bounds.height / 4 + 50), // Positioning below the share button
             animalButton.widthAnchor.constraint(equalToConstant: 80),
             animalButton.heightAnchor.constraint(equalToConstant: 80)
         ])
