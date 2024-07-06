@@ -319,6 +319,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         self.currentLocation = newLocation.coordinate
         print("User's location: \(newLocation)")
         
+        // Check if this is a new location and update currentLocationName
+        if let locationName = self.fetchLocationNameFor(location: newLocation.coordinate) {
+            self.currentLocationName = locationName
+        } else {
+            self.currentLocationName = "New Place"
+        }
+        print("Current location name: \(self.currentLocationName ?? "Unknown")")
+        
         updateCurrentLocationInfo(location: newLocation.coordinate)
         self.displayImage(location: self.currentLocation!)
         
@@ -348,9 +356,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
         
+        // Update UI on main thread
+        DispatchQueue.main.async {
+            self.updateLocationNameLabel(location: newLocation.coordinate)
+            self.updateNotesCountLabel()
+        }
+        
         hasFetchedLocation = true
     }
-    
     func setupClosestTwentyGeofences(currentLocation: CLLocation, completion: @escaping () -> Void) {
             print("Setting up geofences for closest twenty locations.")  // Debugging print statement
             
@@ -831,6 +844,44 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         return true
     }
     
+    
+    func saveNote() {
+        guard let userEmail = Auth.auth().currentUser?.email,
+              let activeCell = activeNoteCell,
+              let noteText = activeCell.noteTextField.text,
+              !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            print("Failed to prepare data for saving")
+            return
+        }
+
+        let locationToSave = selectedLocation ?? currentLocation
+        guard let saveLocation = locationToSave else {
+            print("Failed to get user's current location or selected location")
+            return
+        }
+
+        let noteId = activeCell.note?.id ?? UUID().uuidString
+        
+        // Check if this is a new location
+        if currentLocationName == nil || currentLocationName == "New Place" || currentLocationName == "Unnamed Location" {
+            // This is a new place, prompt for location name
+            promptForNewLocation(location: saveLocation, noteText: noteText, noteId: noteId)
+        } else {
+            // This is an existing location, proceed with normal save
+            let locationName = currentLocationName ?? "Unnamed Location"
+            saveNoteToFirestore(noteId: noteId, noteText: noteText, location: saveLocation, locationName: locationName, imageURL: "") { success in
+                if success {
+                    print("Note successfully saved to Firestore.")
+                    DispatchQueue.main.async {
+                        self.updateUIAfterSavingNote(noteId: noteId, noteText: noteText, locationName: locationName)
+                    }
+                } else {
+                    print("Failed to save note to Firestore.")
+                }
+            }
+        }
+    }
+
     func promptForNewLocation(location: CLLocationCoordinate2D, noteText: String, noteId: String) {
         let alertController = UIAlertController(title: "New Location", message: "Please enter a name for this new location:", preferredStyle: .alert)
         alertController.addTextField()
@@ -851,12 +902,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 if success {
                     print("Note successfully saved to Firestore.")
                     DispatchQueue.main.async {
-                        if let noteIndex = self.notes.firstIndex(where: { $0.id == noteId }) {
-                            self.notes[noteIndex].text = noteText
-                            self.tableView.scrollToRow(at: IndexPath(row: noteIndex, section: 0), at: .bottom, animated: true)
-                        }
-                        self.updateLocationNameLabel(location: location)
-                        self.updateUI(withLocationName: locationName)
+                        self.updateUIAfterSavingNote(noteId: noteId, noteText: noteText, locationName: locationName)
                         
                         // Now prompt for image
                         self.presentImagePicker(locationName: locationName)
@@ -871,58 +917,20 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
         present(alertController, animated: true)
     }
-    
-    func saveNote() {
-        guard let userEmail = Auth.auth().currentUser?.email,
-              let activeCell = activeNoteCell,
-              let noteText = activeCell.noteTextField.text,
-              !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            print("Failed to prepare data for saving")
-            return
+
+    func updateUIAfterSavingNote(noteId: String, noteText: String, locationName: String) {
+        if let noteIndex = self.notes.firstIndex(where: { $0.id == noteId }) {
+            self.notes[noteIndex].text = noteText
+            self.notes[noteIndex].locationName = locationName
+            self.tableView.reloadRows(at: [IndexPath(row: noteIndex, section: 0)], with: .automatic)
+        } else {
+            // If the note doesn't exist in the array, add it
+            let newNote = Note(id: noteId, text: noteText, location: self.currentLocation!, locationName: locationName, imageURL: nil)
+            self.notes.append(newNote)
+            self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
         }
-
-        let locationToSave = selectedLocation ?? currentLocation
-        guard let saveLocation = locationToSave else {
-            print("Failed to get user's current location or selected location")
-            return
-        }
-
-        let noteId = activeCell.note?.id ?? UUID().uuidString
-        let locationName = currentLocationName ?? "Unnamed Location"
-        
-        // Get the current image URL
-        let safeFileName = self.safeFileName(for: locationName)
-        let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
-        
-        storageRef.downloadURL { [weak self] (url, error) in
-            guard let self = self else { return }
-            
-            let imageURL = url?.absoluteString ?? ""
-
-            print("Saving note with locationName: \(locationName), imageURL: \(imageURL)")
-
-            self.saveNoteToFirestore(noteId: noteId, noteText: noteText, location: saveLocation, locationName: locationName, imageURL: imageURL) { success in
-                if success {
-                    print("Note successfully saved to Firestore.")
-                    DispatchQueue.main.async {
-                        if let noteIndex = self.notes.firstIndex(where: { $0.id == noteId }) {
-                            self.notes[noteIndex].text = noteText
-                            self.notes[noteIndex].locationName = locationName
-                            self.notes[noteIndex].imageURL = URL(string: imageURL)
-                            self.tableView.reloadRows(at: [IndexPath(row: noteIndex, section: 0)], with: .automatic)
-                        } else {
-                            // If the note doesn't exist in the array, add it
-                            let newNote = Note(id: noteId, text: noteText, location: saveLocation, locationName: locationName, imageURL: URL(string: imageURL))
-                            self.notes.append(newNote)
-                            self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                        }
-                        self.updateUI(withLocationName: locationName)
-                    }
-                } else {
-                    print("Failed to save note to Firestore.")
-                }
-            }
-        }
+        self.updateLocationNameLabel(location: self.currentLocation!)
+        self.updateUI(withLocationName: locationName)
     }
     
     func saveNoteHelper(userEmail: String, noteText: String, location: CLLocationCoordinate2D, locationName: String, noteId: String?) {
@@ -1092,8 +1100,8 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         NotificationCenter.default.addObserver(self, selector: #selector(handleAppDidBecomeActive), name: NSNotification.Name("appDidBecomeActive"), object: nil)
         
         if !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
-                setupOnboardingView()
-            }
+            setupOnboardingView()
+        }
         
         // Retrieve the stored goal number from UserDefaults
         let storedValue = UserDefaults.standard.integer(forKey: "GoalNumber")
@@ -1109,25 +1117,62 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
         
         setupGeofenceManager()
-
-        
         LocationButton(UIButton())
         
-        
-        
-        // Check if app has permissions to record audio
-        checkAudioRecordingPermission { [weak self] hasPermission in
-            if hasPermission {
-                // Start recording
-                DispatchQueue.main.async { // Ensure UI updates are on the main thread
-                    self?.startRecordingAutomatically()
-                }
-            } else {
-                // Handle the case where permission is not granted
-                print("Audio recording permission not granted")
-                // You can show an alert here asking the user to enable permissions
-            }
+        // Load notifiedRegions from UserDefaults
+        if let savedRegions = UserDefaults.standard.array(forKey: "notifiedRegions") as? [String] {
+            notifiedRegions = Set(savedRegions)
         }
+        
+        // Setting up location manager
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.distanceFilter = kCLDistanceFilterNone
+        locationManager.requestAlwaysAuthorization()
+        
+        // Setting up notification center
+        UNUserNotificationCenter.current().delegate = self
+        requestNotificationAuthorization()
+        setupNotificationCategory()
+        
+        tableView.dragDelegate = self
+        tableView.dropDelegate = self
+        tableView.dragInteractionEnabled = false
+        
+        //Appearance of App//
+        setupAppearance()
+        
+        print("viewDidLoad called") // Add print statement
+        setupTableView()
+        
+        setupLocationManager()
+        setupRoundedImageView()
+        
+        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
+        CurrentPlace.isUserInteractionEnabled = true
+        CurrentPlace.addGestureRecognizer(tapGestureRecognizer)
+        
+        let goalButton = UIBarButtonItem(title: "Set Goal", style: .plain, target: self, action: #selector(goalButtonTapped))
+        navigationItem.rightBarButtonItem = goalButton
+    }
+
+    // Add these helper methods to keep the viewDidLoad clean:
+    private func setupAppearance() {
+        NewNameLook.layer.cornerRadius = 12
+        NewNameLook.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
+        NewNameLook.layer.borderWidth = 3
+        NewNameLook.layer.borderColor = UIColor.black.cgColor
+        
+        SaveButtonLook.layer.cornerRadius = 12
+        SaveButtonLook.backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
+        SaveButtonLook.layer.borderWidth = 3
+        SaveButtonLook.layer.borderColor = UIColor.black.cgColor
+    }
+
+    private func setupTableView() {
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.register(UINib(nibName: "NoteCell", bundle: nil), forCellReuseIdentifier: "NoteCell")
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -1185,62 +1230,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
     
-    func startRecordingAutomatically() {
-        // Assuming 'toggleRecording' is correctly set up for starting/stopping recording
-        if !isRecording {
-            print("Automatically starting recording...")
-            toggleRecording(UIButton()) // Simulate button press
-        }
-        
-        // Load notifiedRegions from UserDefaults
-        if let savedRegions = UserDefaults.standard.array(forKey: "notifiedRegions") as? [String] {
-            notifiedRegions = Set(savedRegions)
-        }
-        
-        // Setting up location manager
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = kCLDistanceFilterNone
-        locationManager.requestAlwaysAuthorization()
-        
-        // Setting up notification center
-        UNUserNotificationCenter.current().delegate = self
-        requestNotificationAuthorization()
-        setupNotificationCategory()
-        //        // Update the progress bar according to the retrieved goal number
-        //           updateProgressBar()
-        tableView.dragDelegate = self
-        tableView.dropDelegate = self
-        tableView.dragInteractionEnabled = false
-        
-        //Apparance of App//
-        NewNameLook.layer.cornerRadius = 12
-        NewNameLook.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
-        NewNameLook.layer.borderWidth = 3
-        NewNameLook.layer.borderColor = UIColor.black.cgColor
-        
-        SaveButtonLook.layer.cornerRadius = 12
-        SaveButtonLook.backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
-        SaveButtonLook.layer.borderWidth = 3
-        SaveButtonLook.layer.borderColor = UIColor.black.cgColor
-        
-        print("viewDidLoad called") // Add print statement
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.register(UINib(nibName: "NoteCell", bundle: nil), forCellReuseIdentifier: "NoteCell")
-        
-        setupLocationManager()
-        setupRoundedImageView()
-        
-        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
-        CurrentPlace.isUserInteractionEnabled = true
-        CurrentPlace.addGestureRecognizer(tapGestureRecognizer)
-        
-        
-        
-        let goalButton = UIBarButtonItem(title: "Set Goal", style: .plain, target: self, action: #selector(goalButtonTapped))
-        navigationItem.rightBarButtonItem = goalButton
-    }
+    
     //ENDVIEWDIDLOAD
     
     deinit {
