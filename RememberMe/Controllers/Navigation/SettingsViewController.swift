@@ -25,6 +25,8 @@ class AppState {
     private init() {}
 }
 
+
+
 class SettingsViewController: UIViewController, MFMailComposeViewControllerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -44,6 +46,81 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
             // Customize the cell to indicate it's an accepted friend
         }
         return cell
+    }
+    
+    private var onboardingView: UIView?
+    private var hasSeenOnboarding: Bool {
+        get { UserDefaults.standard.bool(forKey: "HasSeenSettingsOnboarding") }
+        set { UserDefaults.standard.set(newValue, forKey: "HasSeenSettingsOnboarding") }
+    }
+    @objc private func dismissOnboarding() {
+        UIView.animate(withDuration: 0.3, animations: {
+            self.onboardingView?.alpha = 0
+        }) { _ in
+            self.onboardingView?.removeFromSuperview()
+            self.onboardingView = nil
+            self.hasSeenOnboarding = true
+        }
+    }
+    
+    private func setupOnboardingView() {
+        guard !hasSeenOnboarding else { return }
+        
+        onboardingView = UIView(frame: view.bounds)
+        onboardingView?.backgroundColor = UIColor.black.withAlphaComponent(0.7)
+        
+        let contentView = UIVisualEffectView(effect: UIBlurEffect(style: .dark))
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.layer.cornerRadius = 20
+        contentView.clipsToBounds = true
+        
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = UIImage(systemName: "square.and.arrow.up")
+        imageView.tintColor = .white
+        
+        let label = UILabel()
+        label.text = "Share with a friend to unlock custom avatars!"
+        label.textAlignment = .center
+        label.font = UIFont(name: "Avenir-Medium", size: 20)
+        label.textColor = .white
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        
+        let gotItButton = UIButton(type: .system)
+        gotItButton.setTitle("Got it!", for: .normal)
+        gotItButton.setTitleColor(.white, for: .normal)
+        gotItButton.titleLabel?.font = UIFont(name: "Avenir-Heavy", size: 22)
+        gotItButton.addTarget(self, action: #selector(dismissOnboarding), for: .touchUpInside)
+        gotItButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        contentView.contentView.addSubview(imageView)
+        contentView.contentView.addSubview(label)
+        contentView.contentView.addSubview(gotItButton)
+        onboardingView?.addSubview(contentView)
+        
+        view.addSubview(onboardingView!)
+        
+        NSLayoutConstraint.activate([
+            contentView.centerXAnchor.constraint(equalTo: onboardingView!.centerXAnchor),
+            contentView.centerYAnchor.constraint(equalTo: onboardingView!.centerYAnchor),
+            contentView.widthAnchor.constraint(equalTo: onboardingView!.widthAnchor, multiplier: 0.8),
+            contentView.heightAnchor.constraint(equalTo: onboardingView!.heightAnchor, multiplier: 0.4),
+            
+            imageView.topAnchor.constraint(equalTo: contentView.contentView.topAnchor, constant: 30),
+            imageView.centerXAnchor.constraint(equalTo: contentView.contentView.centerXAnchor),
+            imageView.widthAnchor.constraint(equalTo: contentView.contentView.widthAnchor, multiplier: 0.3),
+            imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor),
+            
+            label.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20),
+            label.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor, constant: 20),
+            label.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor, constant: -20),
+            
+            gotItButton.centerXAnchor.constraint(equalTo: contentView.contentView.centerXAnchor),
+            gotItButton.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor, constant: -20),
+            gotItButton.topAnchor.constraint(greaterThanOrEqualTo: label.bottomAnchor, constant: 20)
+        ])
     }
 
     
@@ -147,6 +224,8 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
         print("Audio session category: \(audioSession.category)")
         print("Audio session mode: \(audioSession.mode)")
         print("Audio session options: \(audioSession.categoryOptions)")
+        setupOnboardingView()
+
         
         catImage.image = UIImage()
         if let userEmailString = Auth.auth().currentUser?.email {
