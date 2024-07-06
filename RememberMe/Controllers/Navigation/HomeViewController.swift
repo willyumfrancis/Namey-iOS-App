@@ -2020,39 +2020,48 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     func createNewNoteWithTranscription(_ transcription: String) {
         if let currentLocation = self.currentLocation {
             let locationName = self.currentLocationName ?? "Unnamed Location"
-            let imageURL = self.currentLocationImageURL?.absoluteString ?? ""
+            
+            // Get the current image URL
+            let safeFileName = self.safeFileName(for: locationName)
+            let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
+            
+            storageRef.downloadURL { [weak self] (url, error) in
+                guard let self = self else { return }
+                
+                let imageURL = url?.absoluteString ?? ""
 
-            let newNote = Note(id: UUID().uuidString,
-                               text: transcription,
-                               location: currentLocation,
-                               locationName: locationName,
-                               imageURL: URL(string: imageURL))
-            
-            notes.append(newNote)
-            selectedNote = newNote
-            
-            DispatchQueue.main.async {
-                self.tableView.beginUpdates()
-                self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
-                self.tableView.endUpdates()
+                let newNote = Note(id: UUID().uuidString,
+                                   text: transcription,
+                                   location: currentLocation,
+                                   locationName: locationName,
+                                   imageURL: URL(string: imageURL))
                 
-                self.saveNoteToFirestore(noteId: newNote.id,
-                                         noteText: transcription,
-                                         location: currentLocation,
-                                         locationName: locationName,
-                                         imageURL: imageURL) { success in
-                    if success {
-                        print("Note successfully saved to Firestore.")
-                    } else {
-                        print("Failed to save note to Firestore.")
+                self.notes.append(newNote)
+                self.selectedNote = newNote
+                
+                DispatchQueue.main.async {
+                    self.tableView.beginUpdates()
+                    self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+                    self.tableView.endUpdates()
+                    
+                    self.saveNoteToFirestore(noteId: newNote.id,
+                                             noteText: transcription,
+                                             location: currentLocation,
+                                             locationName: locationName,
+                                             imageURL: imageURL) { success in
+                        if success {
+                            print("Note successfully saved to Firestore.")
+                        } else {
+                            print("Failed to save note to Firestore.")
+                        }
                     }
-                }
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                    guard let self = self else { return }
-                    if let newRowIndexPath = self.tableView.indexPathForLastRow,
-                       let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
-                        newCell.noteTextField.becomeFirstResponder()
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                        guard let self = self else { return }
+                        if let newRowIndexPath = self.tableView.indexPathForLastRow,
+                           let newCell = self.tableView.cellForRow(at: newRowIndexPath) as? NoteCell {
+                            newCell.noteTextField.becomeFirstResponder()
+                        }
                     }
                 }
             }
