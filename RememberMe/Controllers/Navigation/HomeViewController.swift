@@ -861,7 +861,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
 
         let noteId = activeCell.note?.id ?? UUID().uuidString
-        
+
         // Check if this is a new location
         if currentLocationName == nil || currentLocationName == "New Place" || currentLocationName == "Unnamed Location" {
             // This is a new place, prompt for location name
@@ -869,17 +869,47 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         } else {
             // This is an existing location, proceed with normal save
             let locationName = currentLocationName ?? "Unnamed Location"
-            saveNoteToFirestore(noteId: noteId, noteText: noteText, location: saveLocation, locationName: locationName, imageURL: "") { success in
-                if success {
-                    print("Note successfully saved to Firestore.")
-                    DispatchQueue.main.async {
-                        self.updateUIAfterSavingNote(noteId: noteId, noteText: noteText, locationName: locationName)
+            
+            // Get the current image URL
+            let safeFileName = self.safeFileName(for: locationName)
+            let storageRef = Storage.storage().reference().child("location_images/\(safeFileName).jpg")
+            
+            storageRef.downloadURL { [weak self] (url, error) in
+                guard let self = self else { return }
+                
+                let imageURL = url?.absoluteString ?? ""
+
+                print("Saving note with locationName: \(locationName), imageURL: \(imageURL)")
+
+                self.saveNoteToFirestore(noteId: noteId, noteText: noteText, location: saveLocation, locationName: locationName, imageURL: imageURL) { success in
+                    if success {
+                        print("Note successfully saved to Firestore.")
+                        DispatchQueue.main.async {
+                            self.updateUIAfterSavingNote(noteId: noteId, noteText: noteText, locationName: locationName, imageURL: imageURL)
+                        }
+                    } else {
+                        print("Failed to save note to Firestore.")
                     }
-                } else {
-                    print("Failed to save note to Firestore.")
                 }
             }
         }
+    }
+
+
+    func updateUIAfterSavingNote(noteId: String, noteText: String, locationName: String, imageURL: String) {
+        if let noteIndex = self.notes.firstIndex(where: { $0.id == noteId }) {
+            self.notes[noteIndex].text = noteText
+            self.notes[noteIndex].locationName = locationName
+            self.notes[noteIndex].imageURL = URL(string: imageURL)
+            self.tableView.reloadRows(at: [IndexPath(row: noteIndex, section: 0)], with: .automatic)
+        } else {
+            // If the note doesn't exist in the array, add it
+            let newNote = Note(id: noteId, text: noteText, location: self.currentLocation!, locationName: locationName, imageURL: URL(string: imageURL))
+            self.notes.append(newNote)
+            self.tableView.insertRows(at: [IndexPath(row: self.notes.count - 1, section: 0)], with: .automatic)
+        }
+        self.updateLocationNameLabel(location: self.currentLocation!)
+        self.updateUI(withLocationName: locationName)
     }
 
     func promptForNewLocation(location: CLLocationCoordinate2D, noteText: String, noteId: String) {
