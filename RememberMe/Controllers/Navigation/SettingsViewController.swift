@@ -237,6 +237,14 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
         
         setupShareButton()
         
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(labelTapped))
+            betaTap.addGestureRecognizer(tapGesture)
+            betaTap.isUserInteractionEnabled = true
+
+            let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(labelLongPressed))
+            longPressGesture.minimumPressDuration = 0.5 // Adjust this value to change how long the user needs to press
+            betaTap.addGestureRecognizer(longPressGesture)
+        
         if let path = Bundle.main.path(forResource: "eastersong", ofType: "mp3") {
             let url = URL(fileURLWithPath: path)
             do {
@@ -304,6 +312,7 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
             print("Failed to set audio session category. Error: \(error)")
         }
     }
+
 
 
     
@@ -778,23 +787,72 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
         }
     }
 
+    private var lastTapTime: TimeInterval = 0
+    private var tapCount: Int = 0
 
-    
-    
     @objc private func labelTapped() {
+        let currentTime = CACurrentMediaTime()
+        let timeSinceLastTap = currentTime - lastTapTime
         
-        if catImage.transform.d != 0 { // checking if the image is visible
-            UIView.animate(withDuration: 0.3, animations: {
-                self.catImage.transform = self.catImage.transform.scaledBy(x: 0.9, y: 0.9) // reduce the size by 10%
+        // Reset tap count if it's been more than 0.5 seconds since last tap
+        if timeSinceLastTap > 0.5 {
+            tapCount = 0
+        }
+        
+        tapCount += 1
+        lastTapTime = currentTime
+        
+        // Cancel any ongoing animations
+        self.betaTap.layer.removeAllAnimations()
+        self.catImage.layer.removeAllAnimations()
+        
+        // Calculate jump height and duration based on tap count
+        let jumpHeight = min(-3.0 * CGFloat(tapCount), -20.0) // Cap at -20 points
+        let duration = max(0.05, 0.1 - 0.005 * Double(tapCount)) // Minimum duration of 0.05 seconds
+        
+        // Animate label jump
+        UIView.animate(withDuration: duration, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState], animations: {
+            self.betaTap.transform = CGAffineTransform(translationX: 0, y: jumpHeight)
+        }) { _ in
+            UIView.animate(withDuration: duration, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState], animations: {
+                self.betaTap.transform = .identity
+            })
+        }
+        
+        // Animate cat image shrink
+        if catImage.transform.d != 0 {
+            let shrinkFactor = max(0.8, 0.95 - 0.01 * CGFloat(tapCount)) // Minimum shrink to 80%
+            UIView.animate(withDuration: 0.1, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState], animations: {
+                self.catImage.transform = self.catImage.transform.scaledBy(x: shrinkFactor, y: shrinkFactor)
             })
         }
     }
-    
+
     @objc private func labelLongPressed(gesture: UILongPressGestureRecognizer) {
-        if gesture.state == .began { // Only perform the action when the long press begins
-            UIView.animate(withDuration: 3, animations: {
-                self.catImage.transform = self.catImage.transform.scaledBy(x: 2, y: 2) // increase the size by 50%
+        switch gesture.state {
+        case .began:
+            // Shrink the label
+            UIView.animate(withDuration: 0.3, animations: {
+                self.betaTap.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
             })
+            
+            // Enlarge the cat image
+            UIView.animate(withDuration: 3, animations: {
+                self.catImage.transform = self.catImage.transform.scaledBy(x: 2, y: 2) // increase the size by 100%
+            })
+        case .ended, .cancelled:
+            // Rebound the label
+            UIView.animate(withDuration: 0.2, animations: {
+                self.betaTap.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+            }) { _ in
+                UIView.animate(withDuration: 0.1) {
+                    self.betaTap.transform = .identity
+                }
+            }
+            
+          
+        default:
+            break
         }
     }
     
