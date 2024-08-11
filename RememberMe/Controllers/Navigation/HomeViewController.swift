@@ -88,11 +88,10 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
 
     func shouldRefreshGeofences(newLocation: CLLocation) -> Bool {
         guard let lastRefreshLocation = lastRefreshLocation else {
-            return true // Always refresh if it's the first time
+            return true
         }
-
         let distanceFromLastRefresh = newLocation.distance(from: lastRefreshLocation)
-        return distanceFromLastRefresh > refreshDistance
+        return distanceFromLastRefresh > 100 // Reduce this value to refresh more frequently
     }
 
     // CLLocationManagerDelegate method
@@ -300,8 +299,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     func setupLocationManager() {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()  // Changed from requestWhenInUseAuthorization
-        locationManager.startUpdatingLocation()
+        locationManager.distanceFilter = kCLDistanceFilterNone
+        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.pausesLocationUpdatesAutomatically = false
+        locationManager.requestAlwaysAuthorization()
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didStartMonitoringFor region: CLRegion) {
+        print("Started monitoring region: \(region.identifier)")
     }
     var hasProcessedLocationUpdate = false
     var lastLocationUpdateTime: Date?
@@ -433,26 +438,21 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     }
 
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        print("Entered region: \(region.identifier)") // Debug statement to indicate region entry.
+        print("Entered region: \(region.identifier)")
         
         if let circularRegion = region as? CLCircularRegion {
-            print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)") // Debugging details about the entered region.
+            print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")
         }
         
-        // Ensure execution in the main thread for UI updates and fetching notes.
         DispatchQueue.main.async {
-            // Load notes for the region directly without waiting, as time is limited in the background.
             self.LoadPlacesNotes(for: region.identifier) {
-                // After loading, fetch the last three notes.
                 let lastThreeNotes = self.getLastThreeNotes(for: region.identifier)
                 let lastThreeNotesText = lastThreeNotes.map { $0.text }
                 
                 if !lastThreeNotesText.isEmpty {
-                    // Send notification if there are notes for the entered region.
                     self.sendNotification(locationName: region.identifier, lastThreeNotes: lastThreeNotesText)
-                    self.notifiedRegions.insert(region.identifier)
                 } else {
-                    print("No notes available for region: \(region.identifier)") // Debug statement if no notes are available.
+                    print("No notes available for region: \(region.identifier)")
                 }
             }
         }
@@ -494,16 +494,16 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             content.categoryIdentifier = "notesCategory"
             content.userInfo = ["locationName": locationName]
             
-            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-            UNUserNotificationCenter.current().add(request) { error in
-                if let error = error {
-                    print("Error adding notification: \(error)")
-                } else {
-                    print("Notification added successfully")
-                }
-            }
-        }
-    }
+            
+              let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+              UNUserNotificationCenter.current().add(request) { error in
+                  if let error = error {
+                      print("Error sending notification: \(error.localizedDescription)")
+                  } else {
+                      print("Notification sent successfully for location: \(locationName)")
+                  }
+              }
+          }    }
     
     func requestNotificationAuthorization() {
         print("Requesting notification authorization") // Debugging line

@@ -483,11 +483,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.2;
+				CURRENT_PROJECT_VERSION = 1.3;
 				DEVELOPMENT_TEAM = TV7YB5JDT2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RememberMe/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Namey;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to let you take and upload photos.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app can run in the background to provide real-time navigation updates.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to locate establishments you are visiting. It is a core function of the app";
@@ -504,7 +505,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = misiaszek.RememberMe;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -522,11 +523,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.2;
+				CURRENT_PROJECT_VERSION = 1.3;
 				DEVELOPMENT_TEAM = TV7YB5JDT2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RememberMe/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Namey;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to let you take and upload photos.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app can run in the background to provide real-time navigation updates.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to locate establishments you are visiting. It is a core function of the app";
@@ -543,7 +545,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = misiaszek.RememberMe;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
