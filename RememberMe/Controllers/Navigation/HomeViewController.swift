@@ -28,98 +28,54 @@ struct Geofence {
     let identifier: String
 }
 
-
-
 class GeofenceManager: NSObject, CLLocationManagerDelegate {
     var locationManager: CLLocationManager!
-    var notes: [Note] = []
-    var geofences: [Geofence] = []
+    var notes: [Note] = []  // Your existing array of notes
+    var geofences: [Geofence] = []  // New array for geofences
     var notifiedRegions: Set<String> = []
     var lastNotificationSentTime: [String: Date] = [:]
-    var currentGeofenceRadius: CLLocationDistance = 30
+    var currentGeofenceRadius: CLLocationDistance = 30 // Default value or suitable initial value
     
-    var lastRefreshLocation: CLLocation?
-    let refreshDistance: CLLocationDistance = 500 // Adjust this value as needed
-
+    func refreshGeofences(currentLocation: CLLocation, completion: @escaping (Bool) -> Void) {
+        // Example async operation to simulate fetching notes or geofences from a remote server or complex local computation
+        DispatchQueue.global(qos: .background).async {
+            // Let's assume your actual refreshing logic goes here
+            // For now, we'll just replicate the logic you have in setupClosestFifteenGeofences
+            
+            let sortedNotes = self.notes.sorted {
+                let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
+                let location2 = CLLocation(latitude: $1.location.latitude, longitude: $1.location.longitude)
+                return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
+            }
+            
+            let closestNotes = Array(sortedNotes.prefix(15))
+            
+            DispatchQueue.main.async {
+                self.geofences.removeAll()
+                
+                for note in closestNotes {
+                    let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
+                    let geofence = Geofence(location: coordinate, radius: self.currentGeofenceRadius, identifier: note.locationName)
+                    self.geofences.append(geofence)
+                }
+                
+                // Assuming the geofences setup does not require UI and is fast
+                // In real scenario, replace below true with actual success status
+                completion(true) // Call completion handler to indicate success or failure
+            }
+        }
+    }
+    
+    
     override init() {
         super.init()
         self.locationManager = CLLocationManager()
         self.locationManager.delegate = self
         self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        self.locationManager.distanceFilter = 100 // Update location every 100 meters
-        self.locationManager.allowsBackgroundLocationUpdates = true
-        self.locationManager.pausesLocationUpdatesAutomatically = false
-        print("Location manager initialized for background location updates.")
-    }
-
-    func startMonitoring() {
-        locationManager.startUpdatingLocation()
-    }
-
-    func refreshGeofences(currentLocation: CLLocation, completion: @escaping (Bool) -> Void) {
-        // Sort the notes by distance from the current location
-        let sortedNotes = notes.sorted {
-            let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
-            let location2 = CLLocation(latitude: $1.location.latitude, longitude: $1.location.longitude)
-            return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
-        }
-        
-        // Take the closest 20 notes
-        let closestNotes = Array(sortedNotes.prefix(20))
-        
-        // Stop monitoring all existing geofences
-        for geofence in geofences {
-            locationManager.stopMonitoring(for: CLCircularRegion(center: geofence.location, radius: geofence.radius, identifier: geofence.identifier))
-        }
-        geofences.removeAll()
-        
-        // Add new geofences
-        for note in closestNotes {
-            let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
-            let geofence = Geofence(location: coordinate, radius: 100, identifier: note.locationName)
-            geofences.append(geofence)
-            setupGeoFence(location: geofence.location, identifier: geofence.identifier)
-        }
-        
-        // Update the last refresh location
-        self.lastRefreshLocation = currentLocation
-        completion(true)
-    }
-
-    func shouldRefreshGeofences(newLocation: CLLocation) -> Bool {
-        guard let lastRefreshLocation = lastRefreshLocation else {
-            return true
-        }
-        let distanceFromLastRefresh = newLocation.distance(from: lastRefreshLocation)
-        return distanceFromLastRefresh > 100 // Reduce this value to refresh more frequently
-    }
-
-    // CLLocationManagerDelegate method
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last else { return }
-
-        if shouldRefreshGeofences(newLocation: location) {
-            refreshGeofences(currentLocation: location) { success in
-                print("Geofences refreshed: \(success)")
-            }
-        }
-    }
-
-    func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
-        let radius: CLLocationDistance = 50
-        print("Setting up GeoFence at \(location) with radius \(radius)")  // Debugging line
-        let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
-        region.notifyOnEntry = true
-        region.notifyOnExit = false
-        
-        if CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) {
-            locationManager.startMonitoring(for: region)
-            print("GeoFence setup complete.") // Debugging line
-        } else {
-            print("GeoFence monitoring is not available for this device.") // Debugging line
-        }
+        print("Location manager initialized for background location updates.")  // Debugging line
     }
 }
+
 
 
 class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UNUserNotificationCenterDelegate {
@@ -294,23 +250,53 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
     }
     
+    
     // MARK: - NOTIFICATIONS
+    
+    func determineTransportationMode(from speed: CLLocationSpeed) -> String {
+        // Speed is in meters per second
+        switch speed {
+        case 0..<4: // Less than 4 m/s (~14.4 km/h)
+            return "walking"
+        case 4..<15: // Between 4 m/s and 15 m/s (~14.4 to ~54 km/h)
+            return "biking"
+        default: // Greater than 15 m/s (~54 km/h)
+            return "driving"
+        }
+    }
+    
+    func shouldRefreshGeofences(for modeOfTransport: String, lastLocation: CLLocationCoordinate2D, currentLocation: CLLocationCoordinate2D) -> Bool {
+        let lastCLLocation = CLLocation(latitude: lastLocation.latitude, longitude: lastLocation.longitude)
+        let currentCLLocation = CLLocation(latitude: currentLocation.latitude, longitude: currentLocation.longitude)
+        let distance = currentCLLocation.distance(from: lastCLLocation)
+        
+        let thresholds: [String: CLLocationDistance] = [
+            "walking": 200, // meters
+            "biking": 500,
+            "driving": 1000
+        ]
+        
+        return distance > (thresholds[modeOfTransport] ?? 500) // Default to biking threshold if mode is unknown
+    }
+    
     
     func setupLocationManager() {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = kCLDistanceFilterNone
-        locationManager.allowsBackgroundLocationUpdates = true
-        locationManager.pausesLocationUpdatesAutomatically = false
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestAlwaysAuthorization()  // Changed from requestWhenInUseAuthorization
+        locationManager.startUpdatingLocation()
     }
     
-    func locationManager(_ manager: CLLocationManager, didStartMonitoringFor region: CLRegion) {
-        print("Started monitoring region: \(region.identifier)")
-    }
+    
     var hasProcessedLocationUpdate = false
+    
+    // Location Manager Delegate
     var lastLocationUpdateTime: Date?
+    
+    // Location Manager Delegate
     var lastProcessedLocation: CLLocationCoordinate2D?
+    
+    // Define a property to keep track of whether the location has been fetched
     var hasFetchedLocation = false
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -324,23 +310,15 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         self.currentLocation = newLocation.coordinate
         print("User's location: \(newLocation)")
         
-        // Check if this is a new location and update currentLocationName
-        if let locationName = self.fetchLocationNameFor(location: newLocation.coordinate) {
-            self.currentLocationName = locationName
-        } else {
-            self.currentLocationName = "New Place"
-        }
-        print("Current location name: \(self.currentLocationName ?? "Unknown")")
-        
-        updateCurrentLocationInfo(location: newLocation.coordinate)
+        updateLocationNameLabel(location: newLocation.coordinate)
         self.displayImage(location: self.currentLocation!)
         
         if let coord = self.currentLocation {
             let locationObj = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
             loadAndFilterNotes(for: coord, goalRadius: 15.0) {
                 print("Notes are loaded and filtered.")
-                self.setupClosestTwentyGeofences(currentLocation: locationObj) {
-                    print("Called setupClosestTwentyGeofences completion block in didUpdateLocations")
+                self.setupClosestFifteenGeofences(currentLocation: locationObj) {
+                    print("Called setupClosestFifteenGeofences completion block in didUpdateLocations")
                 }
             }
             
@@ -351,7 +329,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 let modeOfTransport = determineTransportationMode(from: speed)
                 if shouldRefreshGeofences(for: modeOfTransport, lastLocation: lastLocation, currentLocation: coord) {
                     // Your existing logic to update geofences
-                    setupClosestTwentyGeofences(currentLocation: locationObj) {
+                    setupClosestFifteenGeofences(currentLocation: locationObj) {
                         print("Geofences refreshed based on significant location change.")
                     }
                     self.lastProcessedLocation = coord // Update last location after refresh
@@ -361,16 +339,14 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
         
-        // Update UI on main thread
-        DispatchQueue.main.async {
-            self.updateLocationNameLabel(location: newLocation.coordinate)
-            self.updateNotesCountLabel()
-        }
-        
         hasFetchedLocation = true
     }
-    func setupClosestTwentyGeofences(currentLocation: CLLocation, completion: @escaping () -> Void) {
-            print("Setting up geofences for closest twenty locations.")  // Debugging print statement
+    
+    
+    
+    func setupClosestFifteenGeofences(currentLocation: CLLocation, completion: @escaping () -> Void) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
+            print("Setting up geofences for closest fifteen locations.")  // Debugging print statement
             
             let sortedNotes = self.notes.sorted {
                 let location1 = CLLocation(latitude: $0.location.latitude, longitude: $0.location.longitude)
@@ -378,30 +354,23 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
                 return currentLocation.distance(from: location1) < currentLocation.distance(from: location2)
             }
             
-            let closestNotes = Array(sortedNotes.prefix(20))
+            let closestNotes = Array(sortedNotes.prefix(15))
             print("Closest notes count: \(closestNotes.count)")  // Debugging print statement
             
-            // Remove existing geofences
-            for geofence in geofenceManager.geofences {
-                geofenceManager.locationManager.stopMonitoring(for: CLCircularRegion(center: geofence.location, radius: geofence.radius, identifier: geofence.identifier))
-            }
-            geofenceManager.geofences.removeAll()
+            self.geofenceManager.geofences.removeAll()
             
             for note in closestNotes {
                 let coordinate = CLLocationCoordinate2D(latitude: note.location.latitude, longitude: note.location.longitude)
                 let geofence = Geofence(location: coordinate, radius: 100, identifier: note.locationName)
-                geofenceManager.geofences.append(geofence)
-                geofenceManager.setupGeoFence(location: geofence.location, identifier: geofence.identifier)
+                self.geofenceManager.geofences.append(geofence)
+                self.setupGeoFence(location: geofence.location, identifier: geofence.identifier)
             }
             
-            print("Geofences for closest twenty locations set up.")  // Debugging print statement
-            
-            // Update last refresh location
-            geofenceManager.lastRefreshLocation = currentLocation
-            
+            print("Geofences for closest fifteen locations set up.")  // Debugging print statement
             completion()
         }
-
+    }
+    
     
     // When exiting a region, remove it from the list of notified regions
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
@@ -417,8 +386,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     var geofenceManager = GeofenceManager()  // Initialize GeofenceManager
     
+    
     func setupGeoFence(location: CLLocationCoordinate2D, identifier: String) {
-        let radius: CLLocationDistance = 50
+        let radius: CLLocationDistance = 25
         print("Setting up GeoFence at \(location) with radius \(radius)")  // Debugging line
         let region = CLCircularRegion(center: location, radius: radius, identifier: identifier)
         region.notifyOnEntry = true
@@ -436,74 +406,75 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         print("Fetching last three notes for location: \(locationName)") // Debugging line
         return Array(notes.filter { $0.locationName == locationName }.suffix(3))
     }
-
+    
+    
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        print("Entered region: \(region.identifier)")
+        print("Entered region: \(region.identifier)") // Debug statement to indicate region entry.
         
         if let circularRegion = region as? CLCircularRegion {
-            print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)")
+            print("Entered circular region with center: \(circularRegion.center) and radius: \(circularRegion.radius)") // Debugging details about the entered region.
         }
         
+        // Ensure execution in the main thread for UI updates and fetching notes.
         DispatchQueue.main.async {
+            // Load notes for the region directly without waiting, as time is limited in the background.
             self.LoadPlacesNotes(for: region.identifier) {
+                // After loading, fetch the last three notes.
                 let lastThreeNotes = self.getLastThreeNotes(for: region.identifier)
                 let lastThreeNotesText = lastThreeNotes.map { $0.text }
                 
                 if !lastThreeNotesText.isEmpty {
+                    // Send notification if there are notes for the entered region.
                     self.sendNotification(locationName: region.identifier, lastThreeNotes: lastThreeNotesText)
+                    self.notifiedRegions.insert(region.identifier)
                 } else {
-                    print("No notes available for region: \(region.identifier)")
+                    print("No notes available for region: \(region.identifier)") // Debug statement if no notes are available.
                 }
             }
         }
     }
+    
     
     func requestLocationAuthorization() {
         locationManager.requestWhenInUseAuthorization()
     }
     
+    // Add a dictionary to keep track of last sent time for each location
     var lastNotificationSentTime: [String: Date] = [:]
     
     func sendNotification(locationName: String, lastThreeNotes: [String]) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            print("Preparing to send notification for location: \(locationName)")
+            print("Preparing to send notification for location: \(locationName)") // Debugging line
+            
             
             // Check if locationName and lastThreeNotes are not empty
-            if locationName.isEmpty {
-                print("Location name is empty. Skipping notification.")
+            if locationName.isEmpty || lastThreeNotes.isEmpty {
+                print("Either the location name or the last three notes are empty. Skipping notification.") // Debugging line
                 return
             }
+            
             
             // Update the last sent time for this location
             self.geofenceManager.lastNotificationSentTime[locationName] = Date()
             
-            print("Sending notification for location: \(locationName)")
+            print("Sending notification for location: \(locationName)") // Debugging line
             let content = UNMutableNotificationContent()
-            content.title = "You're near \(locationName)"
-            
-            if lastThreeNotes.isEmpty {
-                content.body = "Tap to view your notes for this location."
-            } else {
-                let numberedNotes = lastThreeNotes.enumerated().map { index, note in
-                    return "\(index + 1). \(note)"
-                }
-                content.body = numberedNotes.joined(separator: "\n")
-            }
-            
-            content.sound = .default
+            content.title = "Near \(locationName)"
+            let notesText = lastThreeNotes.joined(separator: ", ")
+            content.body = "\(notesText)"
             content.categoryIdentifier = "notesCategory"
-            content.userInfo = ["locationName": locationName]
-            
-            
-              let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-              UNUserNotificationCenter.current().add(request) { error in
-                  if let error = error {
-                      print("Error sending notification: \(error.localizedDescription)")
-                  } else {
-                      print("Notification sent successfully for location: \(locationName)")
-                  }
-              }
-          }    }
+            content.sound = UNNotificationSound.default
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+            UNUserNotificationCenter.current().add(request) { error in
+                if let error = error {
+                    print("Error adding notification: \(error)") // Debugging line
+                } else {
+                    print("Notification added successfully") // Debugging line
+                }
+            }
+        }
+    }
     
     func requestNotificationAuthorization() {
         print("Requesting notification authorization") // Debugging line
@@ -522,7 +493,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
     
     func setupNotificationCategory() {
         print("Setting up notification category") // Debugging line
-        let viewLastThreeNotesAction = UNNotificationAction(identifier: "viewLastThreeNotes", title: "Open Namey", options: [.foreground])
+        let viewLastThreeNotesAction = UNNotificationAction(identifier: "viewLastThreeNotes", title: "View last three notes", options: [.foreground])
         let category = UNNotificationCategory(identifier: "notesCategory", actions: [viewLastThreeNotesAction], intentIdentifiers: [], options: [])
         UNUserNotificationCenter.current().setNotificationCategories([category])
         print("Notification category setup complete.") // Debugging line
@@ -541,6 +512,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         }
         completionHandler()
     }
+    
+    
+    
+    //MARK: - END NOTIES
+    
+    
+   
     
     //MARK: - OUTLETS
     @IBOutlet weak var tableView: UITableView!
@@ -1114,11 +1092,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         
     }
     
-    func setupGeofenceManager() {
-           geofenceManager = GeofenceManager()
-           geofenceManager.startMonitoring()
-       }
-    
     // VIEWDIDLOAD BRO
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -1146,7 +1119,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
             }
         }
         
-        setupGeofenceManager()
         LocationButton(UIButton())
         
         // Load notifiedRegions from UserDefaults
@@ -2508,34 +2480,6 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate, UIImagePi
         self.present(alertController, animated: true, completion: {
             textField.becomeFirstResponder()
         })
-    }
-    
-
-    
-    func determineTransportationMode(from speed: CLLocationSpeed) -> String {
-        // Speed is in meters per second
-        switch speed {
-        case 0..<4: // Less than 4 m/s (~14.4 km/h)
-            return "walking"
-        case 4..<15: // Between 4 m/s and 15 m/s (~14.4 to ~54 km/h)
-            return "biking"
-        default: // Greater than 15 m/s (~54 km/h)
-            return "driving"
-        }
-    }
-    
-    func shouldRefreshGeofences(for modeOfTransport: String, lastLocation: CLLocationCoordinate2D, currentLocation: CLLocationCoordinate2D) -> Bool {
-        let lastCLLocation = CLLocation(latitude: lastLocation.latitude, longitude: lastLocation.longitude)
-        let currentCLLocation = CLLocation(latitude: currentLocation.latitude, longitude: currentLocation.longitude)
-        let distance = currentCLLocation.distance(from: lastCLLocation)
-        
-        let thresholds: [String: CLLocationDistance] = [
-            "walking": 200, // meters
-            "biking": 500,
-            "driving": 1000
-        ]
-        
-        return distance > (thresholds[modeOfTransport] ?? 500) // Default to biking threshold if mode is unknown
     }
     
     @objc func imageTapped() {
